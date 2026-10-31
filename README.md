@@ -1,176 +1,288 @@
-# DormHub - Smart Dormitory Management System (Frontend)
+# DormHub — Frontend
 
-## 📌 Giới thiệu dự án
-DormHub là hệ thống quản lý ký túc xá thông minh dành cho sinh viên, quản lý ký túc xá và quản trị viên hệ thống. Dự án Frontend được phát triển bằng **React**, **Vite** và **Tailwind CSS v4**, mang lại giao diện hiện đại, mượt mà và trực quan.
+Frontend cho hệ thống quản lý ký túc xá DormHub, xây dựng bằng React, Vite và React Router. Project giữ giao diện hiện có, tổ chức lại các layout dùng chung, bổ sung xử lý CSRF/refresh cookie cho API client và giới hạn phạm vi người dùng còn **Guest, Student, Manager**.
 
----
+Đây là project frontend. Backend Spring Boot và PostgreSQL được chạy riêng.
 
-## 🚀 Công nghệ sử dụng (Frontend Stack)
-- **Framework & Build tool**: React 19, Vite 8
-- **Routing**: React Router v7
-- **Styling & UI**: Tailwind CSS v4, Base UI, Shadcn, Motion (Framer Motion), tw-animate-css
-- **State Management & Data Fetching**: React Context, TanStack Query (tùy chọn)
-- **Forms & Validation**: React Hook Form, Zod/Yup
-- **Charts & Statistics**: Recharts
-- **API Client**: Axios
-- **Utilities**: Day.js, Lucide React (Icons), Sonner (Toasts)
+## 1. Công nghệ
 
----
+- React 19 + Vite 8
+- React Router 7
+- JavaScript + JSX
+- Tailwind CSS 4, Lucide React, Recharts, Motion
+- Fetch API dùng chung tại `src/api/apiClient.js`
+- Xác thực bằng HttpOnly Cookie; không lưu access token vào `localStorage` hoặc `sessionStorage`
 
-## 📂 Cấu trúc thư mục (`src/`)
-Chi tiết cấu trúc thư mục của dự án Frontend:
-```text
-src/
-├── api/          # Cấu hình Axios client, interceptors và các API call chính
-├── assets/       # Tài nguyên tĩnh: hình ảnh, logo, v.v.
-├── components/   # Các UI component dùng chung (Buttons, Input, Modals, Cards,...)
-├── constants/    # Khai báo các hằng số (role, status, API endpoints,...)
-├── context/      # Quản lý global state (AuthContext, ThemeContext,...)
-├── hooks/        # Các Custom Hook tái sử dụng (useAuth, useLocalStorage,...)
-├── layouts/      # Layout chung cho từng vai trò (AdminLayout, ManagerLayout, StudentLayout, AuthLayout)
-├── lib/          # Cấu hình các thư viện bên thứ 3 (Shadcn, Axios instance,...)
-├── pages/        # Các view/page chính của hệ thống chia theo vai trò và chức năng
-├── routes/       # Cấu hình định tuyến (routes.jsx, ProtectedRoutes,...)
-├── schemas/      # Định nghĩa các schema validation (Zod/Yup cho forms)
-├── services/     # Tương tác với backend (authService, roomService, invoiceService,...)
-├── utils/        # Các hàm tiện ích dùng chung (format tiền tệ, ngày tháng,...)
-├── App.jsx       # Entry component chính điều hướng ứng dụng
-├── App.css       # Style global bổ sung cho ứng dụng
-├── index.css     # Entry stylesheet chứa cấu hình Tailwind CSS v4
-└── main.jsx      # Điểm khởi chạy React app
-```
+Yêu cầu môi trường: Node.js **20.19+ hoặc 22.12+** và npm.
 
----
+## 2. Cài đặt và chạy
 
-## 👥 Các vai trò & Tính năng trên Frontend
-
-### 1. Sinh viên (Student)
-- **Đăng ký & Đăng nhập**: 
-  - Đăng ký tài khoản mới và xác thực qua mã OTP gửi tới Email.
-  - Đăng nhập hệ thống (hỗ trợ JWT Token, Refresh Token, Google Login tích hợp).
-  - Đổi mật khẩu & khôi phục mật khẩu qua luồng Quên mật khẩu.
-- **Quản lý hồ sơ cá nhân**: 
-  - Xem và cập nhật thông tin cá nhân: Họ tên, MSSV, CCCD, Trường, Khoa, Lớp, Giới tính, Ngày sinh, Ảnh đại diện, Địa chỉ, SĐT, Email.
-  - Quản lý thông tin liên hệ khẩn cấp (Họ tên, SĐT, Quan hệ).
-- **Đăng ký thuê phòng (Room Registration)**: 
-  - Xem danh sách phòng trống kèm bộ lọc (Tòa nhà, Tầng, Sức chứa, Loại phòng, Giá cả, Tiện ích, Giới tính).
-  - Gửi yêu cầu đăng ký phòng trực tuyến.
-- **Hợp đồng & Gia hạn**: 
-  - Xem thông tin chi tiết hợp đồng thuê phòng hiện tại (Ngày bắt đầu, Ngày kết thúc, Tiền cọc, Tiền phòng hàng tháng, Trạng thái).
-  - Gửi yêu cầu gia hạn hợp đồng.
-- **Hóa đơn & Thanh toán**: 
-  - Xem hóa đơn hàng tháng chi tiết (Tiền phòng, Tiền điện, Tiền nước, Internet, Phí dịch vụ gửi xe, v.v.).
-  - Thanh toán hóa đơn và tiền đặt cọc bằng nhiều phương thức: VNPay, MoMo, Chuyển khoản (Bank Transfer), Tiền mặt (Cash).
-- **Báo hỏng & Bảo trì (Maintenance)**: 
-  - Tạo yêu cầu báo hỏng cơ sở vật chất kèm mô tả chi tiết, độ ưu tiên (Low, Medium, High, Urgent) và tải lên hình ảnh lỗi (tích hợp Cloudinary).
-  - Xem tiến độ xử lý và gửi đánh giá (rating/phản hồi) khi hoàn thành.
-- **Chat & Hỗ trợ**: Chat trực tiếp với Quản lý tòa nhà (Manager) thời gian thực bằng WebSocket.
-- **Thông báo**: Nhận thông báo đẩy/tức thời về hóa đơn mới, hóa đơn quá hạn, trạng thái hợp đồng, cập nhật báo hỏng.
-
-### 2. Quản lý ký túc xá (Dorm Manager)
-- **Quản lý cơ sở vật chất**: Xem, cập nhật trạng thái phòng nghỉ trong các tòa nhà theo sơ đồ: `Building -> Floor -> Room`.
-- **Duyệt đăng ký phòng**: Tiếp nhận, kiểm tra hồ sơ và phê duyệt (Approved) hoặc từ chối (Rejected) các yêu cầu thuê phòng từ sinh viên.
-- **Quản lý hợp đồng**: 
-  - Tạo hợp đồng tự động khi duyệt đăng ký thành công.
-  - Hỗ trợ quy trình Check-in và Check-out (tính tiền còn thiếu, hoàn trả cọc, giải phóng phòng thành Available).
-- **Ghi chỉ số điện nước (Meter Reading)**: Nhập chỉ số cũ và mới của Điện/Nước mỗi tháng, hệ thống tự động tính số lượng tiêu thụ và thành tiền.
-- **Quản lý hóa đơn & Công nợ**: 
-  - Tạo hóa đơn hàng tháng và gửi email/thông báo nhắc nợ tự động đến sinh viên.
-  - Quản lý trạng thái hóa đơn (Pending, Paid, Overdue, Canceled).
-- **Xử lý báo hỏng**: Tiếp nhận các phản hồi báo hỏng, cập nhật trạng thái xử lý (Processing -> Done).
-- **Gửi thông báo**: Gửi tin nhắn, thông báo chung đến toàn bộ tòa nhà hoặc các tầng cụ thể.
-
-### 3. Quản trị viên (Admin)
-- **Quản lý tài khoản (User Management)**: Thêm, sửa, xóa, khóa tài khoản người dùng trong hệ thống.
-- **Phân quyền (RBAC)**: Định cấu hình Roles (ADMIN, MANAGER, STUDENT) và Permissions cho từng nhóm người dùng.
-- **Quản lý Tòa nhà & Cơ sở vật chất**: Quản lý danh mục các Tòa nhà (Buildings), cấu hình thông số cơ bản.
-- **Sao lưu dữ liệu**: Thực hiện Backup & Restore cơ sở dữ liệu để đảm bảo an toàn thông tin.
-- **Dashboard phân tích**: Dashboard tổng quan hiển thị doanh thu, tỷ lệ lấp đầy phòng, thống kê công nợ, số lượng sinh viên hoạt động qua các biểu đồ trực quan (Recharts).
-
----
-
-## 🛠️ Quy trình nghiệp vụ cốt lõi trên Frontend
-
-### 1. Quy trình đăng ký thuê phòng
-```mermaid
-graph TD
-    A[Sinh viên chọn phòng trống] --> B[Gửi yêu cầu Room Registration]
-    B --> C[Manager nhận yêu cầu & phê duyệt]
-    C -->|Từ chối| D[Trạng thái Rejected - Kết thúc]
-    C -->|Phê duyệt| E[Hệ thống tự động sinh Contract]
-    E --> F[Sinh viên thanh toán đặt cọc]
-    F --> G[Xác nhận thanh toán & Check-in nhận phòng]
-    G --> H[Trạng thái Contract sang Active & Room cập nhật Occupancy]
-```
-
-### 2. Quy trình hóa đơn & thanh toán hàng tháng
-```mermaid
-graph TD
-    A[Đầu tháng: Manager nhập chỉ số Điện/Nước] --> B[Hệ thống tự động tính tiền & sinh Invoice]
-    B --> C[Gửi thông báo & Email hóa đơn đến Sinh viên]
-    C --> D[Sinh viên chọn phương thức thanh toán VNPay/MoMo/Chuyển khoản]
-    D --> E[Xử lý giao dịch qua cổng thanh toán]
-    E -->|Thành công| F[Cập nhật trạng thái Invoice: Paid]
-    E -->|Thất bại/Quá hạn| G[Trạng thái Invoice: Overdue & gửi cảnh báo]
-```
-
-### 3. Quy trình báo hỏng thiết bị
-```mermaid
-graph TD
-    A[Sinh viên gửi yêu cầu báo hỏng kèm ảnh chụp] --> B[Manager tiếp nhận & điều phối kỹ thuật]
-    B --> C[Cập nhật trạng thái: Processing]
-    C --> D[Kỹ thuật sửa chữa hoàn thành]
-    D --> E[Manager chuyển trạng thái: Done]
-    E --> F[Sinh viên kiểm tra & gửi đánh giá chất lượng]
-```
-
----
-
-## ⚙️ Hướng dẫn cài đặt và khởi chạy dự án dưới Local
-
-### 1. Yêu cầu hệ thống
-- **Node.js**: Phiên bản 18 hoặc mới hơn.
-- **npm** (được cài đặt sẵn cùng Node.js).
-
-### 2. Cài đặt các thư viện phụ thuộc
-Truy cập vào thư mục `FE` và chạy lệnh cài đặt:
 ```bash
 npm install
 ```
 
-### 3. Cấu hình biến môi trường (`.env`)
-Tạo file `.env` tại thư mục gốc của Frontend và cấu hình các biến sau:
-```env
-VITE_API_BASE_URL=http://localhost:8080/api/v1
-VITE_WS_URL=ws://localhost:8080/ws
-VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
-VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
-```
+Tạo file `.env` từ mẫu:
 
-### 4. Khởi chạy Local Development Server
-Để bắt đầu code và xem thay đổi trực tiếp trên trình duyệt, chạy:
-```bash
+**Windows PowerShell**
+
+```powershell
+Copy-Item .env.example .env
 npm run dev
 ```
-Mặc định ứng dụng sẽ chạy tại: [http://localhost:5173](http://localhost:5173)
 
-### 5. Build ứng dụng cho môi trường Production
-Để build tối ưu mã nguồn cho việc deploy thực tế, chạy:
+**macOS / Linux**
+
 ```bash
-npm run build
+cp .env.example .env
+npm run dev
 ```
-Mã nguồn đã được build sẽ nằm trong thư mục `dist/`.
 
----
+Mở URL Vite hiển thị trong terminal, thường là `http://localhost:5173`.
 
-## 🔒 Cơ chế phân quyền và bảo vệ định tuyến (Routing & Guard)
-Frontend sử dụng **React Router v7** để cấu hình phân quyền thông minh:
-- **Public Routes**: Trang đăng ký, đăng nhập, quên mật khẩu được cấu hình để chuyển hướng người dùng đã xác thực ra màn hình chính.
-- **Private Routes**: Sử dụng Component bọc để kiểm tra JWT Access Token hợp lệ và khớp với phân quyền truy cập:
-  - Sinh viên chỉ có quyền truy cập các màn hình dưới `/student/*`.
-  - Quản lý chỉ có quyền truy cập các màn hình dưới `/manager/*`.
-  - Admin có quyền truy cập toàn bộ trang quản trị dưới `/admin/*`.
-- **Layouts**: Tách biệt rõ ràng bố cục giao diện (Sidebar, Header, Content Area) của từng đối tượng sử dụng để tối ưu hóa trải nghiệm người dùng.
+Các lệnh hữu ích:
 
----
-*Dự án được xây dựng và phát triển bởi đội ngũ DormHub.*
+```bash
+npm run dev      # Chạy môi trường phát triển
+npm run build    # Build production vào dist/
+npm run preview  # Xem thử bản build
+npm run lint     # Kiểm tra ESLint
+```
+
+Nếu PowerShell chặn `npm.ps1`, chạy `npm.cmd run dev` hoặc `npm.cmd run build`.
+
+## 3. Cấu hình kết nối backend
+
+File `.env.example`:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_ENABLE_DEMO=false
+```
+
+- `VITE_API_BASE_URL`: URL gốc của API Spring Boot.
+- Không đặt mật khẩu, JWT secret, SMTP password hoặc bất kỳ thông tin bí mật nào trong biến `VITE_*`; các biến này được đưa vào bundle trình duyệt.
+- Frontend gọi API bằng `credentials: 'include'`, vì vậy backend cần cho phép CORS từ `http://localhost:5173` và `allowCredentials(true)`.
+- Khi chạy local, nên dùng cùng hostname `localhost` cho cả frontend và backend. Không trộn `localhost` với `127.0.0.1` khi kiểm tra cookie.
+
+### Cơ chế CSRF và phiên đăng nhập
+
+`src/api/apiClient.js` thực hiện các bước sau:
+
+1. Với request thay đổi dữ liệu (`POST`, `PUT`, `PATCH`, `DELETE`), lấy CSRF token từ cookie `XSRF-TOKEN`; nếu chưa có thì gọi `GET /api/v1/auth/csrf`.
+2. Gửi token trong header `X-XSRF-TOKEN`.
+3. Gửi cookie bằng `credentials: 'include'`; JavaScript không đọc trực tiếp `access_token` hoặc `refresh_token` vì chúng là HttpOnly.
+4. Nếu API bảo vệ trả `401`, thử `POST /api/v1/auth/refresh` một lần rồi gửi lại request. Các request refresh đồng thời dùng chung một lần refresh để tránh xoay cùng refresh token nhiều lần.
+5. Nếu refresh thất bại, request gốc vẫn trả lỗi để UI xử lý; frontend không tự giả lập thành công.
+
+**Lưu ý cần hoàn thiện ở backend trước khi dùng như hệ thống thật:** theo phần backend hiện có, logout mới xóa cookie `access_token`. Cần bổ sung việc thu hồi refresh token đang dùng và hết hạn cookie `refresh_token` trong `POST /api/v1/auth/logout`. Nếu không, refresh token cũ có thể vẫn còn hiệu lực sau khi giao diện đăng xuất.
+
+## 4. Tài khoản xem thử
+
+Trong môi trường `npm run dev`, trang `/login` có nút điền tài khoản demo để xem giao diện mà không cần backend:
+
+| Vai trò | Email | Mật khẩu |
+|---|---|---|
+| Student | `student@demo.dormhub` | `DormHub@123` |
+| Manager | `manager@demo.dormhub` | `DormHub@123` |
+
+Dữ liệu demo chỉ là dữ liệu giả lưu trong `sessionStorage` để xem thử giao diện; không được gửi tới backend và không tạo thanh toán thật. Đây **không phải** cơ chế xác thực production. Chế độ demo chỉ được bật trong development, trừ khi chủ động đặt `VITE_ENABLE_DEMO=true` khi build.
+
+Tài khoản Student thật do nhà trường cấp. Không có chức năng tự đăng ký sinh viên công khai. Nếu đã được cấp tài khoản nhưng chưa kích hoạt, mở `/verify-email` để xác thực email bằng OTP.
+
+## 5. Cấu trúc thư mục
+
+```text
+src/
+├── api/
+│   └── apiClient.js          # Fetch, CSRF, cookie credentials, refresh retry
+├── assets/                   # Ảnh và tài nguyên giao diện
+├── components/
+│   ├── ui/                   # Component UI dùng chung
+│   ├── AuthScreen.jsx        # Login, kích hoạt email, quên/đặt lại mật khẩu
+│   ├── Screen.jsx            # Màn hình dùng cấu hình cho danh sách/form/detail
+│   └── Workspace.jsx         # Khung giao diện và navigation
+├── constants/
+│   ├── roles.js              # Vai trò và trang mặc định theo vai trò
+│   ├── screenConfig.js       # Route, endpoint và cấu hình các màn hình
+│   └── status.js             # Nhãn trạng thái dùng chung
+├── context/
+│   ├── AuthContext.jsx       # User, role, loading, login, logout
+│   └── authContext.js        # Khởi tạo React Context
+├── hooks/
+│   ├── useAuth.js            # Đọc AuthContext
+│   ├── useDebounce.js        # Trì hoãn tìm kiếm để giảm request
+│   └── usePagination.js      # Quản lý trang dữ liệu
+├── layouts/
+│   ├── AuthLayout.jsx
+│   ├── GuestLayout.jsx
+│   ├── ManagerLayout.jsx
+│   └── StudentLayout.jsx
+├── pages/
+│   ├── Auth/
+│   ├── Guest/
+│   ├── Manager/
+│   └── Student/
+├── routes/
+│   ├── AppRoutes.jsx         # Khai báo route
+│   ├── AuthRoute.jsx         # Chuyển người đã đăng nhập khỏi trang auth
+│   ├── ProtectRoute.jsx      # Bảo vệ route theo vai trò
+│   └── pageMap.js            # Ánh xạ route sang page component
+├── services/
+│   ├── auth.service.js       # API xác thực
+│   ├── resource.service.js   # API CRUD dùng chung
+│   └── demo.service.js       # Dữ liệu giả chỉ dùng để xem thử
+├── utils/
+│   ├── errorHandler.js
+│   └── format.js
+├── App.jsx
+├── App.css
+├── index.css
+└── main.jsx
+```
+
+### Quy ước khi bổ sung code
+
+- Component giao diện không tự ghép URL backend rải rác; dùng `auth.service.js`, `resource.service.js` hoặc `api()`.
+- Route cần đăng nhập phải nằm trong nhóm được bảo vệ của `AppRoutes.jsx`; backend vẫn phải tự kiểm tra quyền.
+- Endpoint, HTTP method và tên field phải khớp với controller/DTO của backend. Không tự đổi `POST` thành `PATCH` hoặc đoán tên field khi chưa xác nhận.
+- Không lưu JWT vào Web Storage. Access/refresh token phải do backend đặt bằng HttpOnly Cookie.
+- Không hiển thị thông báo thành công nếu request thất bại.
+
+## 6. API xác thực đã đối chiếu với backend
+
+Tất cả đường dẫn dưới đây được nối với `VITE_API_BASE_URL`, mặc định là `http://localhost:8080/api/v1`.
+
+| Method | Endpoint | Request body / mục đích |
+|---|---|---|
+| `GET` | `/auth/csrf` | Lấy CSRF token; backend trả token trong `data.token` và đặt cookie `XSRF-TOKEN` |
+| `POST` | `/auth/login` | `{ "email": "...", "password": "..." }`; backend đặt `access_token` và `refresh_token` cookie, trả thông tin user |
+| `GET` | `/auth/me` | Lấy thông tin user từ phiên đăng nhập hiện tại |
+| `POST` | `/auth/verify-email` | `{ "email": "...", "otp": "123456" }` |
+| `POST` | `/auth/resend-otp` | `{ "email": "..." }` |
+| `POST` | `/auth/forgot-password` | `{ "email": "..." }` |
+| `POST` | `/auth/reset-password` | `{ "email": "...", "otp": "123456", "newPassword": "..." }` |
+| `POST` | `/auth/refresh` | Gửi refresh cookie; backend xoay refresh token và đặt lại cookie, response chứa thông tin user |
+| `POST` | `/auth/logout` | Gửi cookie phiên hiện tại; backend cần thu hồi refresh token và xóa cả hai cookie |
+
+Backend hiện vô hiệu hóa `POST /auth/register`. Các đường dẫn cũ `/register` và `/verify-otp` chỉ chuyển hướng sang `/verify-email`; không còn luồng tạo tài khoản công khai.
+
+## 7. API nghiệp vụ cần đối chiếu trước khi nối từng module
+
+Các page và `screenConfig.js` hiện đang mong đợi những nhóm endpoint dưới đây. Phần này là **hợp đồng frontend đang sử dụng**, không khẳng định tất cả endpoint/DTO đã có sẵn trong backend. Thành viên phụ trách phải kiểm tra controller, service, DTO hoặc Swagger của backend trước khi hoàn tất module.
+
+| Module | Endpoint frontend đang mong đợi |
+|---|---|
+| Guest | `GET /rooms`, `GET /rooms/{id}` |
+| Student profile | `GET/PATCH /students/me` |
+| Student applications | `GET /applications/me`, `POST /applications`, `GET /applications/{id}`, `PATCH /applications/{id}/cancel` |
+| Room assignment / contract | `GET /room-assignments/me`, `GET /contracts/me`, `GET /contracts/{id}` |
+| Invoices / payments | `GET /invoices/me`, `GET /invoices/{id}`, `POST /payments` |
+| Maintenance / notifications | `GET /maintenance-requests/me`, `POST /maintenance-requests`, `GET /notifications/me`, `PATCH /notifications/{id}/read` |
+| Manager operations | `/buildings`, `/rooms`, `/students`, `/applications`, `/contracts`, `/invoices`, `/room-monthly-charges`, `/payments`, `/maintenance-requests`, `/residence-terms`, `/notifications` |
+| Chat | `/conversations`, `/conversations/{id}/messages`; xác nhận với backend trước khi coi là chức năng realtime |
+
+Một số method hoặc đường dẫn dạng `/me` có thể khác trong backend. Nếu khác, hãy sửa cấu hình/service của frontend theo hợp đồng backend thực tế thay vì sửa backend chỉ để khớp với giả định của UI.
+
+## 8. Phân chia công việc cho nhóm 4 thành viên
+
+Mỗi thành viên chịu trách nhiệm một module, tự kiểm tra API của module mình, sau đó phối hợp tích hợp trên nhánh chung. Phần authentication và API client nên có một người quản lý chính để tránh sửa cùng lúc.
+
+### Thành viên 1 — Bạn: Nền tảng, authentication và tích hợp chung
+
+**File chính:**
+
+- `src/api/apiClient.js`
+- `src/services/auth.service.js`
+- `src/context/AuthContext.jsx`
+- `src/routes/AppRoutes.jsx`, `AuthRoute.jsx`, `ProtectRoute.jsx`
+- `src/components/AuthScreen.jsx`
+- `src/layouts/`
+
+**Việc cần làm:**
+
+1. Chạy project và giữ cấu trúc chung ổn định.
+2. Kiểm tra login, `/auth/me`, kích hoạt email, gửi lại OTP, quên mật khẩu, đặt lại mật khẩu, refresh và logout.
+3. Kiểm tra cookie HttpOnly, CSRF header, CORS và hành vi khi refresh thất bại.
+4. Duyệt các thay đổi chạm vào API client, route chung hoặc AuthContext.
+5. Kiểm tra build/lint và hỗ trợ ghép các module của thành viên khác.
+
+**Tiêu chí hoàn thành:** không có JWT trong Web Storage; đăng nhập và lấy user từ backend thành công; route Student/Manager được bảo vệ; lỗi API được hiển thị đúng.
+
+### Thành viên 2 — Guest và tra cứu phòng
+
+**File chính:**
+
+- `src/pages/Guest/Home/Home.jsx`
+- `src/pages/Guest/Rooms/RoomList.jsx`
+- `src/pages/Guest/Rooms/RoomDetail.jsx`
+- `src/pages/Guest/NotFound.jsx`
+- Phần `guest` trong `src/constants/screenConfig.js`
+
+**Việc cần làm:**
+
+1. Kiểm tra trang chủ và danh sách phòng trên desktop/mobile.
+2. Nối danh sách và chi tiết phòng với API thật.
+3. Đối chiếu field trả về (tên tòa, sức chứa, số chỗ trống, giá, trạng thái) và xử lý danh sách rỗng/lỗi tải.
+4. Kiểm tra CTA đăng nhập/kích hoạt tài khoản; không thêm đăng ký sinh viên công khai.
+5. Gửi lại cho thành viên 1 danh sách endpoint và DTO đã xác nhận.
+
+**Tiêu chí hoàn thành:** không còn dữ liệu demo trong chế độ API thật; danh sách/chi tiết phòng hiển thị đúng dữ liệu backend và có trạng thái loading/error/empty.
+
+### Thành viên 3 — Các chức năng Student
+
+**File chính:**
+
+- `src/pages/Student/`
+- Các route `group: 'student'` trong `src/constants/screenConfig.js`
+- Các service cần thiết trong `src/services/`
+
+**Việc cần làm:**
+
+1. Dashboard và hồ sơ sinh viên.
+2. Đơn đăng ký nội trú, trạng thái xét duyệt và thông tin chỗ ở.
+3. Hợp đồng, hóa đơn và kết quả thanh toán.
+4. Gửi yêu cầu bảo trì và theo dõi trạng thái.
+5. Thông báo và chat với quản lý.
+6. Đối chiếu từng API/DTO, nhất là cập nhật hồ sơ, tạo đơn, thanh toán và các endpoint `/me`.
+
+**Tiêu chí hoàn thành:** Student chỉ xem/sửa dữ liệu được backend cho phép; mọi thao tác ghi dữ liệu có loading/error/success rõ ràng; trạng thái thanh toán lấy từ backend, không suy luận từ query string.
+
+### Thành viên 4 — Các chức năng Manager
+
+**File chính:**
+
+- `src/pages/Manager/`
+- Các route `group: 'manager'` trong `src/constants/screenConfig.js`
+- Các service cần thiết trong `src/services/`
+
+**Việc cần làm:**
+
+1. Dashboard quản lý và thống kê.
+2. Quản lý tòa nhà, phòng và danh sách sinh viên cư trú.
+3. Xét duyệt đơn, từ chối có lý do và phân phòng.
+4. Hợp đồng, hóa đơn, chi phí điện/nước/dịch vụ và theo dõi thanh toán.
+5. Xử lý yêu cầu bảo trì, tạo đợt đăng ký và gửi thông báo.
+6. Kiểm tra API chat; chỉ tích hợp WebSocket nếu backend có giao thức tương ứng.
+
+**Tiêu chí hoàn thành:** thao tác quản lý dùng API thật; phân quyền được backend xác nhận; các hành động nguy hiểm có xác nhận; các trường tiền/trạng thái khớp DTO backend.
+
+### Quy trình phối hợp
+
+1. Mỗi thành viên tạo branch riêng, ví dụ `feature/guest-rooms`, `feature/student-module`, `feature/manager-module`, `feature/auth-integration`.
+2. Trước khi code API, ghi rõ method, URL, request DTO và response DTO đã kiểm tra trong backend.
+3. Không tự ý sửa `apiClient.js`, `AuthContext.jsx` hoặc cơ chế CSRF/refresh nếu không phối hợp với thành viên 1.
+4. Không commit `.env`, mật khẩu, token, `node_modules/` hoặc `dist/`.
+5. Trước khi merge, chạy `npm run lint` và `npm run build`; kiểm tra lại route, loading, empty state, lỗi API và phân quyền.
+6. Khi một endpoint backend chưa có, ghi rõ trạng thái “chưa có ở backend” trong báo cáo; không giả thành công bằng dữ liệu mẫu.
+
+## 9. Checklist kiểm thử trước khi nộp
+
+- [ ] `npm run build` hoàn thành.
+- [ ] `npm run lint` không có lỗi.
+- [ ] Guest xem được trang chủ, danh sách phòng và chi tiết phòng.
+- [ ] Tài khoản Student không truy cập được route Manager; tài khoản Manager không truy cập được route Student.
+- [ ] Login, `/auth/me`, refresh và logout đã được thử với backend đang chạy.
+- [ ] Request thay đổi dữ liệu có header `X-XSRF-TOKEN`.
+- [ ] Lỗi 401/403/404/500 được hiển thị phù hợp, không báo thành công giả.
+- [ ] Không còn route, menu, trang hoặc tài khoản demo thuộc phạm vi ngoài Guest/Student/Manager.
+- [ ] Các API nghiệp vụ được xác nhận với controller/DTO backend trước khi demo cuối.

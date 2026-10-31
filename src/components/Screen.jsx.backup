@@ -1,0 +1,1096 @@
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowRight,
+  Search,
+  Plus,
+  RefreshCw,
+  Send,
+  Home,
+  FileText,
+  CreditCard,
+  Wrench,
+  ShieldCheck,
+} from "lucide-react";
+import { api, asList } from "../api/apiClient";
+import { resources } from "../services/resource.service";
+import { errorMessage } from "../utils/errorHandler";
+import { date, money } from "../utils/format";
+import GuestLayout from "../layouts/GuestLayout";
+import StudentLayout from "../layouts/StudentLayout";
+import ManagerLayout from "../layouts/ManagerLayout";
+import { STATUS_LABELS, FILTERABLE_STATUSES } from "../constants/status";
+import useDebounce from "../hooks/useDebounce";
+import usePagination from "../hooks/usePagination";
+
+const labels = {
+  id: "Mã",
+  name: "Tên",
+  fullName: "Họ và tên",
+  studentName: "Sinh viên",
+  studentCode: "Mã sinh viên",
+  email: "Email",
+  phone: "Số điện thoại",
+  roomNumber: "Phòng",
+  buildingName: "Tòa nhà",
+  buildingId: "Mã tòa nhà",
+  roomId: "Mã phòng",
+  roomType: "Loại phòng",
+  capacity: "Sức chứa",
+  availableSlots: "Chỗ trống",
+  monthlyPrice: "Giá hàng tháng",
+  price: "Giá",
+  floor: "Tầng",
+  gender: "Giới tính",
+  status: "Trạng thái",
+  createdAt: "Ngày tạo",
+  startDate: "Ngày bắt đầu",
+  endDate: "Ngày kết thúc",
+  dueDate: "Hạn thanh toán",
+  period: "Kỳ",
+  totalAmount: "Tổng tiền",
+  amount: "Số tiền",
+  type: "Loại",
+  title: "Tiêu đề",
+  body: "Nội dung",
+  description: "Mô tả",
+  priority: "Mức ưu tiên",
+  month: "Tháng",
+  year: "Năm",
+  electricityAmount: "Tiền điện",
+  waterAmount: "Tiền nước",
+  serviceAmount: "Phí dịch vụ",
+  termName: "Đợt đăng ký",
+  contractId: "Mã hợp đồng",
+  invoiceId: "Mã hóa đơn",
+  method: "Phương thức",
+  role: "Vai trò",
+  read: "Đã đọc",
+  action: "Hành động",
+  resource: "Đối tượng",
+  address: "Địa chỉ",
+};
+const fields = {
+  email: { type: "email" },
+  phone: { type: "tel" },
+  description: { tag: "textarea" },
+  body: { tag: "textarea" },
+  note: { tag: "textarea" },
+  expectedCheckInDate: { type: "date" },
+  dueDate: { type: "date" },
+  startDate: { type: "date" },
+  endDate: { type: "date" },
+  month: { type: "number", min: 1, max: 12 },
+  year: { type: "number", min: 2020 },
+  capacity: { type: "number", min: 1 },
+  floor: { type: "number", min: 0 },
+  monthlyPrice: { type: "number", min: 0 },
+  electricityAmount: { type: "number", min: 0 },
+  waterAmount: { type: "number", min: 0 },
+  serviceAmount: { type: "number", min: 0 },
+  gender: { options: ["Nam", "Nữ"] },
+  role: { options: ["STUDENT", "MANAGER"] },
+  status: { options: ["ACTIVE", "OPEN", "CLOSED", "MAINTENANCE", "LOCKED"] },
+  priority: { options: ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+};
+const statusLabels = STATUS_LABELS;
+const statusClass = (value) =>
+  /^(APPROVED|ACTIVE|PAID|RESOLVED|OPEN|SUCCESS|CHECKED_IN)$/i.test(value)
+    ? "green"
+    : /^(REJECTED|FAILED|OVERDUE|CLOSED)$/i.test(value)
+      ? "red"
+      : "amber";
+const isDate = (key) => /(At|Date)$/.test(key);
+const isMoney = (key) => /(Amount|Price|Fee)$/.test(key);
+const pretty = (key, value) => {
+  if (value == null || value === "") return "—";
+  if (key === "status")
+    return (
+      <span className={`status ${statusClass(value)}`}>
+        {statusLabels[value] || value}
+      </span>
+    );
+  if (typeof value === "boolean") return value ? "Có" : "Chưa";
+  if (isMoney(key)) return money(value);
+  if (isDate(key)) return date(value);
+  if (Array.isArray(value))
+    return value
+      .map((v) => (typeof v === "object" ? v.name || v.id : v))
+      .join(", ");
+  if (typeof value === "object")
+    return value.name || value.fullName || value.id || JSON.stringify(value);
+  return String(value);
+};
+const getValue = (row, key) =>
+  row?.[key] ?? row?.room?.[key] ?? row?.student?.[key] ?? row?.building?.[key];
+
+function Notice({ error, success }) {
+  return (
+    <>
+      {error && (
+        <div role="alert" className="notice error">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div role="status" className="notice success">
+          {success}
+        </div>
+      )}
+    </>
+  );
+}
+function Loading() {
+  return (
+    <div className="empty-state">
+      <RefreshCw className="spin" size={21} />
+      <strong>Đang tải dữ liệu…</strong>
+    </div>
+  );
+}
+function Empty({ text = "Chưa có dữ liệu phù hợp." }) {
+  return (
+    <div className="empty-state">
+      <Search size={22} />
+      <strong>{text}</strong>
+      <p>Dữ liệu sẽ xuất hiện khi máy chủ có thông tin tương ứng.</p>
+    </div>
+  );
+}
+function Heading({ config, children }) {
+  return (
+    <div className="page-heading">
+      <div>
+        <p className="eyebrow">DORMHUB / {config.group.toUpperCase()}</p>
+        <h1>{config.title}</h1>
+        <p className="subheading">
+          Quản lý thông tin và theo dõi tiến trình trên cùng một không gian.
+        </p>
+      </div>
+      <div className="heading-actions">{children}</div>
+    </div>
+  );
+}
+
+function useLoad(path, params) {
+  const [data, setData] = useState(null),
+    [error, setError] = useState(""),
+    [loading, setLoading] = useState(true),
+    [version, setVersion] = useState(0);
+  const reload = () => setVersion((v) => v + 1);
+  const paramsKey = JSON.stringify(params);
+  useEffect(() => {
+    let live = true;
+    Promise.resolve()
+      .then(() => {
+        if (!live) return null;
+        setLoading(true);
+        setError("");
+        return resources.list(path, JSON.parse(paramsKey));
+      })
+      .then((result) => {
+        if (live) setData(result);
+      })
+      .catch((e) => {
+        if (live) setError(errorMessage(e));
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [path, paramsKey, version]);
+  return { data, error, loading, reload };
+}
+
+function HomeScreen() {
+  return (
+    <>
+      <div className="hero">
+        <div>
+          <p className="eyebrow">STUDENT RESIDENCE · CAMPUS LIVING</p>
+          <h1>
+            Chỗ ở an tâm.
+            <br />
+            Hành trình học tập trọn vẹn.
+          </h1>
+          <p>
+            Tìm phòng phù hợp, đăng ký nội trú và theo dõi cuộc sống ký túc xá
+            thuận tiện cùng DormHub.
+          </p>
+          <div className="hero-actions">
+            <Link to="/rooms" className="button primary">
+              Khám phá phòng <ArrowRight size={16} />
+            </Link>
+            <Link to="/verify-email" className="button light">
+              Kích hoạt tài khoản
+            </Link>
+          </div>
+        </div>
+        <div className="hero-art">
+          <div className="sun" />
+          <div className="building-art">
+            {Array.from({ length: 12 }, (_, i) => (
+              <i key={i} />
+            ))}
+          </div>
+          <div className="art-caption">A place to belong.</div>
+        </div>
+      </div>
+      <div className="feature-grid">
+        {[
+          [
+            Home,
+            "Tìm phòng dễ dàng",
+            "Xem sức chứa, vị trí và mức phí trước khi chọn.",
+          ],
+          [
+            FileText,
+            "Đăng ký minh bạch",
+            "Theo dõi hồ sơ từ khi nộp đến khi được phân phòng.",
+          ],
+          [
+            CreditCard,
+            "Tài chính rõ ràng",
+            "Xem hóa đơn và trạng thái thanh toán ở một nơi.",
+          ],
+          [
+            Wrench,
+            "Hỗ trợ kịp thời",
+            "Gửi yêu cầu sửa chữa và theo dõi tiến độ.",
+          ],
+        ].map(([Icon, title, sub]) => (
+          <div className="feature" key={title}>
+            <Icon size={22} />
+            <h3>{title}</h3>
+            <p>{sub}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ListScreen({ config }) {
+  const location = useLocation();
+  const [search, setSearch] = useState(""),
+    [status, setStatus] = useState(""),
+    [busy, setBusy] = useState(""),
+    [success, setSuccess] = useState(""),
+    [actionError, setActionError] = useState("");
+  const { page, pageSize, nextPage, previousPage, resetPage } = usePagination(0, 10);
+  const debouncedSearch = useDebounce(search, 300);
+  const { data, error, loading, reload } = useLoad(config.resource, {
+    page,
+    size: pageSize,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(status ? { status } : {}),
+  });
+  const rows = asList(data);
+  const createPath =
+    config.create ||
+    (config.group === "student" && config.resource.includes("applications")
+      ? "/student/applications/new"
+      : config.group === "student" && config.resource.includes("maintenance")
+        ? "/student/maintenance/new"
+        : config.group === "manager" &&
+          ["/rooms", "/invoices"].includes(config.resource)
+          ? `${location.pathname}/new`
+          : null);
+  async function doAction(row, action) {
+    if (
+      action.confirm &&
+      !window.confirm(`${action.label} cho mục ${row.id || row.title}?`)
+    )
+      return;
+    setBusy(String(row.id));
+    setActionError("");
+    setSuccess("");
+    try {
+      await resources.action(
+        `${config.resource.replace(/\/me$/, "")}/${row.id}${action.suffix}`,
+        action.method,
+        action.body,
+      );
+      setSuccess("Thao tác đã được lưu trên máy chủ.");
+      reload();
+    } catch (e) {
+      setActionError(errorMessage(e));
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <>
+      <Heading config={config}>
+        {createPath && (
+          <Link to={createPath} className="button primary">
+            <Plus size={15} /> Tạo mới
+          </Link>
+        )}
+      </Heading>
+      <Notice error={actionError || error} success={success} />
+      <div className="panel">
+        <div className="toolbar">
+          <div className="search-box">
+            <Search size={17} />
+            <input
+              aria-label="Tìm kiếm"
+              placeholder="Tìm theo mã, tên hoặc nội dung…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                resetPage();
+              }}
+            />
+          </div>
+          <select
+            aria-label="Lọc trạng thái"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              resetPage();
+            }}
+          >
+            <option value="">Mọi trạng thái</option>
+            {FILTERABLE_STATUSES.map((x) => (
+              <option key={x} value={x}>
+                {statusLabels[x]}
+              </option>
+            ))}
+          </select>
+          <button
+            className="button subtle"
+            onClick={reload}
+            aria-label="Tải lại"
+          >
+            <RefreshCw size={16} />
+          </button>
+        </div>
+        {loading ? (
+          <Loading />
+        ) : rows.length === 0 ? (
+          <Empty />
+        ) : (
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  {config.columns.map((key) => (
+                    <th key={key}>{labels[key] || key}</th>
+                  ))}
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={row.id || index}>
+                    {config.columns.map((key) => (
+                      <td key={key}>{pretty(key, getValue(row, key))}</td>
+                    ))}
+                    <td className="row-actions">
+                      {config.detail && (
+                        <Link
+                          to={`${config.detail}/${row.id}`}
+                          className="text-link"
+                        >
+                          Chi tiết
+                        </Link>
+                      )}
+                      {config.actions?.map((action) => (
+                        <button
+                          key={action.label}
+                          disabled={busy === String(row.id)}
+                          onClick={() => doAction(row, action)}
+                          className="text-link"
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="pagination">
+          <span>
+            Trang {page + 1}
+            {data?.totalElements != null ? ` · ${data.totalElements} mục` : ""}
+          </span>
+          <div>
+            <button
+              className="button subtle"
+              disabled={page === 0}
+              onClick={previousPage}
+            >
+              Trước
+            </button>
+            <button
+              className="button subtle"
+              disabled={data?.last === true || rows.length < 10}
+              onClick={nextPage}
+            >
+              Sau
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DetailScreen({ config }) {
+  const { id } = useParams(),
+    navigate = useNavigate(),
+    [busy, setBusy] = useState(false),
+    [actionError, setActionError] = useState(""),
+    [success, setSuccess] = useState("");
+  const path = config.single
+    ? config.resource
+    : `${config.resource}/${encodeURIComponent(id)}`;
+  const { data, error, loading, reload } = useLoad(path, {});
+  async function doAction(action) {
+    if (action.confirm && !window.confirm(`Xác nhận: ${action.label}?`)) return;
+    let body = action.body;
+    if (action.reason) {
+      const reason = window.prompt("Nhập lý do từ chối");
+      if (!reason?.trim()) return;
+      body = { reason: reason.trim() };
+    }
+    if (action.room) {
+      const roomId = window.prompt("Nhập mã phòng phù hợp để phân");
+      if (!roomId?.trim()) return;
+      body = { roomId: roomId.trim() };
+    }
+    if (action.payment) {
+      const method = window.prompt(
+        "Phương thức thanh toán: CASH hoặc BANK_TRANSFER",
+        "BANK_TRANSFER",
+      );
+      if (!method) return;
+      body = { invoiceId: id, method };
+    }
+    setBusy(true);
+    setActionError("");
+    setSuccess("");
+    try {
+      await resources.action(
+        action.payment
+          ? "/payments"
+          : `${config.resource}/${id}${action.suffix}`,
+        action.method,
+        body,
+      );
+      setSuccess("Thao tác đã được lưu trên máy chủ.");
+      reload();
+    } catch (e) {
+      setActionError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const entries =
+    data && typeof data === "object"
+      ? Object.entries(data).filter(
+        ([, value]) =>
+          (value !== null && typeof value !== "object") ||
+          Array.isArray(value),
+      )
+      : [];
+  return (
+    <>
+      <Heading config={config}>
+        <button className="button subtle" onClick={() => navigate(-1)}>
+          Quay lại
+        </button>
+        {config.edit && (
+          <Link className="button primary" to={`${config.edit}/${id}/edit`}>
+            Chỉnh sửa
+          </Link>
+        )}
+        {config.actions?.map((action) => (
+          <button
+            key={action.label}
+            className="button primary"
+            disabled={busy || loading}
+            onClick={() => doAction(action)}
+          >
+            {action.label}
+          </button>
+        ))}
+      </Heading>
+      <Notice error={actionError || error} success={success} />
+      {loading ? (
+        <Loading />
+      ) : !data ? (
+        <Empty />
+      ) : (
+        <div className="detail-grid">
+          <div className="panel">
+            <div className="section-title">Thông tin chi tiết</div>
+            <div className="kv-grid">
+              {entries.map(([key, value]) => (
+                <div className="kv" key={key}>
+                  <span>{labels[key] || key}</span>
+                  <strong>{pretty(key, value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="panel tinted">
+            <ShieldCheck size={25} />
+            <h3>Thông tin từ hệ thống</h3>
+            <p>
+              Dữ liệu được tải từ API DormHub. Nếu cần điều chỉnh, hãy dùng thao
+              tác phù hợp với vai trò của bạn.
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function FormFields({ names, values, onChange }) {
+  return (
+    <div className="form-grid">
+      {names.map((key) => {
+        const meta = fields[key] || {};
+        return (
+          <label
+            className={`field ${meta.tag === "textarea" ? "wide" : ""}`}
+            key={key}
+          >
+            <span>{labels[key] || key}</span>
+            {meta.tag === "textarea" ? (
+              <textarea
+                required={!["description", "note"].includes(key)}
+                value={values[key] ?? ""}
+                onChange={(e) => onChange(key, e.target.value)}
+                rows={4}
+              />
+            ) : meta.options ? (
+              <select
+                value={values[key] ?? ""}
+                required
+                onChange={(e) => onChange(key, e.target.value)}
+              >
+                <option value="">Chọn {labels[key]?.toLowerCase()}</option>
+                {meta.options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                required={!["description", "note"].includes(key)}
+                type={meta.type || "text"}
+                min={meta.min}
+                max={meta.max}
+                value={values[key] ?? ""}
+                onChange={(e) => onChange(key, e.target.value)}
+              />
+            )}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+function FormScreen({ config }) {
+  const { id } = useParams(),
+    navigate = useNavigate(),
+    [values, setValues] = useState({}),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const { data, loading } = useLoad(
+    config.edit ? `${config.resource}/${id}` : config.resource,
+    {},
+  );
+  const currentValues = config.edit ? { ...(data || {}), ...values } : values;
+  const change = (key, value) =>
+    setValues((prev) => ({ ...prev, [key]: value }));
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const body = Object.fromEntries(
+        config.fields.map((key) => [key, currentValues[key]]),
+      );
+      const result = config.edit
+        ? await resources.update(config.resource, id, body)
+        : await resources.create(config.resource, body);
+      navigate(
+        config.edit
+          ? location.pathname.replace(/\/edit$/, "")
+          : config.resource === "/maintenance-requests"
+            ? "/student/maintenance"
+            : config.resource === "/notifications"
+              ? "/manager"
+              : location.pathname.replace(/\/new$/, ""),
+        {
+          state: {
+            success: `Đã lưu ${result?.id ? `mã ${result.id}` : "thành công"}.`,
+          },
+        },
+      );
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Heading config={config} />
+      <Notice error={error} />
+      <div className="panel form-panel">
+        {config.edit && loading ? (
+          <Loading />
+        ) : (
+          <form onSubmit={submit}>
+            <FormFields
+              names={config.fields}
+              values={currentValues}
+              onChange={change}
+            />
+            <div className="form-actions">
+              <button
+                className="button subtle"
+                type="button"
+                onClick={() => navigate(-1)}
+              >
+                Hủy
+              </button>
+              <button className="button primary" disabled={busy}>
+                {busy ? "Đang lưu…" : "Lưu thông tin"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </>
+  );
+}
+
+function DashboardScreen({ config }) {
+  const { data, error, loading, reload } = useLoad(config.resource, {});
+  const list = Object.entries(data || {})
+    .filter(([, value]) => ["number", "string"].includes(typeof value))
+    .slice(0, 6);
+  const shortcuts =
+    config.group === "student"
+      ? [
+        ["Tìm phòng", "/rooms"],
+        ["Đăng ký nội trú", "/student/applications/new"],
+        ["Hóa đơn", "/student/invoices"],
+        ["Báo hỏng", "/student/maintenance"],
+      ]
+      : config.group === "manager"
+        ? [
+          ["Đơn chờ duyệt", "/manager/applications"],
+          ["Quản lý phòng", "/manager/rooms"],
+          ["Hóa đơn", "/manager/invoices"],
+          ["Báo hỏng", "/manager/maintenance"],
+        ]
+        : [];
+  return (
+    <>
+      <Heading config={config}>
+        <button className="button subtle" onClick={reload}>
+          <RefreshCw size={16} /> Tải lại
+        </button>
+      </Heading>
+      <Notice error={error} />
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="metric-grid">
+            {list.length ? (
+              list.map(([key, value]) => (
+                <div className="metric" key={key}>
+                  <span>{labels[key] || key.replace(/([A-Z])/g, " $1")}</span>
+                  <strong>
+                    {typeof value === "number"
+                      ? new Intl.NumberFormat("vi-VN").format(value)
+                      : value}
+                  </strong>
+                </div>
+              ))
+            ) : (
+              <div className="panel" style={{ gridColumn: "1/-1" }}>
+                Máy chủ chưa có số liệu tổng quan.
+              </div>
+            )}
+          </div>
+          <div className="section-title">Truy cập nhanh</div>
+          <div className="shortcut-grid">
+            {shortcuts.map(([name, path]) => (
+              <Link className="shortcut" key={path} to={path}>
+                <span>{name}</span>
+                <ArrowRight size={18} />
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function ProfileScreen({ config }) {
+  const { data, error, loading, reload } = useLoad(config.resource, {}),
+    [values, setValues] = useState({}),
+    [busy, setBusy] = useState(false),
+    [saveError, setSaveError] = useState(""),
+    [success, setSuccess] = useState("");
+  const currentValues = { ...(data || {}), ...values };
+  const names = ["fullName", "studentCode", "phone", "gender", "address"];
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setSaveError("");
+    setSuccess("");
+    try {
+      await api(config.resource, {
+        method: "PATCH",
+        body: Object.fromEntries(
+          names
+            .filter((key) => key !== "studentCode")
+            .map((key) => [key, currentValues[key]]),
+        ),
+      });
+      setSuccess("Hồ sơ đã được cập nhật.");
+      reload();
+    } catch (e) {
+      setSaveError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Heading config={config} />
+      <Notice error={saveError || error} success={success} />
+      {loading ? (
+        <Loading />
+      ) : (
+        <div className="panel form-panel">
+          <form onSubmit={submit}>
+            <FormFields
+              names={names}
+              values={currentValues}
+              onChange={(key, value) =>
+                setValues((prev) => ({ ...prev, [key]: value }))
+              }
+            />
+            <div className="form-actions">
+              <button className="button primary" disabled={busy}>
+                Lưu hồ sơ
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ApplicationScreen({ config }) {
+  const navigate = useNavigate(),
+    [step, setStep] = useState(0),
+    [values, setValues] = useState({}),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  const { data: rooms, loading } = useLoad("/rooms", {
+    availableOnly: true,
+    size: 100,
+  });
+  const steps = [
+    "Thông tin sinh viên",
+    "Chọn nguyện vọng",
+    "Ngày nhận phòng",
+    "Kiểm tra và gửi",
+  ];
+  const change = (key, value) =>
+    setValues((prev) => ({ ...prev, [key]: value }));
+  async function next(e) {
+    e.preventDefault();
+    if (step < 3) {
+      setStep(step + 1);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await resources.create("/applications", values);
+      navigate(`/student/applications/${result?.id}`, { replace: true });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Heading config={config} />
+      <div className="stepper">
+        {steps.map((name, i) => (
+          <div
+            className={i === step ? "current" : i < step ? "done" : ""}
+            key={name}
+          >
+            <span>{i + 1}</span>
+            {name}
+          </div>
+        ))}
+      </div>
+      <Notice error={error} />
+      <div className="panel form-panel">
+        <form onSubmit={next}>
+          {step === 0 ? (
+            <div className="notice info">
+              Hồ sơ sinh viên đã đăng nhập sẽ được hệ thống tự liên kết với đơn
+              đăng ký. Hãy cập nhật hồ sơ trước khi tiếp tục.
+            </div>
+          ) : step === 1 ? (
+            <>
+              {loading ? (
+                <Loading />
+              ) : (
+                <div className="room-choices">
+                  {asList(rooms).map((room) => (
+                    <label
+                      className={`room-choice ${values.roomId === room.id ? "selected" : ""}`}
+                      key={room.id}
+                    >
+                      <input
+                        type="radio"
+                        name="roomId"
+                        required
+                        value={room.id}
+                        checked={values.roomId === room.id}
+                        onChange={() => change("roomId", room.id)}
+                      />
+                      <strong>{room.roomNumber || room.name}</strong>
+                      <span>
+                        {room.buildingName || room.building?.name} ·{" "}
+                        {room.availableSlots ?? "—"} chỗ trống
+                      </span>
+                      <b>{money(room.monthlyPrice)}</b>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {!loading && asList(rooms).length === 0 && (
+                <Empty text="Chưa có phòng trống." />
+              )}
+            </>
+          ) : step === 2 ? (
+            <FormFields
+              names={["expectedCheckInDate", "note"]}
+              values={values}
+              onChange={change}
+            />
+          ) : (
+            <div className="kv-grid">
+              {Object.entries(values).map(([key, value]) => (
+                <div className="kv" key={key}>
+                  <span>{labels[key] || key}</span>
+                  <strong>{String(value)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="form-actions">
+            {step > 0 && (
+              <button
+                type="button"
+                className="button subtle"
+                onClick={() => setStep(step - 1)}
+              >
+                Quay lại
+              </button>
+            )}
+            <button
+              className="button primary"
+              disabled={busy || (step === 1 && !values.roomId)}
+            >
+              {step === 3 ? "Gửi hồ sơ" : "Tiếp tục"} <ArrowRight size={15} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
+  );
+}
+
+function ChatScreen({ config }) {
+  const { data, error, loading } = useLoad(config.resource, {}),
+    [selected, setSelected] = useState(null),
+    [messages, setMessages] = useState([]),
+    [text, setText] = useState(""),
+    [busy, setBusy] = useState(false),
+    [sendError, setSendError] = useState("");
+  const conversations = asList(data);
+  useEffect(() => {
+    if (!selected) return;
+    let live = true;
+    resources
+      .list(`/conversations/${selected}/messages`)
+      .then((result) => {
+        if (live) setMessages(asList(result));
+      })
+      .catch((e) => {
+        if (live) setSendError(errorMessage(e));
+      });
+    return () => {
+      live = false;
+    };
+  }, [selected]);
+  async function send(e) {
+    e.preventDefault();
+    if (!selected || !text.trim()) return;
+    setBusy(true);
+    setSendError("");
+    try {
+      await resources.create(`/conversations/${selected}/messages`, {
+        content: text.trim(),
+      });
+      const result = await resources.list(
+        `/conversations/${selected}/messages`,
+      );
+      setMessages(asList(result));
+      setText("");
+    } catch (e) {
+      setSendError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Heading config={config} />
+      <Notice error={sendError || error} />
+      <div className="chat-layout">
+        <div className="panel chat-list">
+          {loading ? (
+            <Loading />
+          ) : conversations.length ? (
+            conversations.map((item) => (
+              <button
+                key={item.id}
+                className={selected === item.id ? "selected" : ""}
+                onClick={() => {
+                  setSelected(item.id);
+                  setSendError("");
+                }}
+              >
+                {item.title ||
+                  item.participantName ||
+                  `Cuộc trò chuyện #${item.id}`}
+              </button>
+            ))
+          ) : (
+            <Empty text="Chưa có cuộc trò chuyện." />
+          )}
+        </div>
+        <div className="panel chat-window">
+          {selected ? (
+            <>
+              <div className="messages">
+                {messages.map((message, index) => (
+                  <div className="message" key={message.id || index}>
+                    <small>
+                      {message.senderName ||
+                        message.sender?.fullName ||
+                        "Thành viên"}
+                    </small>
+                    <p>{message.content || message.text}</p>
+                  </div>
+                ))}
+              </div>
+              <form className="chat-composer" onSubmit={send}>
+                <input
+                  aria-label="Tin nhắn"
+                  placeholder="Nhập tin nhắn…"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                />
+                <button
+                  className="button primary"
+                  disabled={busy || !text.trim()}
+                >
+                  <Send size={16} />
+                </button>
+              </form>
+            </>
+          ) : (
+            <Empty text="Chọn một cuộc trò chuyện để bắt đầu." />
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PaymentResult() {
+  return (
+    <div className="panel result">
+      <CreditCard size={35} />
+      <h1>Kết quả thanh toán</h1>
+      <p>
+        Cần kiểm tra trạng thái hóa đơn đã được backend cập nhật trước khi xác
+        nhận giao dịch. Thông tin trên URL không được xem là bằng chứng thanh toán.
+      </p>
+      <Link className="button primary" to="/student/invoices">
+        Kiểm tra hóa đơn
+      </Link>
+    </div>
+  );
+}
+
+export default function Screen({ config }) {
+  const location = useLocation();
+  const content =
+    config.type === "home" ? (
+      <HomeScreen />
+    ) : config.type === "list" ? (
+      <ListScreen config={config} />
+    ) : config.type === "detail" ? (
+      <DetailScreen config={config} />
+    ) : config.type === "form" ? (
+      <FormScreen config={config} />
+    ) : config.type === "dashboard" ? (
+      <DashboardScreen config={config} />
+    ) : config.type === "profile" ? (
+      <ProfileScreen config={config} />
+    ) : config.type === "application" ? (
+      <ApplicationScreen config={config} />
+    ) : config.type === "chat" ? (
+      <ChatScreen config={config} />
+    ) : (
+      <PaymentResult />
+    );
+  const Layout =
+    config.group === "guest"
+      ? GuestLayout
+      : config.group === "student"
+        ? StudentLayout
+        : ManagerLayout;
+
+  return (
+    <Layout title={config.title}>
+      {location.state?.success && (
+        <div className="notice success">{location.state.success}</div>
+      )}
+      {content}
+    </Layout>
+  );
+}
