@@ -6,7 +6,8 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Search, Plus, RefreshCw, Filter, ArrowUp, ArrowDown } from "lucide-react";
+import { motion } from "motion/react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
@@ -17,6 +18,7 @@ import { useLoad } from "./useLoad";
 import useDebounce from "../../hooks/useDebounce";
 import usePagination from "../../hooks/usePagination";
 import { STATUS_LABELS, FILTERABLE_STATUSES } from "../../constants/status";
+import { Button, Card, StatusBadge } from "../ui";
 
 /**
  * Component ListScreen - Hiển thị danh sách dữ liệu dạng bảng
@@ -125,8 +127,10 @@ export default function ListScreen({ config }) {
       {/* Heading với breadcrumb và nút tạo mới */}
       <Heading config={config}>
         {createPath && (
-          <Link to={createPath} className="button primary">
-            <Plus size={15} /> Tạo mới
+          <Link to={createPath}>
+            <Button variant="primary" size="md">
+              <Plus size={16} /> Tạo mới
+            </Button>
           </Link>
         )}
       </Heading>
@@ -135,12 +139,12 @@ export default function ListScreen({ config }) {
       <Notice error={actionError || error} success={success} />
       
       {/* Panel chứa toolbar và table */}
-      <div className="panel">
+      <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] overflow-hidden">
         {/* Toolbar: search box, filter dropdown, reload button */}
-        <div className="toolbar">
+        <div className="flex flex-wrap gap-3 p-4 border-b-2 border-[var(--color-line)] bg-[var(--color-surface)]">
           {/* Search box */}
-          <div className="search-box">
-            <Search size={17} />
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={18} />
             <input
               aria-label="Tìm kiếm"
               placeholder="Tìm theo mã, tên hoặc nội dung…"
@@ -149,6 +153,7 @@ export default function ListScreen({ config }) {
                 setSearch(e.target.value);
                 resetPage(); // Reset về trang 1 khi search
               }}
+              className="w-full pl-10 pr-4 py-2.5 rounded-[var(--radius-md)] border-2 border-[var(--color-line)] bg-white text-sm focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all outline-none"
             />
           </div>
           
@@ -160,6 +165,7 @@ export default function ListScreen({ config }) {
               setStatus(e.target.value);
               resetPage(); // Reset về trang 1 khi filter
             }}
+            className="border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-3 py-2.5 text-sm bg-white outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
           >
             <option value="">Mọi trạng thái</option>
             {FILTERABLE_STATUSES.map((x) => (
@@ -171,7 +177,7 @@ export default function ListScreen({ config }) {
           
           {/* Nút reload */}
           <button
-            className="button subtle"
+            className="inline-flex items-center gap-2 px-3 py-2.5 border-2 border-[var(--color-line)] rounded-[var(--radius-md)] text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-line-strong)] transition-all"
             onClick={reload}
             aria-label="Tải lại"
           >
@@ -185,77 +191,94 @@ export default function ListScreen({ config }) {
         ) : rows.length === 0 ? (
           <Empty />
         ) : (
-          <div className="table-scroll">
-            <table>
+          <div className="overflow-x-auto">
+            <motion.table
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="w-full border-collapse"
+            >
               {/* Table header */}
-              <thead>
-                <tr>
+              <thead className="bg-[var(--color-surface-2)] border-b border-[var(--color-line)]">
+                <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {/* Hiển thị header cho từng column */}
                   {config.columns.map((key) => (
-                    <th key={key}>{FIELD_LABELS[key] || key}</th>
+                    <th key={key} className="text-left px-4 py-3 text-xs font-[family-name:var(--font-family-display)] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{FIELD_LABELS[key] || key}</th>
                   ))}
-                  <th>Thao tác</th>
-                </tr>
+                  <th className="text-left px-4 py-3 text-xs font-[family-name:var(--font-family-display)] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Thao tác</th>
+                </motion.tr>
               </thead>
               
               {/* Table body */}
               <tbody>
                 {rows.map((row, index) => (
-                  <tr key={row.id || index}>
+                  <motion.tr
+                    key={row.id || index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                     whileHover={{ backgroundColor: "var(--color-surface)" }}
+                    className="border-b border-[var(--color-line)] transition-colors"
+                  >
                     {/* Hiển thị data cho từng column */}
                     {config.columns.map((key) => (
-                      <td key={key}>
-                        {formatValue(key, getNestedValue(row, key))}
+                      <td key={key} className="px-4 py-3 text-sm text-[var(--color-text)]">
+                        {key === 'status' && typeof getNestedValue(row, key) === 'string' ? (
+                          <StatusBadge status={getNestedValue(row, key)} />
+                        ) : (
+                          formatValue(key, getNestedValue(row, key))
+                        )}
                       </td>
                     ))}
                     
                     {/* Cột thao tác: link chi tiết và action buttons */}
-                    <td className="row-actions">
-                      {/* Link chi tiết */}
-                      {config.detail && (
-                        <Link
-                          to={`${config.detail}/${row.id}`}
-                          className="text-link"
-                        >
-                          Chi tiết
-                        </Link>
-                      )}
-                      
-                      {/* Action buttons */}
-                      {config.actions?.map((action) => (
-                        <button
-                          key={action.label}
-                          disabled={busy === String(row.id)}
-                          onClick={() => doAction(row, action)}
-                          className="text-link"
-                        >
-                          {action.label}
-                        </button>
-                      ))}
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex flex-wrap gap-2">
+                        {/* Link chi tiết */}
+                        {config.detail && (
+                          <Link
+                            to={`${config.detail}/${row.id}`}
+                            className="text-[var(--color-primary)] font-[family-name:var(--font-family-display)] font-semibold hover:underline transition-colors"
+                          >
+                            Chi tiết
+                          </Link>
+                        )}
+                        
+                        {/* Action buttons */}
+                        {config.actions?.map((action) => (
+                          <button
+                            key={action.label}
+                            disabled={busy === String(row.id)}
+                            onClick={() => doAction(row, action)}
+                            className="text-[var(--color-primary)] font-[family-name:var(--font-family-display)] font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
-            </table>
+            </motion.table>
           </div>
         )}
         
         {/* Pagination */}
-        <div className="pagination">
-          <span>
+        <div className="flex items-center justify-between p-4 border-t-2 border-[var(--color-line)] text-sm text-[var(--color-text-muted)]">
+          <span className="font-[family-name:var(--font-family-body)]">
             Trang {page + 1}
             {data?.totalElements != null ? ` · ${data.totalElements} mục` : ""}
           </span>
-          <div>
+          <div className="flex gap-2">
             <button
-              className="button subtle"
+              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-[var(--color-line)] rounded-[var(--radius-md)] text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-line-strong)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={page === 0}
               onClick={previousPage}
             >
               Trước
             </button>
             <button
-              className="button subtle"
+              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-[var(--color-line)] rounded-[var(--radius-md)] text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-2)] hover:border-[var(--color-line-strong)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={data?.last === true || rows.length < 10}
               onClick={nextPage}
             >

@@ -1,3 +1,271 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/geist';
-:root{font-family:'Geist Variable','Segoe UI',sans-serif;color:#24362f;background:#f5f7f5;font-synthesis:none}*{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select,textarea{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}button:disabled{cursor:not-allowed;opacity:.55}:focus-visible{outline:3px solid #7cae98;outline-offset:2px}
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); */
+
+/* Neo-Brutalism Design System */
+@theme {
+  /* Typography - Inter for readability */
+  --font-family-display: 'Inter', sans-serif;
+  --font-family-body: 'Inter', sans-serif;
+  --font-family-mono: 'Courier New', monospace;
+  
+  /* Type scale - Clear hierarchy */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
+  --font-size-hero: clamp(48px, 5vw, 72px);
+  
+  /* Neo-Brutalism Colors - REAL NEON version */
+  --color-bg: #f5f7fa;                       /* Subtle gray gradient base */
+  --color-surface: #ffffff;                  /* Pure white */
+  --color-surface-2: #f8f9fa;                /* Off-white for cards */
+  --color-surface-3: #f3f4f6;
+  
+  --color-text: #1a1a1a;                     /* Dark gray - no tint */
+  --color-text-muted: #4b5563;               /* Gray muted */
+  --color-text-subtle: #9ca3af;
+  
+  --color-line: #333333;                     /* Dark gray border - Neo-Brutalism */
+  --color-line-strong: #000000;              /* Black for strong borders */
+  
+  --color-primary: #00d2ff;                  /* Neon cyan - BRIGHT */
+  --color-primary-hover: #00b8e6;
+  --color-primary-light: #e0f7ff;
+  
+  --color-success: #00ff88;                  /* Neon green - BRIGHT */
+  --color-success-light: #e0f7e8;
+  
+  --color-warning: #ffcc00;                  /* Neon yellow - BRIGHT */
+  --color-warning-light: #fffbe0;
+  
+  --color-error: #ff3366;                    /* Neon red - BRIGHT */
+  --color-error-light: #ffe0e8;
+  
+  --color-accent: #ff6b6b;                   /* Neon coral - BRIGHT */
+  --color-accent-hover: #ff5252;
+  --color-accent-light: #ffe8e8;
+  
+  /* Legacy brand colors (backward compat) */
+  --color-brand-green: var(--color-primary);
+  --color-brand-dark: var(--color-text);
+  --color-brand-muted: var(--color-text-muted);
+  --color-brand-line: var(--color-line);
+  --color-brand-pale: var(--color-surface-2);
+  --color-brand-paper: oklch(1 0 0);
+  
+  --color-primary-surface: var(--color-primary-light);
+  --color-accent-surface: var(--color-accent-light);
+  
+  --color-chat-bg: oklch(0.98 0.006 90);
+  --color-chat-surface: oklch(0.96 0.008 92);
+  --color-chat-text: oklch(0.2 0.02 260);
+  --color-chat-accent: oklch(0.45 0.12 250);
+  
+  /* Spacing - Compact */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  
+  /* Radius - Large & rounded */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  
+  /* Shadows - Neo-Brutalism STRONG */
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 4px 4px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 6px 6px 0 rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 8px 8px 0 rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 12px 12px 0 rgba(0, 0, 0, 0.25);
+  --shadow-lift: var(--shadow-xl);
+}
+
+/* Base styles */
+:root {
+  font-family: var(--font-family-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  /* Neo-Brutalism background with subtle gradient */
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:focus-visible {
+  outline: 4px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* Typography utilities */
+.font-display {
+  font-family: var(--font-family-display);
+  letter-spacing: -0.02em;
+}
+
+.font-body {
+  font-family: var(--font-family-body);
+}
+
+.font-mono {
+  font-family: var(--font-family-mono);
+}
+
+/* Motion utilities */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Rich message formatting (for chatbot) */
+.msg-content {
+  line-height: 1.6;
+}
+
+.msg-content h1,
+.msg-content h2,
+.msg-content h3 {
+  font-family: var(--font-family-display);
+  font-weight: 600;
+  margin: 1.5em 0 0.5em;
+  letter-spacing: -0.02em;
+}
+
+.msg-content h1 { font-size: 1.5em; }
+.msg-content h2 { font-size: 1.3em; }
+.msg-content h3 { font-size: 1.1em; }
+
+.msg-content p {
+  margin: 0.8em 0;
+}
+
+.msg-content ul,
+.msg-content ol {
+  margin: 0.8em 0;
+  padding-left: 1.5em;
+}
+
+.msg-content li {
+  margin: 0.3em 0;
+}
+
+.msg-content code {
+  font-family: var(--font-family-mono);
+  background: var(--color-surface-2);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+.msg-content pre {
+  background: var(--color-surface-2);
+  padding: 1em;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.msg-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.msg-content blockquote {
+  border-left: 3px solid var(--color-line-strong);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.msg-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.msg-content a:hover {
+  color: var(--color-primary-hover);
+}
+
+.msg-content strong {
+  font-weight: 600;
+}
+
+.msg-content em {
+  font-style: italic;
+}

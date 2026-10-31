@@ -1,22 +1,19 @@
-// Hiển thị skeleton loading - giả lập layout khi đang tải data
+// Hiển thị skeleton loading với Hallmark styling
+import { motion } from 'motion/react';
 import { RefreshCw } from 'lucide-react';
 
 // Loading đơn giản - chỉ hiện spinner
 export function SimpleLoading() {
   return (
-    <div style={{ 
-      padding: '60px 20px', 
-      textAlign: 'center',
-      color: '#666'
-    }}>
-      <RefreshCw 
-        size={32} 
-        style={{ 
-          animation: 'spin 1s linear infinite',
-          marginBottom: '12px'
-        }} 
-      />
-      <p>Đang tải dữ liệu...</p>
+    <div className="p-[60px_20px] text-center text-[var(--color-text-muted)]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="inline-block mb-3"
+      >
+        <RefreshCw size={32} className="text-[var(--color-primary)]" />
+      </motion.div>
+      <p className="font-[family-name:var(--font-family-body)] text-sm">Đang tải dữ liệu...</p>
     </div>
   );
 }
@@ -24,36 +21,30 @@ export function SimpleLoading() {
 // Loading cho bảng dữ liệu (ví dụ: danh sách phòng)
 export function TableSkeleton({ rows = 5, cols = 4 }) {
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="p-5">
       {/* Header của bảng */}
-      <div style={{
-        height: '40px',
-        background: '#e5e7eb',
-        borderRadius: '6px',
-        marginBottom: '16px',
-        animation: 'pulse 1.5s ease-in-out infinite'
-      }} />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        className="h-10 bg-[var(--color-surface-2)] rounded-[var(--radius-md)] mb-4"
+      />
       
       {/* Các dòng dữ liệu giả */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div 
-          key={rowIndex} 
-          style={{ 
-            display: 'flex', 
-            gap: '12px', 
-            marginBottom: '12px' 
-          }}
-        >
+        <div key={rowIndex} className="flex gap-3 mb-3">
           {Array.from({ length: cols }).map((_, colIndex) => (
-            <div
+            <motion.div
               key={colIndex}
-              style={{
-                height: '32px',
-                flex: 1,
-                background: '#f3f4f6',
-                borderRadius: '4px',
-                animation: 'pulse 1.5s ease-in-out infinite'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ 
+                duration: 1.5, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                delay: (rowIndex * 0.1) + (colIndex * 0.05)
               }}
+              className="h-8 flex-1 bg-[var(--color-surface-3)] rounded-[var(--radius-sm)]"
             />
           ))}
         </div>
@@ -65,44 +56,36 @@ export function TableSkeleton({ rows = 5, cols = 4 }) {
 // Loading cho form (ví dụ: chi tiết hợp đồng)
 export function FormSkeleton() {
   return (
-    <div style={{ padding: '20px', maxWidth: '600px' }}>
+    <div className="p-5 max-w-[600px]">
       {/* Giả lập 5 input fields */}
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} style={{ marginBottom: '20px' }}>
+        <div key={i} className="mb-5">
           {/* Label */}
-          <div style={{
-            width: '120px',
-            height: '16px',
-            background: '#e5e7eb',
-            borderRadius: '4px',
-            marginBottom: '8px',
-            animation: 'pulse 1.5s ease-in-out infinite'
-          }} />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ 
+              duration: 1.5, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              delay: i * 0.1
+            }}
+            className="w-[120px] h-4 bg-[var(--color-surface-2)] rounded-[var(--radius-sm)] mb-2"
+          />
           {/* Input */}
-          <div style={{
-            height: '40px',
-            background: '#f3f4f6',
-            borderRadius: '6px',
-            animation: 'pulse 1.5s ease-in-out infinite'
-          }} />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ 
+              duration: 1.5, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              delay: i * 0.1 + 0.05
+            }}
+            className="h-11 bg-[var(--color-surface-3)] rounded-[var(--radius-md)]"
+          />
         </div>
       ))}
     </div>
   );
-}
-
-// CSS animation cho pulse effect
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
 }

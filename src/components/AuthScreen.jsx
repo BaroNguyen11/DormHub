@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { ArrowRight, Mail, LockKeyhole } from 'lucide-react';
 import AuthLayout from '../layouts/AuthLayout';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 import useAuth from '../hooks/useAuth';
 import { authService } from '../services/auth.service';
 import { errorMessage } from '../utils/errorHandler';
@@ -130,41 +133,72 @@ export default function AuthScreen({ type }) {
 
   return (
     <AuthLayout>
-      <div className="auth-card">
-        <div className="auth-icon">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full min-w-0 max-w-[430px]"
+      >
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4, type: 'spring', stiffness: 200 }}
+          className="w-[42px] h-[42px] rounded-lg bg-[var(--color-primary-surface)] text-[var(--color-primary)] grid place-items-center mb-5"
+        >
           {type === 'login' ? <LockKeyhole size={22} /> : <Mail size={22} />}
-        </div>
-        <p className="eyebrow">TÀI KHOẢN DORMHUB</p>
-        <h2>{config.title}</h2>
-        <p className="subheading">{config.intro}</p>
+        </motion.div>
+        <p className="text-[10px] font-[family-name:var(--font-family-display)] font-extrabold tracking-[0.15em] text-[var(--color-primary)] uppercase m-0 mb-[11px]">TÀI KHOẢN DORMHUB</p>
+        <h2 className="text-[28px] font-[family-name:var(--font-family-display)] font-bold tracking-tight m-0 mb-[7px] text-[var(--color-text)]">{config.title}</h2>
+        <p className="text-[var(--color-text-muted)] text-sm leading-[1.8] m-0 mb-7">{config.intro}</p>
 
         {location.state?.success && (
-          <div className="notice success" role="status">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-3 rounded-[var(--radius-md)] mb-4 text-sm leading-relaxed bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20" 
+            role="status"
+          >
             {location.state.success}
-          </div>
+          </motion.div>
         )}
         {error && (
-          <div className="notice error" role="alert">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-3 rounded-[var(--radius-md)] mb-4 text-sm leading-relaxed bg-[var(--color-error)]/10 text-[var(--color-error)] border border-[var(--color-error)]/20" 
+            role="alert"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
         {success && (
-          <div className="notice success" role="status">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-3 rounded-[var(--radius-md)] mb-4 text-sm leading-relaxed bg-[var(--color-success)]/10 text-[var(--color-success)] border border-[var(--color-success)]/20" 
+            role="status"
+          >
             {success}
-          </div>
+          </motion.div>
         )}
 
         {type === 'login' && DEMO_ENABLED && (
-          <div className="demo-login">
-            <strong>Xem thử giao diện không cần backend</strong>
-            <p>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="bg-[var(--color-surface-2)] border border-[var(--color-line)] rounded-[var(--radius-lg)] p-4 mb-5 text-[var(--color-text)] text-sm"
+          >
+            <strong className="block mb-2 font-[family-name:var(--font-family-display)] font-semibold">Xem thử giao diện không cần backend</strong>
+            <p className="text-[var(--color-text-muted)] text-sm leading-normal m-0 mb-3">
               Chọn vai trò để điền tài khoản mẫu. Mật khẩu chung:{' '}
-              <code>{DEMO_PASSWORD}</code>
+              <code className="px-2 py-1 rounded-[var(--radius-sm)] bg-white text-[var(--color-primary)] text-xs font-[family-name:var(--font-family-mono)]">{DEMO_PASSWORD}</code>
             </p>
-            <div>
+            <div className="flex gap-2 flex-wrap">
               {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  className="button subtle"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   type="button"
                   key={account.role}
                   onClick={() =>
@@ -172,17 +206,17 @@ export default function AuthScreen({ type }) {
                   }
                 >
                   {account.label}
-                </button>
+                </Button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         <form onSubmit={submit}>
           {config.fields.map(([key, label, inputType]) => (
-            <label className="field" key={key}>
-              <span>{label}</span>
-              <input
+            <label className="block mb-4" key={key}>
+              <span className="block text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] mb-2">{label}</span>
+              <Input
                 type={inputType}
                 required
                 minLength={inputType === 'password' ? 8 : undefined}
@@ -208,42 +242,44 @@ export default function AuthScreen({ type }) {
               />
             </label>
           ))}
-          <button className="button primary auth-submit" disabled={busy}>
+          <Button className="w-full mt-3" size="lg" disabled={busy}>
             {busy ? 'Đang xử lý…' : config.button}
             <ArrowRight size={16} />
-          </button>
+          </Button>
         </form>
 
         {type === 'verifyEmail' && (
-          <button
-            className="button subtle auth-resend"
+          <Button
+            className="w-full mt-3"
+            variant="secondary"
+            size="lg"
             type="button"
             disabled={resendBusy || busy}
             onClick={resendOtp}
           >
             {resendBusy ? 'Đang gửi lại…' : 'Gửi lại mã OTP'}
-          </button>
+          </Button>
         )}
 
-        <div className="auth-links">
+        <div className="flex justify-between gap-3 mt-6 text-sm text-[var(--color-text-muted)]">
           {type === 'login' ? (
             <>
-              <Link to="/forgot-password">Quên mật khẩu?</Link>
+              <Link to="/forgot-password" className="text-[var(--color-primary)] font-semibold hover:underline">Quên mật khẩu?</Link>
               <span>
                 Đã được nhà trường cấp tài khoản?{' '}
-                <Link to="/verify-email">Kích hoạt email</Link>
+                <Link to="/verify-email" className="text-[var(--color-primary)] font-semibold hover:underline">Kích hoạt email</Link>
               </span>
             </>
           ) : (
-            <Link to="/login">Quay lại đăng nhập</Link>
+            <Link to="/login" className="text-[var(--color-primary)] font-semibold hover:underline">Quay lại đăng nhập</Link>
           )}
         </div>
         {type === 'login' && (
-          <p className="auth-footnote">
+          <p className="mt-5 text-[var(--color-text-muted)] text-xs leading-normal text-center">
             Tài khoản sinh viên được nhà trường cấp; DormHub không mở đăng ký sinh viên công khai.
           </p>
         )}
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 }

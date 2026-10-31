@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, Bell, LogOut, ArrowLeft, Building2 } from "lucide-react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import useAuth from "../hooks/useAuth";
 import { nav } from "../constants/screenConfig";
 import { isDemoSession } from "../services/demo.service";
@@ -11,114 +12,158 @@ export default function Workspace({ group, title, children }) {
   const [open, setOpen] = useState(false);
   if (group === "guest")
     return (
-      <div className="guest-shell">
-        <header className="guest-header">
-          <Link className="brand" to="/">
-            <span className="brand-mark">dH</span> DormHub.
+      <div className="min-h-screen bg-[var(--color-bg)]">
+        <header className="h-[74px] border-b-4 border-[var(--color-line)] bg-white flex items-center justify-between px-[clamp(20px,5vw,72px)] gap-5 shadow-[var(--shadow-sm)]">
+          <Link className="inline-flex items-center gap-2.5 font-[family-name:var(--font-family-display)] font-extrabold text-xl tracking-tight text-[var(--color-text)] whitespace-nowrap" to="/">
+            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white inline-grid place-items-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
+              <Building2 size={20} />
+            </div>
+            DormHub
           </Link>
-          <nav>
+          <nav className="flex gap-8 text-sm text-[var(--color-text-muted)] font-bold">
             {nav.guest.map(([name, path]) => (
-              <NavLink key={path} to={path} end>
+              <NavLink key={path} to={path} end className="[&.active]:text-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
                 {name}
               </NavLink>
             ))}
           </nav>
-          <div className="header-actions">
-            <Link className="button subtle" to="/login">
+          <div className="flex gap-3">
+            <Link className="border-3 border-[var(--color-line)] bg-white rounded-[var(--radius-md)] h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-[var(--color-text)] hover:bg-[var(--color-surface)] hover:border-[var(--color-line-strong)] hover:shadow-[var(--shadow-sm)] transition-all" to="/login">
               Đăng nhập
             </Link>
-            <Link className="button primary" to="/verify-email">
+            <Link className="border-3 border-[var(--color-line-strong)] bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap hover:bg-[var(--color-primary-hover)] hover:shadow-[var(--shadow-md)] transition-all" to="/verify-email">
               Kích hoạt tài khoản
             </Link>
           </div>
         </header>
         {children}
-        <footer className="footer">DormHub · Không gian sống sinh viên</footer>
+        <footer className="py-8 px-[clamp(20px,5vw,72px)] border-t-4 border-[var(--color-line)] bg-white text-[var(--color-text-muted)] text-sm font-semibold">
+          DormHub · Không gian sống sinh viên
+        </footer>
       </div>
     );
   if (group === "auth")
     return (
-      <div className="auth-shell">
-        <div className="auth-intro">
-          <Link className="brand" to="/">
-            <span className="brand-mark">dH</span> DormHub.
+      <div className="min-h-screen grid grid-cols-[44%_56%] bg-white">
+        <div className="bg-[var(--color-primary-light)] px-[clamp(28px,5vw,72px)] py-12 flex flex-col justify-between border-r-4 border-[var(--color-primary)] shadow-[var(--shadow-lg)]">
+          <Link className="inline-flex items-center gap-2.5 font-[family-name:var(--font-family-display)] font-extrabold text-xl tracking-tight text-[var(--color-text)] whitespace-nowrap" to="/">
+            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white inline-grid place-items-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
+              <Building2 size={20} />
+            </div>
+            DormHub
           </Link>
           <div>
-            <p className="eyebrow">DORMHUB / STUDENT LIVING</p>
-            <h1>Không gian sống thuận tiện cho hành trình học tập.</h1>
-            <p>
+            <p className="text-xs font-extrabold tracking-[0.15em] text-[var(--color-primary)] uppercase mb-4 px-3 py-1 bg-white/60 rounded-[var(--radius-sm)] inline-block border-2 border-[var(--color-primary)]">DORMHUB / STUDENT LIVING</p>
+            <h1 className="text-[clamp(32px,3.4vw,52px)] leading-[1.15] tracking-tight font-[family-name:var(--font-family-display)] font-extrabold text-[var(--color-text)] mb-6">
+              Không gian sống thuận tiện cho hành trình học tập.
+            </h1>
+            <p className="text-base leading-[1.8] text-[var(--color-text-muted)] max-w-[480px] font-medium">
               Kích hoạt tài khoản do nhà trường cấp, theo dõi hợp đồng, hóa đơn
               và yêu cầu hỗ trợ ở một nơi.
             </p>
           </div>
-          <Link to="/" className="back-link">
+          <Link to="/" className="flex items-center gap-2 text-[var(--color-primary)] text-sm font-bold hover:gap-3 transition-all px-4 py-2 bg-white/60 rounded-[var(--radius-md)] border-2 border-[var(--color-primary)] w-fit">
             <ArrowLeft size={16} /> Quay lại trang chủ
           </Link>
         </div>
-        <main className="auth-main">{children}</main>
+        <main className="grid place-items-center px-8 py-16 bg-[var(--color-surface)]">{children}</main>
       </div>
     );
   return (
-    <div className="workspace">
-      <aside className={`sidebar ${open ? "open" : ""}`}>
-        <Link className="brand" to={`/${group}`} onClick={() => setOpen(false)}>
-          <span className="brand-mark">dH</span> DormHub.
+    <div className="min-h-screen flex">
+      <motion.aside 
+        initial={false}
+        animate={{ x: open ? 0 : (window.innerWidth <= 760 ? -280 : 0) }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className={`w-64 flex-none bg-[var(--color-bg)] border-r-4 border-[var(--color-line)] px-4 py-6 pb-4 flex flex-col sticky top-0 h-screen overflow-y-auto z-20 shadow-[var(--shadow-lg)] ${open ? "!fixed left-0" : "max-[760px]:fixed max-[760px]:-left-[250px]"}`}
+      >
+        {/* Logo */}
+        <Link className="inline-flex items-center gap-2.5 px-3 pb-8 mb-2 border-b-3 border-[var(--color-line)]" to={`/${group}`} onClick={() => setOpen(false)}>
+          <div className="w-9 h-9 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-[var(--radius-md)] flex items-center justify-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
+            <Building2 size={20} className="text-white" />
+          </div>
+          <span className="font-[family-name:var(--font-family-display)] font-extrabold text-xl text-[var(--color-text)]">DormHub</span>
         </Link>
-        <div className="nav-caption">
-          {group === "student" ? "KHÔNG GIAN SINH VIÊN" : "TRUNG TÂM QUẢN LÝ"}
+        
+        {/* Section Label */}
+        <div className="text-[10px] tracking-[0.15em] text-[var(--color-text-muted)] font-extrabold px-3 py-4 pb-3 uppercase">
+          {group === "student" ? "Không gian sinh viên" : "Trung tâm quản lý"}
         </div>
-        <nav className="side-nav">
+        
+        {/* Navigation */}
+        <nav className="flex flex-col gap-1">
           {nav[group].map(([name, path]) => (
             <NavLink key={path} to={path} end onClick={() => setOpen(false)}>
-              {name}
+              {({ isActive }) => (
+                <div
+                  className={`text-sm rounded-[var(--radius-md)] px-4 py-3 font-bold transition-all duration-300 ${
+                    isActive 
+                      ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]" 
+                      : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] border-3 border-transparent hover:border-[var(--color-line)]"
+                  }`}
+                >
+                  {name}
+                </div>
+              )}
             </NavLink>
           ))}
         </nav>
-        <div className="side-account">
-          <div className="avatar">
+        
+        {/* User Profile */}
+        <div className="mt-auto border-t-3 border-[var(--color-line)] pt-4 px-2 pb-0.5 flex gap-3 items-center min-w-0">
+          <div className="w-11 h-11 flex-none rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white grid place-items-center text-sm font-extrabold shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
             {(user?.fullName || user?.name || "U").slice(0, 1).toUpperCase()}
           </div>
-          <div>
-            <strong>
+          <div className="min-w-0">
+            <strong className="block text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[var(--color-text)]">
               {user?.fullName || user?.name || user?.email || "Tài khoản"}
             </strong>
-            <small>{group.toUpperCase()}</small>
+            <small className="block text-[10px] text-[var(--color-text-muted)] mt-0.5 uppercase tracking-wider font-bold">{group}</small>
           </div>
         </div>
-      </aside>
-      {open && (
-        <button
-          className="sidebar-backdrop"
-          onClick={() => setOpen(false)}
-          aria-label="Đóng menu"
-        />
-      )}
-      <div className="workspace-main">
-        <header className="topbar">
-          <div className="breadcrumb">
+      </motion.aside>
+      <AnimatePresence>
+        {open && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 border-0 bg-[oklch(0.2_0.02_260/0.4)] z-[19]"
+            onClick={() => setOpen(false)}
+            aria-label="Đóng menu"
+          />
+        )}
+      </AnimatePresence>
+      <div className="min-w-0 flex-1 bg-[var(--color-surface)]">
+        <header className="h-[66px] border-b-4 border-[var(--color-line)] bg-white flex items-center justify-between px-[clamp(20px,3vw,40px)] gap-4 shadow-[var(--shadow-sm)]">
+          <div className="flex items-center gap-3 text-[var(--color-text-muted)] text-xs">
             <button
-              className="icon-button mobile-menu"
+              className="border-0 bg-transparent text-[var(--color-text-muted)] w-9 h-9 rounded-[var(--radius-md)] inline-grid place-items-center hover:bg-[var(--color-surface)] hidden max-[760px]:inline-grid"
               onClick={() => setOpen(true)}
               aria-label="Mở menu"
             >
-              <Menu size={19} />
+              <Menu size={20} />
             </button>
             <Building2 size={16} />
-            <span>{group === "student" ? "Sinh viên" : "Quản lý"}</span>
+            <span className="font-bold">{group === "student" ? "Sinh viên" : "Quản lý"}</span>
             <span>/</span>
-            <strong>{title}</strong>
+            <strong className="text-[var(--color-text)] font-extrabold">{title}</strong>
           </div>
-          <div className="top-actions">
-            <Link
-              to={group === "student" ? "/student/notifications" : "/manager/notifications"}
-              className="icon-button"
-              aria-label="Thông báo"
-            >
-              <Bell size={18} />
-            </Link>
-            <span className="top-name">{user?.fullName || user?.email}</span>
-            <button
-              className="icon-button"
+          <div className="flex items-center gap-3 text-[var(--color-text-muted)]">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to={group === "student" ? "/student/notifications" : "/manager/notifications"}
+                className="border-0 bg-transparent text-[var(--color-text-muted)] w-9 h-9 rounded-[var(--radius-md)] inline-grid place-items-center hover:bg-[var(--color-surface)] hover:shadow-[var(--shadow-sm)] transition-all"
+                aria-label="Thông báo"
+              >
+                <Bell size={18} />
+              </Link>
+            </motion.div>
+            <span className="font-bold text-[var(--color-text)] max-[760px]:hidden text-sm">{user?.fullName || user?.email}</span>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="border-0 bg-transparent text-[var(--color-text-muted)] w-9 h-9 rounded-[var(--radius-md)] inline-grid place-items-center hover:bg-[var(--color-surface)] hover:shadow-[var(--shadow-sm)] transition-all"
               onClick={async () => {
                 try {
                   await logout();
@@ -132,16 +177,16 @@ export default function Workspace({ group, title, children }) {
               aria-label="Đăng xuất"
             >
               <LogOut size={18} />
-            </button>
+            </motion.button>
           </div>
         </header>
         {isDemoSession() && (
-          <div className="demo-banner">
+          <div className="py-3 px-6 bg-[var(--color-warning)] text-white border-b-4 border-[var(--color-line-strong)] text-xs font-bold text-center shadow-[var(--shadow-sm)]">
             Chế độ xem thử · Dữ liệu lưu trong phiên trình duyệt · Không gửi đến
             backend hoặc thực hiện thanh toán thật
           </div>
         )}
-        <main className="content">{children}</main>
+        <main className="max-w-[1500px] mx-auto px-[clamp(20px,3vw,48px)] py-12 pb-16">{children}</main>
       </div>
     </div>
   );

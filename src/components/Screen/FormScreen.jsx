@@ -11,6 +11,7 @@ import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_LABELS, FIELD_CONFIGS } from "./constants";
 import { Notice, Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
+import { Input, Button } from "../ui";
 
 /**
  * Component FormFields - Render các input fields
@@ -28,18 +29,20 @@ import { useLoad } from "./useLoad";
  */
 function FormFields({ names, values, onChange }) {
   return (
-    <div className="form-grid">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {names.map((key) => {
         // Lấy cấu hình của field từ FIELD_CONFIGS
         const meta = FIELD_CONFIGS[key] || {};
         
         return (
           <label
-            className={`field ${meta.tag === "textarea" ? "wide" : ""}`}
+            className={`flex flex-col gap-1.5 ${meta.tag === "textarea" ? "md:col-span-2" : ""}`}
             key={key}
           >
             {/* Label của field */}
-            <span>{FIELD_LABELS[key] || key}</span>
+            <span className="text-sm font-[family-name:var(--font-family-display)] font-medium text-[var(--color-text)]">
+              {FIELD_LABELS[key] || key}
+            </span>
             
             {/* Render input tùy theo loại field */}
             
@@ -50,6 +53,8 @@ function FormFields({ names, values, onChange }) {
                 value={values[key] ?? ""}
                 onChange={(e) => onChange(key, e.target.value)}
                 rows={4}
+                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase()}`}
+                className="border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none transition-all"
               />
               
             /* 2. Select - cho dropdown với options */
@@ -58,6 +63,7 @@ function FormFields({ names, values, onChange }) {
                 value={values[key] ?? ""}
                 required
                 onChange={(e) => onChange(key, e.target.value)}
+                className="border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
               >
                 <option value="">Chọn {FIELD_LABELS[key]?.toLowerCase()}</option>
                 {meta.options.map((option) => (
@@ -69,13 +75,14 @@ function FormFields({ names, values, onChange }) {
               
             /* 3. Input - cho text, number, date, email... */
             ) : (
-              <input
+              <Input
                 required={!["description", "note"].includes(key)}
                 type={meta.type || "text"}
                 min={meta.min}
                 max={meta.max}
                 value={values[key] ?? ""}
                 onChange={(e) => onChange(key, e.target.value)}
+                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase()}`}
               />
             )}
           </label>
@@ -191,7 +198,7 @@ export default function FormScreen({ config }) {
       <Notice error={error} />
       
       {/* Panel chứa form */}
-      <div className="panel form-panel">
+      <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] p-6">
         {/* Nếu edit mode và đang loading -> hiển thị Loading */}
         {config.edit && loading ? (
           <Loading />
@@ -205,20 +212,27 @@ export default function FormScreen({ config }) {
             />
             
             {/* Form actions: nút Hủy và Lưu */}
-            <div className="form-actions">
+            <div className="flex gap-3 mt-6">
               {/* Nút Hủy - quay lại trang trước */}
-              <button
-                className="button subtle"
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={() => navigate(-1)}
               >
                 Hủy
-              </button>
+              </Button>
               
               {/* Nút Lưu - submit form */}
-              <button className="button primary" disabled={busy}>
+              <Button
+                variant="primary"
+                size="lg"
+                type="submit"
+                loading={busy}
+                disabled={busy}
+                className="flex-1"
+              >
                 {busy ? "Đang lưu…" : "Lưu thông tin"}
-              </button>
+              </Button>
             </div>
           </form>
         )}

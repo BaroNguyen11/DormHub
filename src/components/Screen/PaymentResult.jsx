@@ -16,21 +16,21 @@ import { CreditCard } from "lucide-react";
  */
 export default function PaymentResult() {
   return (
-    <div className="panel result">
+    <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] p-8 max-w-md mx-auto mt-12 text-center flex flex-col items-center gap-4">
       {/* Icon thanh toán */}
-      <CreditCard size={35} />
+      <CreditCard size={35} className="text-[var(--color-primary)]" />
       
       {/* Heading */}
-      <h1>Kết quả thanh toán</h1>
+      <h1 className="text-2xl font-[family-name:var(--font-family-display)] font-bold text-[var(--color-text)]">Kết quả thanh toán</h1>
       
       {/* Warning message */}
-      <p>
+      <p className="text-sm text-[var(--color-text-muted)]">
         Cần kiểm tra trạng thái hóa đơn đã được backend cập nhật trước khi xác
         nhận giao dịch. Thông tin trên URL không được xem là bằng chứng thanh toán.
       </p>
       
       {/* Link đến trang hóa đơn */}
-      <Link className="button primary" to="/student/invoices">
+      <Link className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] font-[family-name:var(--font-family-display)] font-bold text-sm hover:bg-[var(--color-primary-hover)] hover:shadow-[var(--shadow-md)] transition-all" to="/student/invoices">
         Kiểm tra hóa đơn
       </Link>
     </div>

@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import Screen from '../components/Screen';
 import AuthScreen from '../components/AuthScreen';
 import { screens } from '../constants/screenConfig';
@@ -13,6 +14,24 @@ const pageModules = import.meta.glob('../pages/**/*.jsx', { eager: true });
 function pageFor(path, config) {
   const Page = pageModules[pageMap[path]]?.default;
   return Page ? <Page /> : config ? <Screen config={config} /> : <NotFound />;
+}
+
+function AnimatedRoutes({ children }) {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
 export default function AppRoutes() {
@@ -52,7 +71,15 @@ export default function AppRoutes() {
             {Object.entries(screens)
               .filter(([, config]) => config.group === group)
               .map(([path, config]) => (
-                <Route key={path} path={path} element={pageFor(path, config)} />
+                <Route 
+                  key={path} 
+                  path={path} 
+                  element={
+                    <AnimatedRoutes>
+                      {pageFor(path, config)}
+                    </AnimatedRoutes>
+                  } 
+                />
               ))}
           </Route>
         ))}

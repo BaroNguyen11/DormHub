@@ -119,25 +119,27 @@ export default function ChatScreen({ config }) {
       <Notice error={sendError || error} />
       
       {/* Chat Layout: 2 cột */}
-      <div className="chat-layout">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 h-[calc(100vh-200px)]">
         {/* Cột trái: Danh sách conversations */}
-        <div className="panel chat-list">
+        <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] overflow-y-auto flex flex-col">
           {loading ? (
             <Loading />
           ) : conversations.length ? (
             conversations.map((item) => (
               <button
                 key={item.id}
-                className={selected === item.id ? "selected" : ""}
+                className={`text-left p-4 border-b border-[var(--color-line)] hover:bg-[var(--color-surface)] transition-colors ${selected === item.id ? "bg-[var(--color-surface)] border-l-4 border-l-[var(--color-primary)]" : ""}`}
                 onClick={() => {
                   setSelected(item.id);
                   setSendError("");
                 }}
               >
                 {/* Hiển thị title hoặc tên người chat */}
-                {item.title ||
-                  item.participantName ||
-                  `Cuộc trò chuyện #${item.id}`}
+                <div className="text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] truncate">
+                  {item.title ||
+                    item.participantName ||
+                    `Cuộc trò chuyện #${item.id}`}
+                </div>
               </button>
             ))
           ) : (
@@ -146,38 +148,39 @@ export default function ChatScreen({ config }) {
         </div>
         
         {/* Cột phải: Chat window */}
-        <div className="panel chat-window">
+        <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] flex flex-col overflow-hidden">
           {selected ? (
             <>
               {/* Danh sách messages */}
-              <div className="messages">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.map((message, index) => (
-                  <div className="message" key={message.id || index}>
+                  <div className="flex flex-col gap-1" key={message.id || index}>
                     {/* Tên người gửi */}
-                    <small>
+                    <small className="text-xs font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text-muted)]">
                       {message.senderName ||
                         message.sender?.fullName ||
                         "Thành viên"}
                     </small>
                     
                     {/* Nội dung tin nhắn */}
-                    <p>{message.content || message.text}</p>
+                    <p className="bg-[var(--color-surface)] px-4 py-2 rounded-[var(--radius-md)] text-sm text-[var(--color-text)] max-w-[80%]">{message.content || message.text}</p>
                   </div>
                 ))}
               </div>
               
               {/* Composer - Input gửi tin nhắn */}
-              <form className="chat-composer" onSubmit={send}>
+              <form className="border-t-2 border-[var(--color-line)] p-4 flex gap-3" onSubmit={send}>
                 <input
                   aria-label="Tin nhắn"
                   placeholder="Nhập tin nhắn…"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
+                  className="flex-1 border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
                 />
                 
                 {/* Nút gửi */}
                 <button
-                  className="button primary"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] font-[family-name:var(--font-family-display)] font-bold text-sm hover:bg-[var(--color-primary-hover)] hover:shadow-[var(--shadow-md)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={busy || !text.trim()}
                 >
                   <Send size={16} />

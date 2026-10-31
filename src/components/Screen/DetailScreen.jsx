@@ -12,6 +12,7 @@ import { FIELD_LABELS } from "./constants";
 import { formatValue } from "./formatters";
 import { Notice, Loading, Empty, Heading, SystemInfo } from "./UIComponents";
 import { useLoad } from "./useLoad";
+import { Card, Button, StatusBadge } from "../ui";
 
 /**
  * Component DetailScreen - Hiển thị chi tiết 1 record
@@ -134,27 +135,30 @@ export default function DetailScreen({ config }) {
       {/* Heading với breadcrumb và action buttons */}
       <Heading config={config}>
         {/* Nút quay lại */}
-        <button className="button subtle" onClick={() => navigate(-1)}>
+        <Button variant="secondary" onClick={() => navigate(-1)}>
           Quay lại
-        </button>
+        </Button>
         
         {/* Nút chỉnh sửa (nếu có) */}
         {config.edit && (
-          <Link className="button primary" to={`${config.edit}/${id}/edit`}>
-            Chỉnh sửa
+          <Link to={`${config.edit}/${id}/edit`}>
+            <Button variant="primary">
+              Chỉnh sửa
+            </Button>
           </Link>
         )}
         
         {/* Action buttons (duyệt, từ chối, thanh toán...) */}
         {config.actions?.map((action) => (
-          <button
+          <Button
             key={action.label}
-            className="button primary"
+            variant="primary"
             disabled={busy || loading}
+            loading={busy}
             onClick={() => doAction(action)}
           >
             {action.label}
-          </button>
+          </Button>
         ))}
       </Heading>
       
@@ -167,24 +171,34 @@ export default function DetailScreen({ config }) {
       ) : !data ? (
         <Empty />
       ) : (
-        <div className="detail-grid">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           {/* Panel hiển thị thông tin chi tiết */}
-          <div className="panel">
-            <div className="section-title">Thông tin chi tiết</div>
-            
-            {/* Grid hiển thị key-value pairs */}
-            <div className="kv-grid">
+          <Card>
+            <div className="space-y-6">
+              <h3 className="text-xs font-[family-name:var(--font-family-display)] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                Thông tin chi tiết
+              </h3>
+              
+              {/* Grid hiển thị key-value pairs */}
               {entries.map(([key, value]) => (
-                <div className="kv" key={key}>
+                <div key={key} className="grid grid-cols-[120px_1fr] gap-4 items-start">
                   {/* Label: lấy từ FIELD_LABELS hoặc dùng key */}
-                  <span>{FIELD_LABELS[key] || key}</span>
+                  <dt className="text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text-muted)]">
+                    {FIELD_LABELS[key] || key}
+                  </dt>
                   
-                  {/* Value: format bằng formatValue */}
-                  <strong>{formatValue(key, value)}</strong>
+                  {/* Value: format bằng formatValue hoặc StatusBadge */}
+                  <dd className="text-sm text-[var(--color-text)]">
+                    {key === 'status' && typeof value === 'string' ? (
+                      <StatusBadge status={value} />
+                    ) : (
+                      formatValue(key, value)
+                    )}
+                  </dd>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
           
           {/* Panel thông tin hệ thống */}
           <SystemInfo />
