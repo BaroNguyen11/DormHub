@@ -12,32 +12,49 @@ export default function Workspace({ group, title, children }) {
   const [open, setOpen] = useState(false);
   if (group === "guest")
     return (
-      <div className="min-h-screen bg-[var(--color-bg)]">
-        <header className="h-[74px] border-b-4 border-[var(--color-line)] bg-white flex items-center justify-between px-[clamp(20px,5vw,72px)] gap-5 shadow-[var(--shadow-sm)]">
-          <Link className="inline-flex items-center gap-2.5 font-[family-name:var(--font-family-display)] font-extrabold text-xl tracking-tight text-[var(--color-text)] whitespace-nowrap" to="/">
-            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white inline-grid place-items-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
+      <div className="min-h-screen bg-bg">
+        <header className="h-18.5 border-b-4 border-(--color-line) bg-white flex items-center justify-between px-[clamp(20px,5vw,72px)] gap-5 shadow-(--shadow-sm)">
+          <Link
+            className="inline-flex items-center gap-2.5 font-(family-name:--font-family-display) font-extrabold text-xl tracking-tight text-(--color-text) whitespace-nowrap"
+            to="/"
+          >
+            <div
+              className="w-9 h-9 rounded-md bg-linear-to-br from-(--color-primary) to-primary-hover text-white inline-grid place-items-center shadow-[var(-
+            -shadow-md)] border-3 border-line-strong"
+            >
               <Building2 size={20} />
             </div>
             DormHub
           </Link>
-          <nav className="flex gap-8 text-sm text-[var(--color-text-muted)] font-bold">
+          <nav className="flex gap-8 text-sm text-(--color-text-muted) font-bold">
             {nav.guest.map(([name, path]) => (
-              <NavLink key={path} to={path} end className="[&.active]:text-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
+              <NavLink
+                key={path}
+                to={path}
+                end
+                className="[&.active]:text-(--color-primary) hover:text-(--color-primary) transition-colors"
+              >
                 {name}
               </NavLink>
             ))}
           </nav>
           <div className="flex gap-3">
-            <Link className="border-3 border-[var(--color-line)] bg-white rounded-[var(--radius-md)] h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-[var(--color-text)] hover:bg-[var(--color-surface)] hover:border-[var(--color-line-strong)] hover:shadow-[var(--shadow-sm)] transition-all" to="/login">
+            <Link
+              className="border-3 border-(--color-line) bg-white rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-(--color-text) hover:bg-surface hover:border-line-strong hover:shadow-(--shadow-md) shadow-(--shadow-sm) hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
+              to="/login"
+            >
               Đăng nhập
             </Link>
-            <Link className="border-3 border-[var(--color-line-strong)] bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap hover:bg-[var(--color-primary-hover)] hover:shadow-[var(--shadow-md)] transition-all" to="/verify-email">
+            <Link
+              className="border-3 border-line-strong bg-(--color-primary)  rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap shadow-(--shadow-sm)  hover:shadow-(--shadow-md) hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
+              to="/verify-email"
+            >
               Kích hoạt tài khoản
             </Link>
           </div>
         </header>
         {children}
-        <footer className="py-8 px-[clamp(20px,5vw,72px)] border-t-4 border-[var(--color-line)] bg-white text-[var(--color-text-muted)] text-sm font-semibold">
+        <footer className="py-8 px-[clamp(20px,5vw,72px)] border-t-4 border-(--color-line) bg-white text-(--color-text-muted) text-sm font-semibold">
           DormHub · Không gian sống sinh viên
         </footer>
       </div>
@@ -45,51 +62,67 @@ export default function Workspace({ group, title, children }) {
   if (group === "auth")
     return (
       <div className="min-h-screen grid grid-cols-[44%_56%] bg-white">
-        <div className="bg-[var(--color-primary-light)] px-[clamp(28px,5vw,72px)] py-12 flex flex-col justify-between border-r-4 border-[var(--color-primary)] shadow-[var(--shadow-lg)]">
-          <Link className="inline-flex items-center gap-2.5 font-[family-name:var(--font-family-display)] font-extrabold text-xl tracking-tight text-[var(--color-text)] whitespace-nowrap" to="/">
-            <div className="w-9 h-9 rounded-[var(--radius-md)] bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white inline-grid place-items-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
+        <div className="bg-(--color-primary-light) px-[clamp(28px,5vw,72px)] py-12 flex flex-col justify-between border-r-4 border-(--color-primary) shadow-(--shadow-lg)">
+          <Link
+            className="inline-flex items-center gap-2.5 font-(family-name:--font-family-display) font-extrabold text-xl tracking-tight text-(--color-text) whitespace-nowrap"
+            to="/"
+          >
+            <div className="w-9 h-9 rounded-md bg-linear-to-br from-(--color-primary) to-primary-hover text-white inline-grid place-items-center shadow-(--shadow-sm) border-3 border-line-strong">
               <Building2 size={20} />
             </div>
             DormHub
           </Link>
           <div>
-            <p className="text-xs font-extrabold tracking-[0.15em] text-[var(--color-primary)] uppercase mb-4 px-3 py-1 bg-white/60 rounded-[var(--radius-sm)] inline-block border-2 border-[var(--color-primary)]">DORMHUB / STUDENT LIVING</p>
-            <h1 className="text-[clamp(32px,3.4vw,52px)] leading-[1.15] tracking-tight font-[family-name:var(--font-family-display)] font-extrabold text-[var(--color-text)] mb-6">
+            <p className="text-xs font-extrabold tracking-[0.15em] text-(--color-primary) uppercase mb-4 px-3 py-1 bg-white/60 rounded-sm inline-block border-2 border-(--color-primary)">
+              DORMHUB / STUDENT LIVING
+            </p>
+            <h1 className="text-[clamp(32px,3.4vw,52px)] leading-[1.15] tracking-tight font-(family-name:--font-family-display) font-extrabold text-(--color-text) mb-6">
               Không gian sống thuận tiện cho hành trình học tập.
             </h1>
-            <p className="text-base leading-[1.8] text-[var(--color-text-muted)] max-w-[480px] font-medium">
+            <p className="text-base leading-[1.8] text-(--color-text-muted) max-w-120 font-medium">
               Kích hoạt tài khoản do nhà trường cấp, theo dõi hợp đồng, hóa đơn
               và yêu cầu hỗ trợ ở một nơi.
             </p>
           </div>
-          <Link to="/" className="flex items-center gap-2 text-[var(--color-primary)] text-sm font-bold hover:gap-3 transition-all px-4 py-2 bg-white/60 rounded-[var(--radius-md)] border-2 border-[var(--color-primary)] w-fit">
+          <Link
+            to="/"
+            className="flex items-center gap-2  text-sm font-bold shadow-(--shadow-sm) hover:shadow-(--shadow-md) hover:-translate-0.5 transition-all px-4 py-2 bg-white/60 rounded-sm border-3 border-(--color-line) w-fit active:translate-0.5 active:shadow-none"
+          >
             <ArrowLeft size={16} /> Quay lại trang chủ
           </Link>
         </div>
-        <main className="grid place-items-center px-8 py-16 bg-[var(--color-surface)]">{children}</main>
+        <main className="grid place-items-center px-8 py-16 bg-surface">
+          {children}
+        </main>
       </div>
     );
   return (
     <div className="min-h-screen flex">
-      <motion.aside 
+      <motion.aside
         initial={false}
-        animate={{ x: open ? 0 : (window.innerWidth <= 760 ? -280 : 0) }}
+        animate={{ x: open ? 0 : window.innerWidth <= 760 ? -280 : 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className={`w-64 flex-none bg-[var(--color-bg)] border-r-4 border-[var(--color-line)] px-4 py-6 pb-4 flex flex-col sticky top-0 h-screen overflow-y-auto z-20 shadow-[var(--shadow-lg)] ${open ? "!fixed left-0" : "max-[760px]:fixed max-[760px]:-left-[250px]"}`}
       >
         {/* Logo */}
-        <Link className="inline-flex items-center gap-2.5 px-3 pb-8 mb-2 border-b-3 border-[var(--color-line)]" to={`/${group}`} onClick={() => setOpen(false)}>
+        <Link
+          className="inline-flex items-center gap-2.5 px-3 pb-8 mb-2 border-b-3 border-[var(--color-line)]"
+          to={`/${group}`}
+          onClick={() => setOpen(false)}
+        >
           <div className="w-9 h-9 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-[var(--radius-md)] flex items-center justify-center shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
             <Building2 size={20} className="text-white" />
           </div>
-          <span className="font-[family-name:var(--font-family-display)] font-extrabold text-xl text-[var(--color-text)]">DormHub</span>
+          <span className="font-[family-name:var(--font-family-display)] font-extrabold text-xl text-[var(--color-text)]">
+            DormHub
+          </span>
         </Link>
-        
+
         {/* Section Label */}
         <div className="text-[10px] tracking-[0.15em] text-[var(--color-text-muted)] font-extrabold px-3 py-4 pb-3 uppercase">
           {group === "student" ? "Không gian sinh viên" : "Trung tâm quản lý"}
         </div>
-        
+
         {/* Navigation */}
         <nav className="flex flex-col gap-1">
           {nav[group].map(([name, path]) => (
@@ -97,8 +130,8 @@ export default function Workspace({ group, title, children }) {
               {({ isActive }) => (
                 <div
                   className={`text-sm rounded-[var(--radius-md)] px-4 py-3 font-bold transition-all duration-300 ${
-                    isActive 
-                      ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]" 
+                    isActive
+                      ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]"
                       : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] border-3 border-transparent hover:border-[var(--color-line)]"
                   }`}
                 >
@@ -108,7 +141,7 @@ export default function Workspace({ group, title, children }) {
             </NavLink>
           ))}
         </nav>
-        
+
         {/* User Profile */}
         <div className="mt-auto border-t-3 border-[var(--color-line)] pt-4 px-2 pb-0.5 flex gap-3 items-center min-w-0">
           <div className="w-11 h-11 flex-none rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white grid place-items-center text-sm font-extrabold shadow-[var(--shadow-md)] border-3 border-[var(--color-line-strong)]">
@@ -118,7 +151,9 @@ export default function Workspace({ group, title, children }) {
             <strong className="block text-xs font-bold whitespace-nowrap overflow-hidden text-ellipsis text-[var(--color-text)]">
               {user?.fullName || user?.name || user?.email || "Tài khoản"}
             </strong>
-            <small className="block text-[10px] text-[var(--color-text-muted)] mt-0.5 uppercase tracking-wider font-bold">{group}</small>
+            <small className="block text-[10px] text-[var(--color-text-muted)] mt-0.5 uppercase tracking-wider font-bold">
+              {group}
+            </small>
           </div>
         </div>
       </motion.aside>
@@ -145,21 +180,31 @@ export default function Workspace({ group, title, children }) {
               <Menu size={20} />
             </button>
             <Building2 size={16} />
-            <span className="font-bold">{group === "student" ? "Sinh viên" : "Quản lý"}</span>
+            <span className="font-bold">
+              {group === "student" ? "Sinh viên" : "Quản lý"}
+            </span>
             <span>/</span>
-            <strong className="text-[var(--color-text)] font-extrabold">{title}</strong>
+            <strong className="text-[var(--color-text)] font-extrabold">
+              {title}
+            </strong>
           </div>
           <div className="flex items-center gap-3 text-[var(--color-text-muted)]">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                to={group === "student" ? "/student/notifications" : "/manager/notifications"}
+                to={
+                  group === "student"
+                    ? "/student/notifications"
+                    : "/manager/notifications"
+                }
                 className="border-0 bg-transparent text-[var(--color-text-muted)] w-9 h-9 rounded-[var(--radius-md)] inline-grid place-items-center hover:bg-[var(--color-surface)] hover:shadow-[var(--shadow-sm)] transition-all"
                 aria-label="Thông báo"
               >
                 <Bell size={18} />
               </Link>
             </motion.div>
-            <span className="font-bold text-[var(--color-text)] max-[760px]:hidden text-sm">{user?.fullName || user?.email}</span>
+            <span className="font-bold text-[var(--color-text)] max-[760px]:hidden text-sm">
+              {user?.fullName || user?.email}
+            </span>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -186,7 +231,9 @@ export default function Workspace({ group, title, children }) {
             backend hoặc thực hiện thanh toán thật
           </div>
         )}
-        <main className="max-w-[1500px] mx-auto px-[clamp(20px,3vw,48px)] py-12 pb-16">{children}</main>
+        <main className="max-w-[1500px] mx-auto px-[clamp(20px,3vw,48px)] py-12 pb-16">
+          {children}
+        </main>
       </div>
     </div>
   );

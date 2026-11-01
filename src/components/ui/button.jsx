@@ -5,18 +5,18 @@ import { Loader } from 'lucide-react';
 const buttonVariants = {
   // Neo-Brutalism REAL - 3px borders, neon colors, strong shadows
   primary: {
-    base: 'bg-[#00d2ff] text-white border-3 border-[#000000] shadow-[4px_4px_0_rgba(0,0,0,0.25)]',
-    hover: 'hover:bg-[#00b8e6] hover:shadow-[6px_6px_0_rgba(0,0,0,0.3)] hover:-translate-y-1 hover:translate-x-[-2px]',
+    base: 'bg-[#00d2ff] text-(--color-text) font-bold! border-3 border-[#000000] shadow-(--shadow-sm)',
+    hover: ' hover:shadow-(--shadow-md) hover:-translate-0.5',
     focus: 'focus-visible:ring-[#00d2ff]',
   },
   accent: {
-    base: 'bg-[#ff6b6b] text-white border-3 border-[#000000] shadow-[4px_4px_0_rgba(0,0,0,0.25)]',
-    hover: 'hover:bg-[#ff5252] hover:shadow-[6px_6px_0_rgba(0,0,0,0.3)] hover:-translate-y-1 hover:translate-x-[-2px]',
+    base: 'bg-[#ff6b6b] text-(--color-text) font-bold! border-3 border-[#000000] shadow-(--shadow-sm)',
+    hover: 'hover:bg-[#ff5252] hover:shadow-(--shadow-md) hover:-translate-0.5',
     focus: 'focus-visible:ring-[#ff6b6b]',
   },
   secondary: {
-    base: 'bg-white text-[#1a1a1a] border-3 border-[#333333] shadow-[4px_4px_0_rgba(0,0,0,0.15)]',
-    hover: 'hover:shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:border-[#00d2ff] hover:-translate-y-1 hover:translate-x-[-2px]',
+    base: 'bg-white text-[#1a1a1a] border-3 border-[#333333] shadow-(--shadow-sm)',
+    hover: 'hover:shadow-(--shadow-md) hover:border-[#00d2ff] hover:-translate-0.5',
     focus: 'focus-visible:ring-[#00d2ff]',
   },
   ghost: {
@@ -25,8 +25,8 @@ const buttonVariants = {
     focus: 'focus-visible:ring-[#00d2ff]',
   },
   outline: {
-    base: 'bg-white text-[#00d2ff] border-3 border-[#00d2ff] shadow-[4px_4px_0_rgba(0,210,255,0.2)]',
-    hover: 'hover:bg-[#00d2ff] hover:text-white hover:shadow-[6px_6px_0_rgba(0,210,255,0.3)] hover:-translate-y-1 hover:translate-x-[-2px]',
+    base: 'bg-white text-(--color-text) font-bold! border-3 border-[#1a1a1a] shadow-(--shadow-sm)',
+    hover: ' hover:shadow-(--shadow-md) hover:-translate-y-1 hover:translate-x-[-2px]',
     focus: 'focus-visible:ring-[#00d2ff]',
   },
   destructive: {
@@ -55,19 +55,20 @@ export function Button({
   
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
       transition={{ duration: 0.15, ease: 'easeOut' }}
       disabled={disabled || loading}
       className={cn(
         // Base
-        'inline-flex items-center justify-center font-[family-name:var(--font-family-display)] font-bold',
-        'rounded-[var(--radius-md)] transition-all duration-300',
+        'inline-flex items-center justify-center font-(family-name:--font-family-display) font-bold',
+        'rounded-md transition-all duration-300',
         'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-50',
+        'active:translate-0.5 active:shadow-none',
         // Variant
         variantStyle.base,
         variantStyle.hover,
         variantStyle.focus,
+      
         // Size
         sizeVariants[size],
         className

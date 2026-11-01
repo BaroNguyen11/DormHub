@@ -55,23 +55,23 @@ export default function HomeScreen() {
   return (
     <>
       {/* Hero Section - Neo-Brutalism */}
-      <section className="min-h-[calc(100vh-74px)] bg-gradient-to-br from-[#f5f7fa] to-[#e4e8ec] relative overflow-hidden">
+      <section className="min-h-[calc(100vh-74px)] bg-linear-to-br from-bg to-[#e4e8ec] relative overflow-hidden">
         {/* Background geometric patterns - Neo-Brutalism BOLD */}
         <div className="absolute inset-0 opacity-15 pointer-events-none">
           <div className="absolute top-20 left-20 w-64 h-64 border-4 border-[#00d2ff] rotate-12" />
-          <div className="absolute bottom-20 right-20 w-48 h-48 border-4 border-[#00ff88]" />
-          <div className="absolute top-1/2 right-1/4 w-32 h-32 border-4 border-[#ff6b6b] -rotate-12" />
+          <div className="absolute bottom-20 right-20 w-48 h-48 border-4 border-success" />
+          <div className="absolute top-1/2 right-1/4 w-32 h-32 border-4 border-accent -rotate-12" />
         </div>
         
         <div className="relative max-w-7xl mx-auto px-8 lg:px-16 py-24 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center" >
             {/* Left - Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-block px-4 py-2 mb-6 bg-[#00d2ff] text-white text-xs font-extrabold uppercase tracking-widest rounded-[var(--radius-md)] shadow-[4px_4px_0_rgba(0,0,0,0.25)] border-3 border-[#000000]">
+              <div className="inline-block px-4 py-2 mb-6 bg-[#00d2ff] text-(--color-text) text-xs font-extrabold uppercase tracking-widest rounded-md shadow-[4px_4px_0_rgba(0,0,0,0.25)] border-3 border-line-strong">
                 Student Residence
               </div>
               
@@ -82,7 +82,7 @@ export default function HomeScreen() {
                 trọn vẹn.
               </h1>
               
-              <p className="text-lg text-[#4b5563] mb-10 leading-relaxed max-w-lg font-medium">
+              <p className="text-lg text-[#4b5563] mb-10 leading-relaxed  font-medium">
                 Tìm phòng phù hợp, đăng ký nội trú và theo dõi cuộc sống ký túc xá
                 thuận tiện cùng DormHub.
               </p>
@@ -107,7 +107,7 @@ export default function HomeScreen() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="relative h-[500px] hidden lg:block"
+              className="relative h-125 hidden lg:block"
             >
               <div className="grid grid-cols-3 gap-4 h-full">
                 {/* Large block - top left */}
@@ -115,7 +115,7 @@ export default function HomeScreen() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5, duration: 0.4 }}
-                  className="col-span-2 row-span-2 bg-gradient-to-br from-[#00d2ff] to-[#00b8e6] border-4 border-[#000000] rounded-[var(--radius-lg)] flex items-center justify-center shadow-[8px_8px_0_rgba(0,0,0,0.25)] hover:shadow-[12px_12px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
+                  className="col-span-2 row-span-2 bg-linear-to-br from-[#00d2ff] to-primary-hover border-4 border-line-strong rounded-lg flex items-center justify-center shadow-[8px_8px_0_rgba(0,0,0,0.25)] hover:shadow-[12px_12px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
                 >
                   <Home size={80} className="text-white opacity-90" />
                 </motion.div>
@@ -125,7 +125,7 @@ export default function HomeScreen() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6, duration: 0.4 }}
-                  className="bg-gradient-to-br from-[#00ff88] to-[#00e677] border-4 border-[#000000] rounded-[var(--radius-lg)] shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
+                  className="bg-linear-to-br from-success to-[#00e677] border-4 border-line-strong rounded-lg shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
                 />
                 
                 {/* Small block - middle right */}
@@ -133,7 +133,7 @@ export default function HomeScreen() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7, duration: 0.4 }}
-                  className="bg-gradient-to-br from-[#ffcc00] to-[#e6b800] border-4 border-[#000000] rounded-[var(--radius-lg)] shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
+                  className="bg-linear-to-br from-warning to-[#e6b800] border-4 border-line-strong rounded-lg shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
                 />
                 
                 {/* Medium block - bottom left */}
@@ -141,7 +141,7 @@ export default function HomeScreen() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8, duration: 0.4 }}
-                  className="bg-gradient-to-br from-[#ff6b6b] to-[#ff5252] border-4 border-[#000000] rounded-[var(--radius-lg)] shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
+                  className="bg-linear-to-br from-accent to-accent-hover border-4 border-line-strong rounded-lg shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
                 />
                 
                 {/* Large block - bottom right */}
@@ -149,7 +149,7 @@ export default function HomeScreen() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9, duration: 0.4 }}
-                  className="col-span-2 bg-gradient-to-br from-[#ff3366] to-[#e62b59] border-4 border-[#000000] rounded-[var(--radius-lg)] shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
+                  className="col-span-2 bg-linear-to-br from-error to-[#e62b59] border-4 border-line-strong rounded-lg shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-300"
                 />
               </div>
             </motion.div>
@@ -162,7 +162,7 @@ export default function HomeScreen() {
         <div className="max-w-7xl mx-auto px-8 lg:px-16">
           {/* Section header */}
           <div className="text-center mb-16">
-            <div className="inline-block px-4 py-2 mb-4 bg-[#ffe8e8] text-[#ff6b6b] text-xs font-extrabold uppercase tracking-widest rounded-[var(--radius-md)] border-3 border-[#ff6b6b] shadow-[3px_3px_0_rgba(0,0,0,0.2)]">
+            <div className="inline-block px-4 py-2 mb-4 bg-[#ffe8e8] text-accent text-xs font-extrabold uppercase tracking-widest rounded-md border-3 border-accent shadow-[3px_3px_0_rgba(0,0,0,0.2)]">
               Tính năng
             </div>
             <h2 className="font-extrabold text-4xl lg:text-5xl text-[#1a1a1a] mb-4">
@@ -190,12 +190,12 @@ export default function HomeScreen() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.1 }}
-                  className="bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-8 shadow-[6px_6px_0_rgba(0,0,0,0.15)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.25)] hover:-translate-y-2 transition-all duration-300"
+                  className="bg-white border-3 border-[#333333] rounded-lg p-8 shadow-[6px_6px_0_rgba(0,0,0,0.15)] hover:shadow-[8px_8px_0_rgba(0,0,0,0.25)] hover:-translate-y-2 transition-all duration-300"
                   style={{ '--hover-border': colors.border }}
                   onMouseEnter={(e) => e.currentTarget.style.borderColor = colors.bg}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = '#333333'}
                 >
-                  <div className="w-16 h-16 rounded-[var(--radius-md)] flex items-center justify-center mb-6 shadow-[4px_4px_0_rgba(0,0,0,0.2)] border-3" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
+                  <div className="w-16 h-16 rounded-md flex items-center justify-center mb-6 shadow-[4px_4px_0_rgba(0,0,0,0.2)] border-3" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
                     <Icon size={32} className="text-white" />
                   </div>
                   <h3 className="font-extrabold text-xl text-[#1a1a1a] mb-3">
