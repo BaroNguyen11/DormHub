@@ -1,63 +1,45 @@
 // ====================================
-// CHAT SCREEN - Màn hình trò chuyện
+// CHAT SCREEN - Màn hình trò chuyện (Neo-Brutalism)
 // ====================================
-// Chat giữa sinh viên và quản lý
-// Mục đích: Giao tiếp real-time trong hệ thống
-
-import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Send, MessageSquare, User, RefreshCw, Bot } from "lucide-react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
+import useAuth from "../../hooks/useAuth";
 
-/**
- * Component ChatScreen - Màn hình chat
- * @param {object} props
- * @param {object} props.config - Cấu hình màn hình
- * 
- * Config structure:
- * {
- *   resource: "/conversations",  // API endpoint danh sách conversations
- * }
- * 
- * Layout: 2 cột
- * - Trái: Danh sách conversations
- * - Phải: Chat window (messages + composer)
- */
 export default function ChatScreen({ config }) {
-  // Load danh sách conversations
+  const { user } = useAuth();
+
+  // Load danh sách cuộc trò chuyện
   const { data, error, loading } = useLoad(config.resource, {});
-  
-  // State cho conversation đang được chọn
+
   const [selected, setSelected] = useState(null);
-  
-  // State cho danh sách messages của conversation đang chọn
   const [messages, setMessages] = useState([]);
-  
-  // State cho nội dung tin nhắn đang gõ
   const [text, setText] = useState("");
-  
-  // State cho loading của send button
   const [busy, setBusy] = useState(false);
-  
-  // State cho error khi send message
   const [sendError, setSendError] = useState("");
-  
-  // Convert data sang array
+
   const conversations = asList(data);
-  
-  /**
-   * useEffect: Load messages khi chọn conversation
-   * Chạy mỗi khi selected thay đổi
-   */
+  const messagesEndRef = useRef(null);
+
+  // Tự động cuộn xuống cuối khung chat khi có tin nhắn mới
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Fetch tin nhắn khi chọn conversation
   useEffect(() => {
     if (!selected) return;
-    
+
     let isActive = true;
-    
-    // Fetch messages của conversation
+
     resources
       .list(`/conversations/${selected}/messages`)
       .then((result) => {
@@ -66,133 +48,237 @@ export default function ChatScreen({ config }) {
       .catch((e) => {
         if (isActive) setSendError(errorMessage(e));
       });
-    
-    // Cleanup function
+
     return () => {
       isActive = false;
     };
   }, [selected]);
-  
-  /**
-   * Handler khi gửi tin nhắn
-   * @param {Event} e - Submit event
-   */
+
+  // Gửi tin nhắn
   async function send(e) {
     e.preventDefault();
-    
-    // Kiểm tra: phải chọn conversation và nhập text
     if (!selected || !text.trim()) return;
-    
-    // Bắt đầu loading
+
     setBusy(true);
     setSendError("");
-    
+
     try {
-      // Gọi API tạo message mới
       await resources.create(`/conversations/${selected}/messages`, {
         content: text.trim(),
       });
-      
-      // Load lại messages
+
       const result = await resources.list(
         `/conversations/${selected}/messages`,
       );
       setMessages(asList(result));
-      
-      // Clear input
       setText("");
     } catch (e) {
-      // Lỗi -> hiển thị error message
       setSendError(errorMessage(e));
     } finally {
-      // Kết thúc loading
       setBusy(false);
     }
   }
-  
+
+  // Tìm thông tin conversation đang được chọn
+  const activeConversation = conversations.find((c) => c.id === selected);
+
   return (
-    <>
-      {/* Heading với breadcrumb */}
+    <div className="space-y-6">
+      {/* Heading trang */}
       <Heading config={config} />
-      
-      {/* Thông báo lỗi */}
+
+      {/* Notice hiển thị lỗi nếu có */}
       <Notice error={sendError || error} />
-      
-      {/* Chat Layout: 2 cột */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 h-[calc(100vh-200px)]">
-        {/* Cột trái: Danh sách conversations */}
-        <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] overflow-y-auto flex flex-col">
-          {loading ? (
-            <Loading />
-          ) : conversations.length ? (
-            conversations.map((item) => (
-              <button
-                key={item.id}
-                className={`text-left p-4 border-b border-[var(--color-line)] hover:bg-[var(--color-surface)] transition-colors ${selected === item.id ? "bg-[var(--color-surface)] border-l-4 border-l-[var(--color-primary)]" : ""}`}
-                onClick={() => {
-                  setSelected(item.id);
-                  setSendError("");
-                }}
-              >
-                {/* Hiển thị title hoặc tên người chat */}
-                <div className="text-sm font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text)] truncate">
-                  {item.title ||
-                    item.participantName ||
-                    `Cuộc trò chuyện #${item.id}`}
-                </div>
-              </button>
-            ))
-          ) : (
-            <Empty text="Chưa có cuộc trò chuyện." />
-          )}
+
+      {/* Khung Chat Layout 2 Cột Neo-Brutalism */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] min-h-137.5">
+        {/* CỘT TRÁI: Danh sách Cuộc trò chuyện (4 cột) */}
+        <div className="lg:col-span-4 bg-white border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
+          {/* Header danh sách */}
+          <div className="p-4 bg-surface-2 border-b-4 border-line-strong flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-warning border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
+              <MessageSquare
+                size={18}
+                className="text-black"
+                strokeWidth={2.5}
+              />
+            </div>
+            <h2 className="text-sm font-black text-text uppercase tracking-wider">
+              Hộp thư hỗ trợ
+            </h2>
+          </div>
+
+          {/* Body danh sách cuộc trò chuyện */}
+          <div className="flex-1 overflow-y-auto divide-y-2 divide-line-strong/10">
+            {loading ? (
+              <Loading />
+            ) : conversations.length ? (
+              conversations.map((item) => {
+                const isSelected = selected === item.id;
+                const title =
+                  item.title ||
+                  item.participantName ||
+                  `Cuộc trò chuyện #${item.id}`;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setSelected(item.id);
+                      setSendError("");
+                    }}
+                    className={`w-full text-left p-4 transition-all flex items-center gap-3 cursor-pointer ${
+                      isSelected
+                        ? "bg-primary text-black font-black border-l-8 border-l-black shadow-[inset_0_0_0_2px_#141413]"
+                        : "bg-white hover:bg-surface-2 text-text font-bold"
+                    }`}
+                  >
+                    <div
+                      className={`size-10 rounded-xl border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] ${isSelected ? "bg-white" : "bg-warning"}`}
+                    >
+                      <User
+                        size={18}
+                        className="text-black"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-black truncate">{title}</div>
+                      <p className="text-xs text-text-muted truncate mt-0.5 font-semibold">
+                        {item.lastMessage || "Nhấn để xem tin nhắn..."}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <Empty text="Chưa có cuộc trò chuyện nào." />
+            )}
+          </div>
         </div>
-        
-        {/* Cột phải: Chat window */}
-        <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] flex flex-col overflow-hidden">
+
+        {/* CỘT PHẢI: Khung Cửa sổ Chat (8 cột) */}
+        <div className="lg:col-span-8 bg-white border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
           {selected ? (
             <>
-              {/* Danh sách messages */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((message, index) => (
-                  <div className="flex flex-col gap-1" key={message.id || index}>
-                    {/* Tên người gửi */}
-                    <small className="text-xs font-[family-name:var(--font-family-display)] font-semibold text-[var(--color-text-muted)]">
-                      {message.senderName ||
-                        message.sender?.fullName ||
-                        "Thành viên"}
-                    </small>
-                    
-                    {/* Nội dung tin nhắn */}
-                    <p className="bg-[var(--color-surface)] px-4 py-2 rounded-[var(--radius-md)] text-sm text-[var(--color-text)] max-w-[80%]">{message.content || message.text}</p>
+              {/* Header Cửa sổ Chat đang chọn */}
+              <div className="p-4 bg-surface-2 border-b-4 border-line-strong flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+                    <User size={18} className="text-black" strokeWidth={2.5} />
                   </div>
-                ))}
+                  <div>
+                    <h3 className="text-sm font-black text-text">
+                      {activeConversation?.title ||
+                        activeConversation?.participantName ||
+                        `Cuộc trò chuyện #${selected}`}
+                    </h3>
+                    <span className="text-[11px] font-extrabold text-text-muted uppercase tracking-wider">
+                      Trực tuyến
+                    </span>
+                  </div>
+                </div>
               </div>
-              
-              {/* Composer - Input gửi tin nhắn */}
-              <form className="border-t-2 border-[var(--color-line)] p-4 flex gap-3" onSubmit={send}>
+
+              {/* Danh sách Bong bóng tin nhắn */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-surface/40">
+                {messages.length === 0 ? (
+                  <div className="text-center py-12 text-text-muted font-bold text-sm">
+                    Hãy gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện.
+                  </div>
+                ) : (
+                  messages.map((message, index) => {
+                    const senderName =
+                      message.senderName ||
+                      message.sender?.fullName ||
+                      "Thành viên";
+
+                    // Kiểm tra xem tin nhắn là của mình hay của đối phương
+                    const isSelf =
+                      message.senderId === user?.id ||
+                      message.sender?.id === user?.id ||
+                      message.isSelf;
+
+                    return (
+                      <div
+                        key={message.id || index}
+                        className={`flex flex-col gap-1 max-w-[85%] sm:max-w-[70%] ${
+                          isSelf ? "ml-auto items-end" : "mr-auto items-start"
+                        }`}
+                      >
+                        {/* Tên người gửi */}
+                        <span className="text-[11px] font-extrabold text-text-muted px-1">
+                          {isSelf ? "Bạn" : senderName}
+                        </span>
+
+                        {/* Bong bóng nội dung tin nhắn */}
+                        <div
+                          className={`px-4 py-3 rounded-2xl border-3 border-line-strong text-sm! font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
+                            isSelf
+                              ? "bg-primary text-black rounded-tr-xs"
+                              : "bg-white text-text rounded-tl-xs"
+                          }`}
+                        >
+                          {message.content || message.text}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                {/* Anchor cuộn xuống cuối */}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Form Khung nhập Tin nhắn (Composer) */}
+              <form
+                onSubmit={send}
+                className="p-4 bg-white border-t-4 border-line-strong flex gap-3 items-center"
+              >
                 <input
                   aria-label="Tin nhắn"
-                  placeholder="Nhập tin nhắn…"
+                  placeholder="Nhập nội dung tin nhắn..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="flex-1 border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                  className="flex-1 border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60"
                 />
-                
-                {/* Nút gửi */}
+
                 <button
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] font-[family-name:var(--font-family-display)] font-bold text-sm hover:bg-[var(--color-primary-hover)] hover:shadow-[var(--shadow-md)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
                   disabled={busy || !text.trim()}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-black font-extrabold text-sm rounded-xl border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none cursor-pointer shrink-0"
                 >
-                  <Send size={16} />
+                  {busy ? (
+                    <RefreshCw
+                      size={18}
+                      strokeWidth={2.5}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Send size={18} strokeWidth={2.5} />
+                  )}
+                  <span className="hidden sm:inline">Gửi</span>
                 </button>
               </form>
             </>
           ) : (
-            // Chưa chọn conversation
-            <Empty text="Chọn một cuộc trò chuyện để bắt đầu." />
+            // Trạng thái chưa chọn cuộc trò chuyện
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-surface/30">
+              <div className="size-16 rounded-2xl bg-warning border-4 border-line-strong flex items-center justify-center shadow-[4px_4px_0_#141413] mb-4">
+                <Bot size={32} className="text-black" strokeWidth={2.5} />
+              </div>
+              <h3 className="text-lg font-black text-text mb-1">
+                Chưa chọn cuộc trò chuyện
+              </h3>
+              <p className="text-xs font-semibold text-text-muted ">
+                Chọn một cuộc trò chuyện từ danh sách bên trái để bắt đầu trao
+                đổi thông tin.
+              </p>
+            </div>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

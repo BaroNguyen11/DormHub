@@ -1,60 +1,83 @@
-// src/components/ChatbotToggle.jsx
-import { MessageCircle } from 'lucide-react';
-import { motion } from 'motion/react';
+
+import { MessageCircle } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function ChatbotToggle({ onClick }) {
   return (
-    <div className="fixed bottom-6 right-6 z-9998">
-      {/* Ripple effect layers */}
+    <div className="fixed bottom-6 right-6 z-9998 isolate">
+      {/* Subtle ripple effects */}
       <motion.div
-        className="absolute inset-0 bg-(--color-primary) rounded-lg opacity-0"
+        aria-hidden="true"
+        className="absolute inset-0 rounded-xl bg-primary/30 pointer-events-none"
         animate={{
-          scale: [1, 1.4, 1.8],
-          opacity: [0.6, 0.3, 0],
+          scale: [1, 1.35, 1.7],
+          opacity: [0.35, 0.15, 0],
         }}
         transition={{
-          duration: 2,
+          duration: 2.4,
           repeat: Infinity,
-          ease: 'easeOut',
-        }}
-      />
-      
-      <motion.div
-        className="absolute inset-0 bg-(--color-primary) rounded-lg opacity-0"
-        animate={{
-          scale: [1, 1.4, 1.8],
-          opacity: [0.6, 0.3, 0],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: 'easeOut',
-          delay: 0.7,
+          ease: "easeOut",
         }}
       />
 
-      {/* Toggle button */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-0 rounded-xl bg-primary/30 pointer-events-none"
+        animate={{
+          scale: [1, 1.35, 1.7],
+          opacity: [0.35, 0.15, 0],
+        }}
+        transition={{
+          duration: 2.4,
+          repeat: Infinity,
+          ease: "easeOut",
+          delay: 1.2,
+        }}
+      />
+
+      {/* Chatbot button */}
       <motion.button
+        type="button"
         onClick={onClick}
-        whileHover={{ y: -4, scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="relative w-14 h-14 rounded-lg border border-(--color-line)
-                 bg-(--color-primary) text-white
-                 flex items-center justify-center
-                 shadow-(--shadow-md)
-                 transition-all duration-150
-                 hover:bg-primary-hover hover:shadow-(--shadow-lift)
-                 active:translate-y-0"
+        whileHover={{ y: -3, scale: 1.04 }}
+        whileTap={{ y: 1, scale: 0.96 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="
+          relative z-10
+          flex h-14 w-14 items-center justify-center
+          rounded-xl
+          border-3 border-line-strong
+          bg-primary text-black
+          shadow-[4px_4px_0_#141413]
+          hover:shadow-[6px_6px_0_#141413]
+          active:shadow-none
+          transition-shadow duration-200
+          cursor-pointer
+          focus-visible:outline-2
+          focus-visible:outline-offset-4
+          focus-visible:outline-primary
+        "
         title="Mở AI Assistant"
+        aria-label="Mở AI Assistant"
       >
-        <MessageCircle size={24} />
-        
-        {/* AI badge */}
-        <span className="absolute -top-1.5 -right-1.5 
-                       bg-accent text-white
-                       text-[10px] font-semibold font-(family-name:--font-family-display) tracking-wide
-                       px-1.5 py-0.5 rounded leading-none
-                       border-2 border-white shadow-sm">
+        <MessageCircle
+          size={25}
+          strokeWidth={2.5}
+        />
+
+        {/* AI Badge */}
+        <span
+          className="
+            absolute -top-2 -right-2
+            flex items-center justify-center
+            min-w-7 h-6 px-1.5
+            rounded-md
+            border-2 border-line-strong
+            bg-accent text-black
+            text-[10px] font-black tracking-wide
+            shadow-[2px_2px_0_#141413]
+          "
+        >
           AI
         </span>
       </motion.button>

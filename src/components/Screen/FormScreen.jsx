@@ -1,88 +1,70 @@
-// ====================================
-// FORM SCREEN - Màn hình tạo mới/chỉnh sửa
-// ====================================
-// Dùng cho: tạo phòng mới, tạo hóa đơn, chỉnh sửa thông tin...
-// Mục đích: Form nhập liệu với validation
-
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Save, X, FileEdit, PlusCircle } from "lucide-react";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_LABELS, FIELD_CONFIGS } from "./constants";
 import { Notice, Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { Input, Button } from "../ui";
+import { CustomSelect } from "../ui/CustomSelect";
 
 /**
- * Component FormFields - Render các input fields
- * @param {object} props
- * @param {string[]} props.names - Danh sách tên fields cần hiển thị
- * @param {object} props.values - Object chứa giá trị của các fields
- * @param {function} props.onChange - Callback khi user thay đổi giá trị
- * 
- * Ví dụ:
- * <FormFields
- *   names={["fullName", "email", "phone"]}
- *   values={{ fullName: "Nguyễn Văn A", email: "a@email.com" }}
- *   onChange={(key, value) => console.log(key, value)}
- * />
+ * Component FormFields - Render các input fields theo phong cách Neo-Brutalism
  */
 function FormFields({ names, values, onChange }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {names.map((key) => {
-        // Lấy cấu hình của field từ FIELD_CONFIGS
         const meta = FIELD_CONFIGS[key] || {};
-        
+        const isRequired = !["description", "note"].includes(key);
+
         return (
           <label
-            className={`flex flex-col gap-1.5 ${meta.tag === "textarea" ? "md:col-span-2" : ""}`}
+            className={`flex flex-col gap-2 ${
+              meta.tag === "textarea" ? "md:col-span-2" : ""
+            }`}
             key={key}
           >
             {/* Label của field */}
-            <span className="text-sm font-[family-name:var(--font-family-display)] font-medium text-[var(--color-text)]">
-              {FIELD_LABELS[key] || key}
+            <span className="text-sm font-extrabold text-text flex items-center justify-between">
+              <span>{FIELD_LABELS[key] || key}</span>
+              {!isRequired && (
+                <span className="text-xs font-semibold text-text-muted">
+                  (Không bắt buộc)
+                </span>
+              )}
             </span>
-            
-            {/* Render input tùy theo loại field */}
-            
-            {/* 1. Textarea - cho nội dung dài */}
+
+            {/* 1. Textarea - Cho nội dung dài */}
             {meta.tag === "textarea" ? (
               <textarea
-                required={!["description", "note"].includes(key)}
+                required={isRequired}
                 value={values[key] ?? ""}
                 onChange={(e) => onChange(key, e.target.value)}
                 rows={4}
-                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase()}`}
-                className="border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none transition-all"
+                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm! font-semibold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all"
               />
-              
-            /* 2. Select - cho dropdown với options */
             ) : meta.options ? (
-              <select
+              <CustomSelect
                 value={values[key] ?? ""}
-                required
-                onChange={(e) => onChange(key, e.target.value)}
-                className="border-2 border-[var(--color-line)] rounded-[var(--radius-md)] px-4 py-2.5 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-              >
-                <option value="">Chọn {FIELD_LABELS[key]?.toLowerCase()}</option>
-                {meta.options.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              
-            /* 3. Input - cho text, number, date, email... */
+                required={isRequired}
+                options={meta.options}
+                placeholder={`-- Chọn ${FIELD_LABELS[key]?.toLowerCase() || key} --`}
+                onChange={(val) => onChange(key, val)}
+              />
             ) : (
-              <Input
-                required={!["description", "note"].includes(key)}
+              /* 3. Input chuẩn */
+              <input
+                required={isRequired}
                 type={meta.type || "text"}
                 min={meta.min}
                 max={meta.max}
                 value={values[key] ?? ""}
                 onChange={(e) => onChange(key, e.target.value)}
-                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase()}`}
+                placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60"
               />
             )}
           </label>
@@ -94,78 +76,41 @@ function FormFields({ names, values, onChange }) {
 
 /**
  * Component FormScreen - Màn hình form tạo mới hoặc chỉnh sửa
- * @param {object} props
- * @param {object} props.config - Cấu hình màn hình
- * 
- * Config structure:
- * {
- *   resource: "/rooms",  // API endpoint
- *   fields: ["roomNumber", "buildingId", "capacity", "monthlyPrice"],  // Fields hiển thị
- *   edit: true,  // true nếu là form chỉnh sửa
- * }
  */
 export default function FormScreen({ config }) {
-  // Lấy ID từ URL (nếu là edit mode)
   const { id } = useParams();
-  
-  // Hook navigate để chuyển trang
   const navigate = useNavigate();
-  
-  // Hook location để lấy pathname hiện tại
   const location = useLocation();
-  
-  // State lưu giá trị các fields (chỉ lưu những gì user thay đổi)
+
   const [values, setValues] = useState({});
-  
-  // State cho loading của submit button
   const [busy, setBusy] = useState(false);
-  
-  // State cho error message
   const [error, setError] = useState("");
-  
-  // Load data nếu là edit mode
+
+  // Load data nếu ở chế độ Edit
   const { data, loading } = useLoad(
     config.edit ? `${config.resource}/${id}` : config.resource,
     {},
   );
-  
-  // Merge data từ API với values từ state
-  // - Nếu edit: data từ API + override bằng values user thay đổi
-  // - Nếu create: chỉ có values
+
   const currentValues = config.edit ? { ...(data || {}), ...values } : values;
-  
-  /**
-   * Handler khi user thay đổi giá trị
-   * @param {string} key - Tên field
-   * @param {any} value - Giá trị mới
-   */
+
   const change = (key, value) =>
     setValues((prev) => ({ ...prev, [key]: value }));
-  
-  /**
-   * Handler khi submit form
-   * @param {Event} e - Submit event
-   */
+
   async function submit(e) {
-    // Prevent default form submission (tránh reload trang)
     e.preventDefault();
-    
-    // Bắt đầu loading
     setBusy(true);
     setError("");
-    
+
     try {
-      // Tạo body object chỉ chứa các fields được config
       const body = Object.fromEntries(
         config.fields.map((key) => [key, currentValues[key]]),
       );
-      
-      // Gọi API create hoặc update
+
       const result = config.edit
         ? await resources.update(config.resource, id, body)
         : await resources.create(config.resource, body);
-      
-      // Thành công -> navigate về trang trước với thông báo success
+
       navigate(
         config.edit
           ? location.pathname.replace(/\/edit$/, "")
@@ -176,67 +121,89 @@ export default function FormScreen({ config }) {
               : location.pathname.replace(/\/new$/, ""),
         {
           state: {
-            success: `Đã lưu ${result?.id ? `mã ${result.id}` : "thành công"}.`,
+            success: `Đã lưu ${result?.id ? `mã #${result.id}` : "thành công"}.`,
           },
         },
       );
     } catch (e) {
-      // Lỗi -> hiển thị error message
       setError(errorMessage(e));
     } finally {
-      // Kết thúc loading
       setBusy(false);
     }
   }
-  
+
   return (
-    <>
-      {/* Heading với breadcrumb */}
+    <div className="space-y-6">
+      {/* Heading với breadcrumbs */}
       <Heading config={config} />
-      
+
       {/* Thông báo lỗi */}
       <Notice error={error} />
-      
-      {/* Panel chứa form */}
-      <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] p-6">
-        {/* Nếu edit mode và đang loading -> hiển thị Loading */}
+
+      {/* Panel Form Neo-Brutalism */}
+      <div className="bg-white border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413]">
+        {/* Sub-header báo trạng thái Form */}
+        <div className="flex items-center gap-2 mb-6 pb-4 border-b-3 border-line-strong">
+          {config.edit ? (
+            <div className="size-9 rounded-xl bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+              <FileEdit size={18} className="text-black" strokeWidth={2.5} />
+            </div>
+          ) : (
+            <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+              <PlusCircle size={18} className="text-black" strokeWidth={2.5} />
+            </div>
+          )}
+          <h2 className="text-lg font-extrabold text-text">
+            {config.edit
+              ? `Cập nhật thông tin #${id}`
+              : "Điền thông tin bên dưới"}
+          </h2>
+        </div>
+
         {config.edit && loading ? (
           <Loading />
         ) : (
-          <form onSubmit={submit}>
+          <form onSubmit={submit} className="space-y-8">
             {/* Render các input fields */}
             <FormFields
               names={config.fields}
               values={currentValues}
               onChange={change}
             />
-            
-            {/* Form actions: nút Hủy và Lưu */}
-            <div className="flex gap-3 mt-6">
-              {/* Nút Hủy - quay lại trang trước */}
-              <Button
-                variant="secondary"
+
+            {/* Form actions: Nút Hủy & Nút Lưu */}
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-6 border-t-3 border-line-strong">
+              {/* Nút Hủy bỏ */}
+              <button
                 type="button"
                 onClick={() => navigate(-1)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2 bg-white text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:bg-surface-2 hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
               >
-                Hủy
-              </Button>
-              
-              {/* Nút Lưu - submit form */}
-              <Button
-                variant="primary"
-                size="lg"
+                <X size={18} strokeWidth={2.5} />
+                <span>Hủy bỏ</span>
+              </button>
+
+              {/* Nút Lưu thông tin */}
+              <button
                 type="submit"
-                loading={busy}
                 disabled={busy}
-                className="flex-1"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
               >
-                {busy ? "Đang lưu…" : "Lưu thông tin"}
-              </Button>
+                {busy ? (
+                  <RefreshCw
+                    size={18}
+                    strokeWidth={2.5}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Save size={18} strokeWidth={2.5} />
+                )}
+                <span>{busy ? "Đang lưu..." : "Lưu thông tin"}</span>
+              </button>
             </div>
           </form>
         )}
       </div>
-    </>
+    </div>
   );
 }

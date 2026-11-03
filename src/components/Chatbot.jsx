@@ -1,38 +1,61 @@
 // src/components/Chatbot.jsx
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Send, X, Bot, User, Loader } from 'lucide-react';
-import { aiService } from '../services/ai.service';
-import useAuth from '../hooks/useAuth';
-import { marked } from 'marked';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Send, X, Bot, User, RefreshCw, Trash2 } from "lucide-react";
+import { aiService } from "../services/ai.service";
+import useAuth from "../hooks/useAuth";
+import { marked } from "marked";
 
 export default function Chatbot({ isOpen, onClose }) {
   const { user, role } = useAuth();
   const [messages, setMessages] = useState([
     {
-      role: 'assistant',
-      content: `Xin chào ${user?.fullName || 'bạn'}.
+      role: "assistant",
+      content: `Xin chào **${user?.fullName || "bạn"}**! 👋
 
-Tôi là trợ lý AI của DormHub. Tôi có thể giúp:
-— Giải đáp thắc mắc về hệ thống
-— Hướng dẫn sử dụng chức năng
-— Tư vấn về hóa đơn, hợp đồng, phòng
+Tôi là trợ lý AI của **DormHub**. Tôi có thể hỗ trợ bạn:
+- 💡 Giải đáp thắc mắc về quy định nội trú
+- 📝 Hướng dẫn đăng ký phòng, gửi yêu cầu sửa chữa
+- 🧾 Tra cứu thông tin hợp đồng & hóa đơn
 
-Bạn cần hỗ trợ gì?`
-    }
+Bạn cần hỗ trợ gì hôm nay?`,
+    },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Auto scroll
+  const handleInputChange = (e) => {
+    const el = e.currentTarget;
+
+    setInput(el.value);
+
+    const minHeight = 44;
+    const maxHeight = 120;
+
+    el.style.height = "auto";
+
+    const styles = window.getComputedStyle(el);
+    const borderHeight =
+      parseFloat(styles.borderTopWidth) + parseFloat(styles.borderBottomWidth);
+
+    const contentHeight = el.scrollHeight + borderHeight;
+    const nextHeight = Math.min(Math.max(contentHeight, minHeight), maxHeight);
+
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+
+    setIsExpanded(nextHeight > minHeight);
+  };
+  // Auto scroll khi có tin nhắn mới
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-  // Focus input when open
+  // Focus input khi mở chatbot
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
@@ -41,15 +64,11 @@ Bạn cần hỗ trợ gì?`
 
   const handleSend = async () => {
     const userMessage = input.trim();
-    
     if (!userMessage || loading) return;
 
-    setInput('');
+    setInput("");
 
-    const newMessages = [
-      ...messages,
-      { role: 'user', content: userMessage }
-    ];
+    const newMessages = [...messages, { role: "user", content: userMessage }];
     setMessages(newMessages);
 
     try {
@@ -57,28 +76,25 @@ Bạn cần hỗ trợ gì?`
 
       const systemPrompt = aiService.createSystemPrompt(role, user);
       const apiMessages = aiService.formatMessages(
-        newMessages.filter(m => m.role !== 'system'),
-        systemPrompt
+        newMessages.filter((m) => m.role !== "system"),
+        systemPrompt,
       );
 
       const response = await aiService.sendChatMessage(apiMessages);
 
-      setMessages([
-        ...newMessages,
-        { role: 'assistant', content: response }
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: response },
       ]);
-
     } catch (err) {
-      console.error('Chatbot error:', err);
-      
-      setMessages([
-        ...newMessages,
-        { 
-          role: 'assistant', 
-          content: `Xin lỗi, tôi gặp lỗi: ${err.message}
+      console.error("Chatbot error:", err);
 
-Vui lòng thử lại hoặc liên hệ quản trị viên.`
-        }
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `⚠️ **Có lỗi xảy ra:** ${err.message}\n\nVui lòng thử lại hoặc liên hệ ban quản lý.`,
+        },
       ]);
     } finally {
       setLoading(false);
@@ -86,174 +102,233 @@ Vui lòng thử lại hoặc liên hệ quản trị viên.`
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
   const clearChat = () => {
-    if (confirm('Xóa toàn bộ lịch sử chat?')) {
+    if (window.confirm("Xóa toàn bộ lịch sử trò chuyện này?")) {
       setMessages([
         {
-          role: 'assistant',
-          content: 'Đã xóa lịch sử chat. Bạn cần hỗ trợ gì?'
-        }
+          role: "assistant",
+          content: "Đã xóa lịch sử chat. Bạn cần hỗ trợ thông tin gì mới?",
+        },
       ]);
     }
   };
 
-  // Parse markdown to HTML
+  // Parse markdown sang HTML chuẩn Neo-Brutalism
   function parseMessage(content) {
     let html = marked.parse(content);
     html = html
-      .replace(/<h1>/g, '<h1 class="text-base font-semibold mb-2 text-[oklch(0.2_0.02_260)]">')
-      .replace(/<h2>/g, '<h2 class="text-[15px] font-semibold mb-2 mt-4 text-[oklch(0.2_0.02_260)]">')
-      .replace(/<h3>/g, '<h3 class="text-[11px] font-medium uppercase tracking-wider mb-1.5 mt-3 text-[oklch(0.5_0.015_255)]">')
-      .replace(/<p>/g, '<p class="mb-3 leading-relaxed">')
-      .replace(/<ul>/g, '<ul class="my-3 pl-5 space-y-2">')
-      .replace(/<ol>/g, '<ol class="my-3 pl-5 space-y-2 list-decimal">')
-      .replace(/<li>/g, '<li class="leading-normal">')
-      .replace(/<strong>/g, '<strong class="font-semibold text-[oklch(0.45_0.12_250)]">')
-      .replace(/<code>/g, '<code class="px-1.5 py-0.5 rounded bg-[oklch(0.94_0.02_250)] text-[oklch(0.45_0.12_250)] text-[13px] font-mono">')
-      .replace(/<pre>/g, '<pre class="bg-[oklch(0.96_0.008_92)] border border-[oklch(0.86_0.01_95)] rounded p-3 my-3 overflow-x-auto text-[13px] font-mono">');
+      .replace(/<h1>/g, '<h1 class="text-base font-black mb-2 text-text">')
+      .replace(/<h2>/g, '<h2 class="text-sm font-black mb-2 mt-3 text-text">')
+      .replace(
+        /<h3>/g,
+        '<h3 class="text-xs font-black uppercase tracking-wider mb-1.5 mt-2 text-text-muted">',
+      )
+      .replace(/<p>/g, '<p class="mb-2 leading-relaxed font-semibold">')
+      .replace(/<ul>/g, '<ul class="my-2 pl-4 space-y-1 list-disc">')
+      .replace(
+        /<ol>/g,
+        '<ol class="my-2 pl-4 space-y-1 list-decimal font-bold">',
+      )
+      .replace(/<li>/g, '<li class="leading-relaxed font-semibold">')
+      .replace(/<strong>/g, '<strong class="font-black text-black">')
+      .replace(
+        /<code>/g,
+        '<code class="px-1.5 py-0.5 rounded bg-warning/30 text-black text-xs font-mono border border-line-strong">',
+      )
+      .replace(
+        /<pre>/g,
+        '<pre class="bg-surface-2 border-2 border-line-strong rounded-xl p-3 my-2 overflow-x-auto text-xs font-mono shadow-[2px_2px_0_#141413]">',
+      );
     return html;
   }
 
-  if (!isOpen) return null;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: 20 }}
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed bottom-24 right-6 z-[9999] w-[420px] max-w-[calc(100vw-48px)] h-[640px] max-h-[calc(100vh-120px)] 
-                 bg-[oklch(1_0_0)] border border-[oklch(0.86_0.01_95)] rounded-md shadow-[0_1px_2px_oklch(0.2_0.02_260/0.04),0_12px_48px_oklch(0.2_0.02_260/0.12)]
-                 flex flex-col overflow-hidden font-['IBM_Plex_Sans',system-ui,sans-serif]"
-    >
-      {/* Header */}
-      <div className="bg-[oklch(0.96_0.008_92)] border-b border-[oklch(0.86_0.01_95)] px-6 py-5 grid grid-cols-[1fr_auto] gap-4 items-start">
-        <div className="flex flex-col gap-1">
-          <strong className="font-['Space_Grotesk',sans-serif] text-[15px] font-semibold tracking-tight text-[oklch(0.2_0.02_260)] leading-tight">
-            Trợ lý AI
-          </strong>
-          <small className="text-[13px] text-[oklch(0.5_0.015_255)] tracking-wide leading-tight">
-            DormHub Assistant
-          </small>
-        </div>
-        <div className="flex gap-1.5 items-start">
-          <button
-            onClick={clearChat}
-            className="bg-transparent border border-[oklch(0.86_0.01_95)] rounded h-8 w-8 flex items-center justify-center
-                     text-[oklch(0.5_0.015_255)] transition-all duration-150
-                     hover:text-[oklch(0.2_0.02_260)] hover:border-[oklch(0.5_0.015_255)] hover:bg-[oklch(0.98_0.006_90)]"
-            title="Xóa lịch sử"
-          >
-            🗑️
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-transparent border border-[oklch(0.86_0.01_95)] rounded h-8 w-8 flex items-center justify-center
-                     text-[oklch(0.5_0.015_255)] transition-all duration-150
-                     hover:text-[oklch(0.55_0.19_25)] hover:border-[oklch(0.55_0.19_25)]"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5 bg-[oklch(0.98_0.006_90)]
-                    scrollbar-thin scrollbar-thumb-[oklch(0.86_0.01_95)] scrollbar-track-transparent
-                    hover:scrollbar-thumb-[oklch(0.5_0.015_255)]">
-        {messages.map((msg, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`grid gap-3 ${msg.role === 'user' ? 'grid-cols-[1fr_auto] [direction:rtl]' : 'grid-cols-[auto_1fr]'}`}
-          >
-            {/* Icon badge */}
-            <div className={`w-6 h-6 border rounded flex items-center justify-center flex-shrink-0 mt-0.5
-                           ${msg.role === 'assistant' 
-                             ? 'bg-[oklch(0.94_0.02_250)] border-[oklch(0.45_0.12_250)] text-[oklch(0.45_0.12_250)]' 
-                             : 'bg-[oklch(0.92_0.01_90)] border-[oklch(0.82_0.015_90)] text-[oklch(0.5_0.015_255)]'
-                           }`}
-            >
-              {msg.role === 'assistant' ? <Bot size={14} /> : <User size={14} />}
-            </div>
-
-            {/* Content */}
-            <div 
-              className={`px-3.5 py-3 rounded text-sm text-[oklch(0.2_0.02_260)] max-w-full break-words [direction:ltr]
-                         ${msg.role === 'assistant'
-                           ? 'bg-[oklch(1_0_0)] border border-[oklch(0.86_0.01_95)]'
-                           : 'bg-[oklch(0.92_0.01_90)] border border-[oklch(0.82_0.015_90)]'
-                         }`}
-              dangerouslySetInnerHTML={{ 
-                __html: msg.role === 'assistant' 
-                  ? parseMessage(msg.content) 
-                  : msg.content.replace(/\n/g, '<br>')
-              }}
-            />
-          </motion.div>
-        ))}
-        
-        {/* Loading */}
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-[auto_1fr] gap-3"
-          >
-            <div className="w-6 h-6 border rounded flex items-center justify-center flex-shrink-0 mt-0.5
-                          bg-[oklch(0.94_0.02_250)] border-[oklch(0.45_0.12_250)] text-[oklch(0.45_0.12_250)]">
-              <Bot size={14} />
-            </div>
-            <div className="px-3.5 py-3 rounded text-sm bg-[oklch(1_0_0)] border border-[oklch(0.86_0.01_95)]
-                          flex items-center gap-2 text-[oklch(0.5_0.015_255)]">
-              <Loader size={16} className="animate-spin" />
-              Đang suy nghĩ...
-            </div>
-          </motion.div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="px-5 py-5 bg-[oklch(0.96_0.008_92)] border-t border-[oklch(0.86_0.01_95)] flex gap-2.5 items-end">
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Nhập câu hỏi của bạn..."
-          disabled={loading}
-          rows={1}
-          className="flex-1 px-3 py-2.5 border border-[oklch(0.86_0.01_95)] rounded text-sm leading-normal
-                   text-[oklch(0.2_0.02_260)] bg-[oklch(0.98_0.006_90)] resize-none max-h-30
-                   placeholder:text-[oklch(0.5_0.015_255)]
-                   transition-all duration-150
-                   focus:outline-none focus:border-[oklch(0.45_0.12_250)] focus:shadow-[0_0_0_1px_oklch(0.45_0.12_250)]
-                   disabled:bg-[oklch(0.96_0.008_92)] disabled:cursor-not-allowed disabled:opacity-60"
-        />
-        <button 
-          onClick={handleSend}
-          disabled={!input.trim() || loading}
-          className="w-10 h-10 rounded border-0 bg-[oklch(0.45_0.12_250)] text-[oklch(0.99_0_0)]
-                   flex items-center justify-center flex-shrink-0
-                   transition-all duration-150
-                   hover:bg-[oklch(0.38_0.12_250)]
-                   active:translate-y-px
-                   disabled:opacity-40 disabled:cursor-not-allowed
-                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-[oklch(0.45_0.12_250)] focus-visible:outline-offset-2"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-white border-4 border-line-strong rounded-2xl shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
         >
-          <Send size={18} />
-        </button>
-      </div>
-    </motion.div>
+          {/* HEADER CHATBOT */}
+          <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+                <Bot size={22} className="text-black" strokeWidth={2.5} />
+              </div>
+              <div>
+                <strong className="block text-base font-black text-black tracking-tight leading-none">
+                  Trợ lý DormHub AI
+                </strong>
+                <span className="text-[11px] font-extrabold text-black/70 uppercase tracking-wider block mt-1">
+                  Trực tuyến 24/7
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={clearChat}
+                className="size-8 rounded-lg bg-white border-2 border-line-strong flex items-center justify-center text-black shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                title="Xóa lịch sử chat"
+              >
+                <Trash2 size={16} strokeWidth={2.5} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="size-8 rounded-lg bg-accent text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] hover:bg-accent-hover hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                title="Đóng cửa sổ"
+              >
+                <X size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+
+          {/* DANH SÁCH TIN NHẮN */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 bg-surface/50">
+            {messages.map((msg, idx) => {
+              const isAssistant = msg.role === "assistant";
+
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className={`flex gap-2.5 max-w-[88%] ${
+                    isAssistant
+                      ? "mr-auto flex-row"
+                      : "ml-auto flex-row-reverse"
+                  }`}
+                >
+                  {/* Badge Avatar */}
+                  <div
+                    className={`size-8 rounded-lg border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413] mt-0.5 ${
+                      isAssistant ? "bg-warning" : "bg-primary"
+                    }`}
+                  >
+                    {isAssistant ? (
+                      <Bot size={18} className="text-black" strokeWidth={2.5} />
+                    ) : (
+                      <User
+                        size={18}
+                        className="text-black"
+                        strokeWidth={2.5}
+                      />
+                    )}
+                  </div>
+
+                  {/* Bong bóng tin nhắn Neo-Brutalism */}
+                  <div
+                    className={`p-3.5 rounded-2xl border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
+                      isAssistant
+                        ? "bg-white text-text rounded-tl-xs"
+                        : "bg-primary text-black rounded-tr-xs"
+                    }`}
+                  >
+                    {isAssistant ? (
+                      <div
+                        className="space-y-1"
+                        dangerouslySetInnerHTML={{
+                          __html: parseMessage(msg.content),
+                        }}
+                      />
+                    ) : (
+                      <p className="whitespace-pre-wrap font-bold m-0">
+                        {msg.content}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            {/* Trạng thái AI đang phản hồi */}
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex gap-2.5 mr-auto max-w-[85%]"
+              >
+                <div className="size-8 rounded-lg bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
+                  <Bot size={18} className="text-black" strokeWidth={2.5} />
+                </div>
+                <div className="px-4 py-3 rounded-2xl rounded-tl-xs bg-white border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
+                  <RefreshCw
+                    size={16}
+                    strokeWidth={2.5}
+                    className="animate-spin text-primary"
+                  />
+                  <span>DormHub AI đang suy nghĩ...</span>
+                </div>
+              </motion.div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Ô NHẬP TIN NHẮN */}
+          <div className="p-3.5 bg-white border-t-4 border-line-strong flex gap-2.5 items-end shrink-0">
+            {/* <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
+              disabled={loading}
+              rows={1}
+              className="flex-1 border-3 border-line-strong rounded-xl px-3.5 py-2.5 text-xs! sm:text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
+            /> */}
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
+              placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
+              disabled={loading}
+              rows={1}
+              className={`
+    chat-textarea
+    flex-1 min-w-0
+      min-h-11 max-h-30
+    border-3 border-line-strong
+    ${isExpanded ? "rounded-md" : "rounded-xl"}
+    px-3.5   leading-10
+    text-xs! sm:text-sm
+    font-bold text-text bg-white
+    shadow-[2px_2px_0_#141413]
+    focus:shadow-[4px_4px_0_#141413]
+    focus:border-primary
+    outline-none! resize-none
+    placeholder:font-semibold
+    placeholder:text-text-muted/60
+    disabled:opacity-50
+    transition-all duration-200
+  `}
+              style={{ overflowY: "hidden" }}
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+              className="size-10 rounded-xl bg-primary text-black border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+            >
+              <Send size={18} strokeWidth={2.5} />
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

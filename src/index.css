@@ -1,14 +1,14 @@
-@import 'tailwindcss';
-@import '@fontsource-variable/geist';
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
 /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); */
 
 /* Neo-Brutalism Design System */
 @theme {
   /* Typography - Inter for readability */
-  --font-family-display: 'Inter', sans-serif;
-  --font-family-body: 'Inter', sans-serif;
-  --font-family-mono: 'Courier New', monospace;
-  
+  --font-family-display: "Be Vietnam Pro", sans-serif;
+  --font-family-body: "Be Vietnam Pro", sans-serif;
+  --font-family-mono: "Courier New", monospace;
+
   /* Type scale - Clear hierarchy */
   --font-size-xs: 12px;
   --font-size-sm: 14px;
@@ -18,37 +18,37 @@
   --font-size-2xl: 32px;
   --font-size-3xl: 48px;
   --font-size-hero: clamp(48px, 5vw, 72px);
-  
+
   /* Neo-Brutalism Colors - REAL NEON version */
-  --color-bg: #f5f7fa;                       /* Subtle gray gradient base */
-  --color-surface: #ffffff;                  /* Pure white */
-  --color-surface-2: #f8f9fa;                /* Off-white for cards */
+  --color-bg: #f5f7fa; /* Subtle gray gradient base */
+  --color-surface: #ffffff; /* Pure white */
+  --color-surface-2: #f8f9fa; /* Off-white for cards */
   --color-surface-3: #f3f4f6;
-  
-  --color-text: #1a1a1a;                     /* Dark gray - no tint */
-  --color-text-muted: #4b5563;               /* Gray muted */
+
+  --color-text: #1a1a1a; /* Dark gray - no tint */
+  --color-text-muted: #4b5563; /* Gray muted */
   --color-text-subtle: #9ca3af;
-  
-  --color-line: #333333;                     /* Dark gray border - Neo-Brutalism */
-  --color-line-strong: #000000;              /* Black for strong borders */
-  
-  --color-primary: #00d2ff;                  /* Neon cyan - BRIGHT */
+
+  --color-line: #333333; /* Dark gray border - Neo-Brutalism */
+  --color-line-strong: #000000; /* Black for strong borders */
+
+  --color-primary: #00d2ff; /* Neon cyan - BRIGHT */
   --color-primary-hover: #00b8e6;
   --color-primary-light: #e0f7ff;
-  
-  --color-success: #00ff88;                  /* Neon green - BRIGHT */
+
+  --color-success: #00ff88; /* Neon green - BRIGHT */
   --color-success-light: #e0f7e8;
-  
-  --color-warning: #ffcc00;                  /* Neon yellow - BRIGHT */
+
+  --color-warning: #ffcc00; /* Neon yellow - BRIGHT */
   --color-warning-light: #fffbe0;
-  
-  --color-error: #ff3366;                    /* Neon red - BRIGHT */
+
+  --color-error: #ff3366; /* Neon red - BRIGHT */
   --color-error-light: #ffe0e8;
-  
-  --color-accent: #ff6b6b;                   /* Neon coral - BRIGHT */
+
+  --color-accent: #ff6b6b; /* Neon coral - BRIGHT */
   --color-accent-hover: #ff5252;
   --color-accent-light: #ffe8e8;
-  
+
   /* Legacy brand colors (backward compat) */
   --color-brand-green: var(--color-primary);
   --color-brand-dark: var(--color-text);
@@ -56,15 +56,15 @@
   --color-brand-line: var(--color-line);
   --color-brand-pale: var(--color-surface-2);
   --color-brand-paper: oklch(1 0 0);
-  
+
   --color-primary-surface: var(--color-primary-light);
   --color-accent-surface: var(--color-accent-light);
-  
+
   --color-chat-bg: oklch(0.98 0.006 90);
   --color-chat-surface: oklch(0.96 0.008 92);
   --color-chat-text: oklch(0.2 0.02 260);
   --color-chat-accent: oklch(0.45 0.12 250);
-  
+
   /* Spacing - Compact */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -73,21 +73,160 @@
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
   --spacing-3xl: 64px;
-  
+
   /* Radius - Large & rounded */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 32px;
-  
+
   /* Shadows - Neo-Brutalism STRONG */
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 4px 4px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 6px 6px 0 rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 8px 8px 0 rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 12px 12px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5), 6px 6px 0 rgba(0, 0, 0, 0.5);
+  --shadow-lg:
+    0 20px 25px -5px rgba(0, 0, 0, 0.5), 8px 8px 0 rgba(0, 0, 0, 0.3);
+  --shadow-xl:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5), 12px 12px 0 rgba(0, 0, 0, 0.25);
   --shadow-lift: var(--shadow-xl);
 }
+.be-vietnam-pro-thin {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 100;
+  font-style: normal;
+}
 
+.be-vietnam-pro-extralight {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.be-vietnam-pro-light {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.be-vietnam-pro-regular {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.be-vietnam-pro-medium {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.be-vietnam-pro-semibold {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.be-vietnam-pro-bold {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.be-vietnam-pro-extrabold {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.be-vietnam-pro-black {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+.be-vietnam-pro-thin-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 100;
+  font-style: italic;
+}
+
+.be-vietnam-pro-extralight-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 200;
+  font-style: italic;
+}
+
+.be-vietnam-pro-light-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.be-vietnam-pro-regular-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.be-vietnam-pro-medium-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.be-vietnam-pro-semibold-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.be-vietnam-pro-bold-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.be-vietnam-pro-extrabold-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 800;
+  font-style: italic;
+}
+
+.be-vietnam-pro-black-italic {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-weight: 900;
+  font-style: italic;
+}
+/* DormHub AI Chat Scrollbar */
+.chat-textarea {
+  scrollbar-width: thin;
+  scrollbar-color: #93c5fd transparent;
+  scrollbar-gutter: stable;
+}
+
+/* Chrome, Edge, Safari */
+.chat-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-textarea::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 10px;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background 0.2s ease;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
 /* Base styles */
 :root {
   font-family: var(--font-family-body);
@@ -110,7 +249,10 @@ body {
   background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -149,7 +291,9 @@ button:disabled {
 
 /* Motion utilities */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slideUp {
@@ -164,8 +308,14 @@ button:disabled {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideInFromBottom {
@@ -204,9 +354,15 @@ button:disabled {
   letter-spacing: -0.02em;
 }
 
-.msg-content h1 { font-size: 1.5em; }
-.msg-content h2 { font-size: 1.3em; }
-.msg-content h3 { font-size: 1.1em; }
+.msg-content h1 {
+  font-size: 1.5em;
+}
+.msg-content h2 {
+  font-size: 1.3em;
+}
+.msg-content h3 {
+  font-size: 1.1em;
+}
 
 .msg-content p {
   margin: 0.8em 0;

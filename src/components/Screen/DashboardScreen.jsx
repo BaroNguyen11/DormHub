@@ -1,129 +1,196 @@
-// ====================================
-// DASHBOARD SCREEN - Neo-Brutalism with Charts
-// ====================================
-// Bold borders, strong shadows, neon colors, dashboard charts
-
 import { Link } from "react-router-dom";
-import { ArrowRight, RefreshCw, Users, Home, FileText, Wrench, DollarSign, CheckCircle, Calendar, Clock, AlertCircle } from "lucide-react";
+import {
+  RefreshCw,
+  Users,
+  Home,
+  FileText,
+  Wrench,
+  DollarSign,
+  CheckCircle,
+  Calendar,
+  Clock,
+  AlertCircle,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { FIELD_LABELS } from "./constants";
 import { Notice, Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
-import { Badge } from "../ui/badge";
 
-/**
- * Component DashboardScreen - Màn hình dashboard
- * @param {object} props
- * @param {object} props.config - Cấu hình màn hình
- * 
- * Config structure:
- * {
- *   resource: "/students/dashboard",  // API endpoint trả về metrics
- *   group: "student",  // "student" hoặc "manager"
- * }
- * 
- * API response example:
- * {
- *   totalRooms: 50,
- *   occupiedRooms: 35,
- *   totalStudents: 120,
- *   pendingApplications: 5
- * }
- */
-
-// Map field names to icons and colors
-const iconMap = {
-  totalStudents: { icon: Users, color: 'primary' },
-  totalRooms: { icon: Home, color: 'success' },
-  occupiedRooms: { icon: Home, color: 'warning' },
-  pendingApplications: { icon: FileText, color: 'accent' },
-  maintenanceRequests: { icon: Wrench, color: 'error' },
-  totalInvoices: { icon: DollarSign, color: 'primary' },
-  paidInvoices: { icon: CheckCircle, color: 'success' },
-  unpaidInvoices: { icon: FileText, color: 'warning' },
+// Mapping cấu hình Icon & Bảng màu Neo-Brutalism
+const METRIC_CONFIG = {
+  totalStudents: { icon: Users, bg: "bg-primary", light: "bg-primary-light" },
+  totalRooms: { icon: Home, bg: "bg-success", light: "bg-success-light" },
+  occupiedRooms: { icon: Home, bg: "bg-warning", light: "bg-warning-light" },
+  pendingApplications: {
+    icon: FileText,
+    bg: "bg-accent",
+    light: "bg-accent-light",
+  },
+  maintenanceRequests: {
+    icon: Wrench,
+    bg: "bg-error",
+    light: "bg-error-light",
+  },
+  totalInvoices: {
+    icon: DollarSign,
+    bg: "bg-primary",
+    light: "bg-primary-light",
+  },
+  paidInvoices: {
+    icon: CheckCircle,
+    bg: "bg-success",
+    light: "bg-success-light",
+  },
+  unpaidInvoices: {
+    icon: FileText,
+    bg: "bg-warning",
+    light: "bg-warning-light",
+  },
 };
+
+const cardBase =
+  "bg-white border-4 border-line-strong rounded-2xl shadow-[5px_5px_0_#141413]";
 
 export default function DashboardScreen({ config }) {
   // Load dashboard data từ API
   const { data, error, loading, reload } = useLoad(config.resource, {});
-  
-  // Filter data: chỉ lấy các field có type = number hoặc string
-  // Giới hạn 4 metrics để tránh quá nhiều
+
+  // Lấy tối đa 4 metrics đầu tiên
   const list = Object.entries(data || {})
     .filter(([, value]) => ["number", "string"].includes(typeof value))
     .slice(0, 4);
-  
-  // Mock chart data - Occupancy by month
+
+  // Dữ liệu biểu đồ Tỷ lệ lấp đầy
   const chartData = [
-    { month: 'T1', value: 65 },
-    { month: 'T2', value: 72 },
-    { month: 'T3', value: 68 },
-    { month: 'T4', value: 85 },
-    { month: 'T5', value: 92 },
-    { month: 'T6', value: 88 },
+    { month: "T1", value: 65 },
+    { month: "T2", value: 72 },
+    { month: "T3", value: 68 },
+    { month: "T4", value: 85 },
+    { month: "T5", value: 92 },
+    { month: "T6", value: 88 },
   ];
-  
-  // Quick stats data
+
+  // Thông tin nhanh
   const quickStats = [
-    { icon: Clock, label: 'Đơn chưa xử lý', value: '24', color: 'warning' },
-    { icon: AlertCircle, label: 'Yêu cầu khẩn', value: '3', color: 'error' },
-    { icon: CheckCircle, label: 'Hoàn thành hôm nay', value: '12', color: 'success' },
-    { icon: Calendar, label: 'Check-in hôm nay', value: '8', color: 'primary' },
+    {
+      icon: Clock,
+      label: "Đơn chưa xử lý",
+      value: "24",
+      bg: "bg-warning-light",
+      badge: "bg-warning",
+    },
+    {
+      icon: AlertCircle,
+      label: "Yêu cầu khẩn",
+      value: "3",
+      bg: "bg-error-light",
+      badge: "bg-error",
+    },
+    {
+      icon: CheckCircle,
+      label: "Hoàn thành hôm nay",
+      value: "12",
+      bg: "bg-success-light",
+      badge: "bg-success",
+    },
+    {
+      icon: Calendar,
+      label: "Check-in hôm nay",
+      value: "8",
+      bg: "bg-primary-light",
+      badge: "bg-primary",
+    },
   ];
-  
-  // Shortcuts tùy theo group (student hoặc manager)
+
+  // Shortcuts theo vai trò
   const shortcuts =
     config.group === "student"
       ? [
-          { name: "Tìm phòng", path: "/rooms", icon: Home },
-          { name: "Đăng ký nội trú", path: "/student/applications/new", icon: FileText },
-          { name: "Hóa đơn", path: "/student/invoices", icon: DollarSign },
-          { name: "Báo hỏng", path: "/student/maintenance", icon: Wrench },
+          { name: "Tìm phòng", path: "/rooms", icon: Home, bg: "bg-primary" },
+          {
+            name: "Đăng ký nội trú",
+            path: "/student/applications/new",
+            icon: FileText,
+            bg: "bg-success",
+          },
+          {
+            name: "Hóa đơn",
+            path: "/student/invoices",
+            icon: DollarSign,
+            bg: "bg-warning",
+          },
+          {
+            name: "Báo hỏng",
+            path: "/student/maintenance",
+            icon: Wrench,
+            bg: "bg-accent",
+          },
         ]
-      : config.group === "manager"
-        ? [
-            { name: "Đơn chờ duyệt", path: "/manager/applications", icon: FileText },
-            { name: "Quản lý phòng", path: "/manager/rooms", icon: Home },
-            { name: "Hóa đơn", path: "/manager/invoices", icon: DollarSign },
-            { name: "Báo hỏng", path: "/manager/maintenance", icon: Wrench },
-          ]
-        : [];
-  
-  // Animation variants for staggered entrance
+      : [
+          {
+            name: "Đơn chờ duyệt",
+            path: "/manager/applications",
+            icon: FileText,
+            bg: "bg-primary",
+          },
+          {
+            name: "Quản lý phòng",
+            path: "/manager/rooms",
+            icon: Home,
+            bg: "bg-success",
+          },
+          {
+            name: "Hóa đơn",
+            path: "/manager/invoices",
+            icon: DollarSign,
+            bg: "bg-warning",
+          },
+          {
+            name: "Báo hỏng",
+            path: "/manager/maintenance",
+            icon: Wrench,
+            bg: "bg-accent",
+          },
+        ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.08 } },
   };
-  
+
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0 },
   };
-  
+
   return (
-    <>
-      {/* Heading với nút reload */}
-      <Heading config={config}>
-        <button className="inline-flex items-center gap-2 px-4 py-2 border-3 border-[#333333] rounded-[var(--radius-md)] text-sm font-bold text-[#1a1a1a] hover:bg-[#f8f9fa] hover:border-[#00d2ff] hover:shadow-[4px_4px_0_rgba(0,0,0,0.2)] transition-all" onClick={reload}>
-          <RefreshCw size={16} /> Tải lại
+    <div className="space-y-8">
+      {/* Heading + Reload Button */}
+      <div className="flex items-center justify-between gap-4">
+        <Heading config={config} />
+        <button
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border-3 border-line-strong rounded-sm font-extrabold text-sm! text-text shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer shrink-0"
+          onClick={reload}
+        >
+          <RefreshCw
+            size={15}
+            strokeWidth={2.5}
+            className={loading ? "animate-spin" : ""}
+          />
+          <span>Tải lại</span>
         </button>
-      </Heading>
-      
-      {/* Thông báo lỗi */}
+      </div>
+
       <Notice error={error} />
-      
-      {/* Hiển thị loading hoặc dashboard content */}
+
       {loading ? (
         <Loading />
       ) : (
         <div className="space-y-8">
-          {/* Metric Grid - Neo-Brutalism cards */}
-          <motion.div 
+          {/* 1. METRICS GRID */}
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
@@ -131,129 +198,189 @@ export default function DashboardScreen({ config }) {
           >
             {list.length ? (
               list.map(([key, value], idx) => {
-                const config = iconMap[key] || { icon: FileText, color: 'primary' };
-                const Icon = config.icon;
-                const colorVar = `--color-${config.color}`;
+                const itemConfig = METRIC_CONFIG[key] || {
+                  icon: FileText,
+                  bg: "bg-primary",
+                  light: "bg-primary-light",
+                };
+                const Icon = itemConfig.icon;
+
                 return (
-                  <motion.div 
+                  <motion.div
                     variants={itemVariants}
-                    key={key} 
-                    className="bg-white border-3 border-[#00d2ff] rounded-[var(--radius-lg)] p-6 shadow-[4px_4px_0_rgba(0,0,0,0.25)] hover:shadow-[6px_6px_0_rgba(0,0,0,0.3)] hover:-translate-y-1 transition-all duration-300"
+                    key={key}
+                    className={`${cardBase} p-6 hover:shadow-[8px_8px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between`}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center shadow-md`} style={{ backgroundColor: `var(${colorVar})` }}>
-                        <Icon size={28} className="text-white" />
+                      <div
+                        className={`size-12 rounded-xl ${itemConfig.bg} border-3 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]`}
+                      >
+                        <Icon
+                          size={24}
+                          className="text-black"
+                          strokeWidth={2.5}
+                        />
                       </div>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-[var(--radius-sm)] border-2`} style={{ backgroundColor: `var(${colorVar}-light)`, color: `var(${colorVar})`, borderColor: `var(${colorVar})` }}>
-                        +{(idx + 1) * 8}%
+                      <span className="inline-flex items-center gap-1 text-xs font-extrabold px-2.5 py-1 bg-warning text-black rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413]">
+                        <TrendingUp size={12} strokeWidth={3} />+{(idx + 1) * 8}
+                        %
                       </span>
                     </div>
-                    
-                    {/* Label */}
-                    <h3 className="text-sm font-bold text-[#6b7280] mb-2 uppercase tracking-wide">
-                      {FIELD_LABELS[key] || key.replace(/([A-Z])/g, " $1")}
-                    </h3>
-                    
-                    {/* Value - BOLD typography */}
-                    <p className="text-3xl font-extrabold text-[#1a1a1a]">
-                      {typeof value === "number"
-                        ? new Intl.NumberFormat("vi-VN").format(value)
-                        : value}
-                    </p>
+
+                    <div>
+                      <h3 className="text-xs font-extrabold text-text-muted uppercase tracking-wider mb-1">
+                        {FIELD_LABELS[key] || key.replace(/([A-Z])/g, " $1")}
+                      </h3>
+                      <p className="text-3xl font-black text-text tracking-tight">
+                        {typeof value === "number"
+                          ? new Intl.NumberFormat("vi-VN").format(value)
+                          : value}
+                      </p>
+                    </div>
                   </motion.div>
                 );
               })
             ) : (
-              <div className="bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-8 col-span-full text-center text-[#6b7280] font-bold shadow-[4px_4px_0_rgba(0,0,0,0.15)]">
+              <div
+                className={`${cardBase} p-8 col-span-full text-center text-text-muted font-extrabold`}
+              >
                 Máy chủ chưa có số liệu tổng quan.
               </div>
             )}
           </motion.div>
-          
-          {/* Charts Section - Bar Chart */}
-          <div className="bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-8 shadow-[4px_4px_0_rgba(0,0,0,0.2)]">
-            <h2 className="text-2xl font-extrabold text-[#1a1a1a] mb-8">
-              📊 Tỷ lệ occupancy theo tháng
-            </h2>
-            
-            <div className="flex items-end justify-between h-64 gap-3">
-              {chartData.map((data, i) => (
-                <div key={i} className="flex flex-col items-center gap-3 flex-1 group">
-                  <div className="w-full relative flex flex-col justify-end" style={{ height: '100%' }}>
-                    {/* Bar */}
-                    <div 
-                      className="w-full bg-[#00d2ff] rounded-t-[var(--radius-md)] hover:bg-[#00ff88] transition-all duration-300 border-3 border-[#00d2ff] hover:border-[#00ff88] border-b-0 shadow-[3px_3px_0_rgba(0,0,0,0.25)] cursor-pointer relative"
-                      style={{ height: `${data.value}%` }}
+
+          {/* 2. BAR CHART SECTION */}
+          <div className={`${cardBase} p-6 sm:p-8`}>
+            <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+              <div>
+                <div className="inline-block px-3 py-1 mb-2 bg-primary text-black text-xs font-extrabold uppercase tracking-widest rounded-md border-2 border-line-strong shadow-[2px_2px_0_#141413]">
+                  THỐNG KÊ NỘI TRÚ
+                </div>
+                <h2 className="text-2xl font-extrabold text-text">
+                  Tỷ lệ lấp đầy phòng theo tháng (%)
+                </h2>
+              </div>
+              <div className="flex items-center gap-4 text-xs font-extrabold">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-xs bg-primary border-2 border-line-strong" />
+                  Đã ở
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-xs bg-warning border-2 border-line-strong" />
+                  Mục tiêu (90%)
+                </span>
+              </div>
+            </div>
+
+            {/* Khung Biểu đồ Column */}
+            <div className="flex items-end justify-between h-64 gap-2 sm:gap-4 pt-6 pb-2 px-2 border-b-4 border-line-strong">
+              {chartData.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-3 flex-1 h-full justify-end group"
+                >
+                  <div className="w-full h-full flex flex-col justify-end relative">
+                    {/* Cột dữ liệu */}
+                    <div
+                      className="w-full bg-primary hover:bg-warning rounded-t-xl border-3 border-line-strong transition-all duration-200 cursor-pointer relative shadow-[3px_3px_0_#141413]"
+                      style={{ height: `${d.value}%` }}
                     >
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white px-3 py-2 rounded-[var(--radius-md)] text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap shadow-lg border-2 border-white">
-                        {data.value}% occupancy
+                      {/* Tooltip Popup */}
+                      <div className="absolute -top-11 left-1/2 -translate-x-1/2 bg-black text-white px-2.5 py-1 rounded-lg text-xs font-extrabold opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border-2 border-white pointer-events-none z-10 shadow-[2px_2px_0_#000]">
+                        {d.value}% Occupancy
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Label */}
-                  <span className="text-sm font-bold text-[#1a1a1a] whitespace-nowrap">
-                    {data.month}
+
+                  <span className="text-xs sm:text-sm font-extrabold text-text">
+                    {d.month}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-          
-          {/* Quick Stats */}
-          <div className="bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-8 shadow-[4px_4px_0_rgba(0,0,0,0.2)]">
-            <h2 className="text-2xl font-extrabold text-[#1a1a1a] mb-6">
-              ⚡ Thông tin nhanh
-            </h2>
-            
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickStats.map((item, i) => {
-                const colorMap = {
-                  warning: { bg: '#ffcc00', light: '#fffbe0' },
-                  error: { bg: '#ff3366', light: '#ffe0e8' },
-                  success: { bg: '#00ff88', light: '#e0f7e8' },
-                  primary: { bg: '#00d2ff', light: '#e0f7ff' }
-                };
-                const colors = colorMap[item.color];
-                return (
-                  <div key={i} className="flex items-center justify-between p-4 border-3 rounded-[var(--radius-md)] shadow-[3px_3px_0_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0_rgba(0,0,0,0.3)] hover:-translate-y-0.5 transition-all duration-300" style={{ backgroundColor: colors.light, borderColor: colors.bg }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-[var(--radius-sm)] flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-                        <item.icon size={20} className="text-white" />
+
+          {/* 3. QUICK STATS & SHORTCUTS GRID */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Quick Stats */}
+            <div
+              className={`${cardBase} p-6 sm:p-8 flex flex-col justify-between`}
+            >
+              <div className="flex items-center gap-2 mb-6">
+                <Zap size={22} className="text-black fill-warning" />
+                <h2 className="text-xl font-extrabold text-text">
+                  Thông tin nhanh
+                </h2>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                {quickStats.map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between p-4 rounded-xl border-3 border-line-strong shadow-[3px_3px_0_#141413] ${item.bg}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`size-9 rounded-lg ${item.badge} border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]`}
+                        >
+                          <Icon
+                            size={18}
+                            className="text-black"
+                            strokeWidth={2.5}
+                          />
+                        </div>
+                        <span className="text-xs font-extrabold text-text">
+                          {item.label}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-[#1a1a1a]">{item.label}</span>
+                      <span className="text-xl font-black text-text">
+                        {item.value}
+                      </span>
                     </div>
-                    <span className="text-2xl font-extrabold text-[#1a1a1a]">{item.value}</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          
-          {/* Shortcut Grid - Neo-Brutalism */}
-          <div className="bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-8 shadow-[4px_4px_0_rgba(0,0,0,0.2)]">
-            <h2 className="text-2xl font-extrabold text-[#1a1a1a] mb-6">
-              🚀 Tác vụ nhanh
-            </h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {shortcuts.map(({ name, path, icon: Icon }) => (
-                <Link 
-                  key={path}
-                  to={path}
-                  className="flex flex-col items-center justify-center p-6 bg-white border-3 border-[#00d2ff] rounded-[var(--radius-md)] hover:bg-[#00d2ff] hover:text-white hover:shadow-[4px_4px_0_rgba(0,0,0,0.25)] hover:-translate-y-1 transition-all duration-300 group text-center"
-                >
-                  <Icon size={32} className="mb-3 group-hover:scale-110 transition-transform duration-300 text-[#00d2ff] group-hover:text-white" />
-                  <span className="text-sm font-bold text-[#1a1a1a] group-hover:text-white">
-                    {name}
-                  </span>
-                </Link>
-              ))}
+
+            {/* Shortcuts */}
+            <div
+              className={`${cardBase} p-6 sm:p-8 flex flex-col justify-between`}
+            >
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-xl">🚀</span>
+                <h2 className="text-xl font-extrabold text-text">
+                  Tác vụ nhanh
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {shortcuts.map(({ name, path, icon: Icon, bg }) => (
+                  <Link
+                    key={path}
+                    to={path}
+                    className="flex flex-col items-center justify-center p-4 bg-white border-3 border-line-strong rounded-xl shadow-[3px_3px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-1 active:translate-y-0 active:shadow-none transition-all duration-200 text-center group"
+                  >
+                    <div
+                      className={`size-11 rounded-xl ${bg} border-2 border-line-strong flex items-center justify-center mb-2 shadow-[2px_2px_0_#141413] group-hover:scale-110 transition-transform`}
+                    >
+                      <Icon
+                        size={22}
+                        className="text-black"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+                    <span className="text-xs font-extrabold text-text">
+                      {name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
