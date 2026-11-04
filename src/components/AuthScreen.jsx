@@ -1,337 +1,15 @@
-// import { useState } from "react";
-// import { Link, useLocation, useNavigate } from "react-router-dom";
-// import { motion } from "motion/react";
-// import { ArrowRight, Mail, LockKeyhole } from "lucide-react";
-// import AuthLayout from "../layouts/AuthLayout";
-// import { Button } from "./ui/button";
-// import { Input } from "./ui/input";
-// import useAuth from "../hooks/useAuth";
-// import { authService } from "../services/auth.service";
-// import { errorMessage } from "../utils/errorHandler";
-// import {
-//   DEMO_ACCOUNTS,
-//   DEMO_ENABLED,
-//   DEMO_PASSWORD,
-// } from "../services/demo.service";
-
-// const configs = {
-//   login: {
-//     title: "Chào mừng trở lại",
-//     intro: "Đăng nhập để quản lý hành trình nội trú.",
-//     fields: [
-//       ["email", "Email", "email"],
-//       ["password", "Mật khẩu", "password"],
-//     ],
-//     button: "Đăng nhập",
-//   },
-//   verifyEmail: {
-//     title: "Kích hoạt tài khoản",
-//     intro:
-//       "Nhập email do nhà trường cấp và mã OTP đã gửi đến email để kích hoạt tài khoản.",
-//     fields: [
-//       ["email", "Email trường cấp", "email"],
-//       ["otp", "Mã OTP (6 chữ số)", "text"],
-//     ],
-//     button: "Xác thực email",
-//   },
-//   forgot: {
-//     title: "Quên mật khẩu",
-//     intro:
-//       "Chúng tôi sẽ gửi mã khôi phục đến email của bạn nếu tài khoản hợp lệ.",
-//     fields: [["email", "Email", "email"]],
-//     button: "Gửi mã khôi phục",
-//   },
-//   reset: {
-//     title: "Đặt lại mật khẩu",
-//     intro: "Nhập email, mã OTP và mật khẩu mới để hoàn tất khôi phục.",
-//     fields: [
-//       ["email", "Email", "email"],
-//       ["otp", "Mã OTP (6 chữ số)", "text"],
-//       ["newPassword", "Mật khẩu mới", "password"],
-//     ],
-//     button: "Đổi mật khẩu",
-//   },
-// };
-
-// export default function AuthScreen({ type }) {
-//   const config = configs[type];
-//   const navigate = useNavigate();
-//   const location = useLocation();
-//   const { login } = useAuth();
-//   const [values, setValues] = useState({
-//     email: new URLSearchParams(location.search).get("email") || "",
-//   });
-//   const [busy, setBusy] = useState(false);
-//   const [resendBusy, setResendBusy] = useState(false);
-//   const [error, setError] = useState("");
-//   const [success, setSuccess] = useState("");
-
-//   async function submit(event) {
-//     event.preventDefault();
-//     setError("");
-//     setSuccess("");
-//     setBusy(true);
-
-//     try {
-//       if (type === "login") {
-//         const account = await login({
-//           email: values.email.trim(),
-//           password: values.password,
-//         });
-//         const role = String(account?.role || account?.roles?.[0] || "STUDENT")
-//           .replace(/^ROLE_/, "")
-//           .toLowerCase();
-//         const destination = role === "manager" ? "/manager" : "/student";
-//         navigate(location.state?.from || destination, { replace: true });
-//       } else if (type === "verifyEmail") {
-//         await authService.verifyEmail({
-//           email: values.email.trim(),
-//           otp: values.otp.trim(),
-//         });
-//         navigate("/login", {
-//           replace: true,
-//           state: { success: "Email đã được xác thực. Bạn có thể đăng nhập." },
-//         });
-//       } else if (type === "forgot") {
-//         await authService.forgotPassword({ email: values.email.trim() });
-//         setSuccess(
-//           "Nếu email hợp lệ, mã khôi phục đã được gửi. Hãy kiểm tra hộp thư.",
-//         );
-//       } else if (type === "reset") {
-//         await authService.resetPassword({
-//           email: values.email.trim(),
-//           otp: values.otp.trim(),
-//           newPassword: values.newPassword,
-//         });
-//         navigate("/login", {
-//           replace: true,
-//           state: { success: "Mật khẩu đã được cập nhật. Hãy đăng nhập lại." },
-//         });
-//       }
-//     } catch (requestError) {
-//       setError(errorMessage(requestError));
-//     } finally {
-//       setBusy(false);
-//     }
-//   }
-
-//   async function resendOtp() {
-//     if (!values.email.trim()) {
-//       setError("Hãy nhập email do nhà trường cấp trước khi gửi lại mã OTP.");
-//       return;
-//     }
-
-//     setError("");
-//     setSuccess("");
-//     setResendBusy(true);
-//     try {
-//       await authService.resendOtp({ email: values.email.trim() });
-//       setSuccess(
-//         "Nếu tài khoản cần kích hoạt, mã OTP mới đã được gửi đến email.",
-//       );
-//     } catch (requestError) {
-//       setError(errorMessage(requestError));
-//     } finally {
-//       setResendBusy(false);
-//     }
-//   }
-
-//   return (
-//     <AuthLayout>
-//       <motion.div
-//         initial={{ opacity: 0, y: 20 }}
-//         animate={{ opacity: 1, y: 0 }}
-//         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-//         className="w-full min-w-0 max-w-107.5"
-//       >
-//         <motion.div
-//           initial={{ scale: 0 }}
-//           animate={{ scale: 1 }}
-//           transition={{
-//             delay: 0.2,
-//             duration: 0.4,
-//             type: "spring",
-//             stiffness: 200,
-//           }}
-//           className="w-10.5 h-10.5 rounded-lg bg-(--color-primary-surface) text-(--color-primary) grid place-items-center mb-5"
-//         >
-//           {type === "login" ? <LockKeyhole size={22} /> : <Mail size={22} />}
-//         </motion.div>
-//         <p className="text-[10px] font-(family-name:--font-family-display) font-extrabold tracking-[0.15em] text-(--color-primary) uppercase m-0 mb-2.75">
-//           TÀI KHOẢN DORMHUB
-//         </p>
-//         <h2 className="text-[28px] font-(family-name:--font-family-display) font-bold tracking-tight m-0 mb-1.75 text-(--color-text)">
-//           {config.title}
-//         </h2>
-//         <p className="text-(--color-text-muted) text-sm leading-[1.8] m-0 mb-7">
-//           {config.intro}
-//         </p>
-
-//         {location.state?.success && (
-//           <motion.div
-//             initial={{ opacity: 0, y: -10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.1 }}
-//             className="px-4 py-3 rounded-md mb-4 text-sm leading-relaxed bg-success/10 text-success border border-success/20"
-//             role="status"
-//           >
-//             {location.state.success}
-//           </motion.div>
-//         )}
-//         {error && (
-//           <motion.div
-//             initial={{ opacity: 0, y: -10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.1 }}
-//             className="px-4 py-3 rounded-md mb-4 text-sm leading-relaxed bg-error/10 text-error border border-error/20"
-//             role="alert"
-//           >
-//             {error}
-//           </motion.div>
-//         )}
-//         {success && (
-//           <motion.div
-//             initial={{ opacity: 0, y: -10 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.1 }}
-//             className="px-4 py-3 rounded-md mb-4 text-sm leading-relaxed bg-success/10 text-success border border-success/20"
-//             role="status"
-//           >
-//             {success}
-//           </motion.div>
-//         )}
-
-//         {type === "login" && DEMO_ENABLED && (
-//           <motion.div
-//             initial={{ opacity: 0 }}
-//             animate={{ opacity: 1 }}
-//             transition={{ delay: 0.3 }}
-//             className="bg-(--color-surface-2) border border-(--color-line) rounded-lg p-4 mb-5 text-(--color-text) text-sm"
-//           >
-//             <strong className="block mb-2 font-(family-name:--font-family-display) font-semibold">
-//               Xem thử giao diện không cần backend
-//             </strong>
-//             <p className="text-(--color-text-muted) text-sm leading-normal m-0 mb-3">
-//               Chọn vai trò để điền tài khoản mẫu. Mật khẩu chung:{" "}
-//               <code className="px-2 py-1 rounded-sm bg-white text-(--color-primary) text-xs font-family-mono">
-//                 {DEMO_PASSWORD}
-//               </code>
-//             </p>
-//             <div className="flex gap-2 flex-wrap">
-//               {DEMO_ACCOUNTS.map((account) => (
-//                 <Button
-//                   variant="secondary"
-//                   size="sm"
-//                   type="button"
-//                   key={account.role}
-//                   onClick={() =>
-//                     setValues({ email: account.email, password: DEMO_PASSWORD })
-//                   }
-//                 >
-//                   {account.label}
-//                 </Button>
-//               ))}
-//             </div>
-//           </motion.div>
-//         )}
-
-//         <form onSubmit={submit}>
-//           {config.fields.map(([key, label, inputType]) => (
-//             <label className="block mb-4" key={key}>
-//               <span className="block text-sm font-(family-name:--font-family-display) font-semibold text-(--color-text) mb-2">
-//                 {label}
-//               </span>
-//               <Input
-//                 type={inputType}
-//                 required
-//                 minLength={inputType === "password" ? 8 : undefined}
-//                 maxLength={key === "otp" ? 6 : undefined}
-//                 pattern={key === "otp" ? "[0-9]{6}" : undefined}
-//                 inputMode={key === "otp" ? "numeric" : undefined}
-//                 value={values[key] || ""}
-//                 onChange={(event) =>
-//                   setValues((previous) => ({
-//                     ...previous,
-//                     [key]: event.target.value,
-//                   }))
-//                 }
-//                 autoComplete={
-//                   key === "password" || key === "newPassword"
-//                     ? key === "password"
-//                       ? "current-password"
-//                       : "new-password"
-//                     : key === "email"
-//                       ? "email"
-//                       : "one-time-code"
-//                 }
-//               />
-//             </label>
-//           ))}
-//           <Button className="w-full mt-3" size="lg" disabled={busy}>
-//             {busy ? "Đang xử lý…" : config.button}
-//             <ArrowRight size={16} />
-//           </Button>
-//         </form>
-
-//         {type === "verifyEmail" && (
-//           <Button
-//             className="w-full mt-3"
-//             variant="secondary"
-//             size="lg"
-//             type="button"
-//             disabled={resendBusy || busy}
-//             onClick={resendOtp}
-//           >
-//             {resendBusy ? "Đang gửi lại…" : "Gửi lại mã OTP"}
-//           </Button>
-//         )}
-
-//         <div className="flex flex-col justify-between items-center gap-3 mt-6 text-sm text-(--color-text-muted)">
-//           {type === "login" ? (
-//             <>
-//               <Link
-//                 to="/forgot-password"
-//                 className="text-(--color-primary) font-semibold hover:underline"
-//               >
-//                 Quên mật khẩu?
-//               </Link>
-//               <span>
-//                 Đã được nhà trường cấp tài khoản?{" "}
-//                 <Link
-//                   to="/verify-email"
-//                   className="text-(--color-primary) font-semibold hover:underline"
-//                 >
-//                   Kích hoạt email
-//                 </Link>
-//               </span>
-//             </>
-//           ) : (
-//             <Link
-//               to="/login"
-//               className="text-(--color-primary) font-semibold hover:underline!"
-//             >
-//               Quay lại đăng nhập
-//             </Link>
-//           )}
-//         </div>
-//         {type === "login" && (
-//           <p className="mt-5 text-(--color-text-muted) text-xs leading-normal text-center">
-//             Tài khoản sinh viên được nhà trường cấp; DormHub không mở đăng ký
-//             sinh viên công khai.
-//           </p>
-//         )}
-//       </motion.div>
-//     </AuthLayout>
-//   );
-// }
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowRight,
+  Mail,
+  LockKeyhole,
+  Eye,
+  EyeOff,
+  RefreshCw,
+} from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import useAuth from "../hooks/useAuth";
 import { authService } from "../services/auth.service";
 import { errorMessage } from "../utils/errorHandler";
@@ -390,7 +68,7 @@ export default function AuthScreen({ type }) {
   });
   const [busy, setBusy] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State bật/tắt xem mật khẩu
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -423,7 +101,7 @@ export default function AuthScreen({ type }) {
       } else if (type === "forgot") {
         await authService.forgotPassword({ email: values.email.trim() });
         setSuccess(
-          "Nếu email hợp lệ, mã khôi phục đã được gửi. Hãy kiểm tra hộp thư."
+          "Nếu email hợp lệ, mã khôi phục đã được gửi. Hãy kiểm tra hộp thư.",
         );
       } else if (type === "reset") {
         await authService.resetPassword({
@@ -455,7 +133,7 @@ export default function AuthScreen({ type }) {
     try {
       await authService.resendOtp({ email: values.email.trim() });
       setSuccess(
-        "Nếu tài khoản cần kích hoạt, mã OTP mới đã được gửi đến email."
+        "Nếu tài khoản cần kích hoạt, mã OTP mới đã được gửi đến email.",
       );
     } catch (requestError) {
       setError(errorMessage(requestError));
@@ -470,7 +148,7 @@ export default function AuthScreen({ type }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full min-w-0  mx-auto"
+        className="w-full min-w-0 mx-auto"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -481,18 +159,22 @@ export default function AuthScreen({ type }) {
             type: "spring",
             stiffness: 200,
           }}
-          className="size-11 rounded-xl bg-primary-surface text-primary border-2 border-line-strong grid place-items-center mb-5 shadow-[3px_3px_0_#141413]"
+          className="size-12 rounded-sm bg-primary text-black border-3 border-line-strong grid place-items-center mb-5 shadow-[3px_3px_0_#141413]"
         >
-          {type === "login" ? <LockKeyhole size={22} /> : <Mail size={22} />}
+          {type === "login" ? (
+            <LockKeyhole size={22} strokeWidth={2.5} />
+          ) : (
+            <Mail size={22} strokeWidth={2.5} />
+          )}
         </motion.div>
 
-        <p className="text-xs font-extrabold tracking-widest text-primary uppercase mb-2">
+        <p className="text-xs font-black tracking-widest text-primary uppercase mb-2">
           TÀI KHOẢN DORMHUB
         </p>
-        <h2 className="text-3xl font-extrabold tracking-tight text-text mb-2">
+        <h2 className="text-3xl font-black tracking-tight text-text mb-2">
           {config.title}
         </h2>
-        <p className="text-text-muted text-sm leading-relaxed mb-6 font-semibold">
+        <p className="text-text-muted text-sm leading-relaxed mb-6 font-bold">
           {config.intro}
         </p>
 
@@ -500,7 +182,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-lg mb-4 text-sm font-bold bg-success/20 text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {location.state.success}
@@ -510,7 +192,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-lg mb-4 text-sm font-bold bg-error/20 text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-error/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="alert"
           >
             {error}
@@ -520,7 +202,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-lg mb-4 text-sm font-bold bg-success/20 text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {success}
@@ -532,22 +214,20 @@ export default function AuthScreen({ type }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="bg-surface-2 border-2 border-line-strong rounded-xl p-4 mb-6 shadow-[3px_3px_0_#141413]"
+            className="bg-surface-2 border-3 border-line-strong rounded-sm p-4 mb-6 shadow-[4px_4px_0_#141413]"
           >
-            <strong className="block mb-1.5 text-sm font-extrabold text-text">
+            <strong className="block mb-1.5 text-sm font-black text-text">
               Xem thử giao diện không cần backend
             </strong>
-            <p className="text-text-muted text-xs leading-normal mb-3 font-medium">
+            <p className="text-text-muted text-xs leading-normal mb-3 font-extrabold">
               Chọn vai trò để điền tài khoản mẫu. Mật khẩu chung:{" "}
-              <code className="px-1.5 py-0.5 rounded bg-white text-primary text-xs font-mono border border-black/20">
+              <code className="px-1.5 py-0.5 rounded-sm bg-white text-black text-xs font-mono border-2 border-line-strong shadow-[1px_1px_0_#141413]">
                 {DEMO_PASSWORD}
               </code>
             </p>
             <div className="flex gap-2 flex-wrap">
               {DEMO_ACCOUNTS.map((account) => (
-                <Button
-                  variant="secondary"
-                  size="sm"
+                <button
                   type="button"
                   key={account.role}
                   onClick={() =>
@@ -556,15 +236,16 @@ export default function AuthScreen({ type }) {
                       password: DEMO_PASSWORD,
                     })
                   }
+                  className="border-3 border-line-strong bg-white text-black rounded-sm px-3 py-1.5 inline-flex gap-1.5 items-center justify-center font-extrabold text-xs whitespace-nowrap hover:bg-warning shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
                 >
                   {account.label}
-                </Button>
+                </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        <form onSubmit={submit}>
+        <form onSubmit={submit} className="space-y-4">
           {config.fields.map(([key, label, inputType]) => {
             const isPassword = inputType === "password";
             const actualType = isPassword
@@ -574,12 +255,13 @@ export default function AuthScreen({ type }) {
               : inputType;
 
             return (
-              <label className="block mb-4" key={key}>
+              <label className="block" key={key}>
                 <span className="block text-sm font-extrabold text-text mb-2">
                   {label}
                 </span>
                 <div className="relative">
-                  <Input
+                  {/* Ô INPUT THUẦN CHUẨN NEO-BRUTALISM */}
+                  <input
                     type={actualType}
                     required
                     minLength={isPassword ? 8 : undefined}
@@ -599,17 +281,21 @@ export default function AuthScreen({ type }) {
                           ? "current-password"
                           : "new-password"
                         : key === "email"
-                        ? "email"
-                        : "one-time-code"
+                          ? "email"
+                          : "one-time-code"
                     }
-                    className={isPassword ? "pr-10" : ""}
+                    placeholder={`Nhập ${label.toLowerCase()}...`}
+                    className={`w-full border-3 border-line-strong bg-white rounded-sm h-12 px-4 text-sm font-bold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 ${
+                      isPassword ? "pr-12" : ""
+                    }`}
                   />
+
                   {/* Nút bật/tắt xem mật khẩu */}
                   {isPassword && (
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors p-1 focus:outline-none"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors p-1 cursor-pointer focus:outline-none"
                       title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                     >
                       {showPassword ? (
@@ -624,39 +310,51 @@ export default function AuthScreen({ type }) {
             );
           })}
 
-          <Button className="w-full mt-2" size="lg" disabled={busy}>
-            {busy ? "Đang xử lý…" : config.button}
-            <ArrowRight size={18} />
-          </Button>
+          {/* NÚT SUBMIT THUẦN CHUẨN NEO-BRUTALISM */}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full border-3 border-line-strong bg-primary rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-black text-sm whitespace-nowrap text-text  hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+          >
+            {busy ? (
+              <RefreshCw size={18} strokeWidth={2.5} className="animate-spin" />
+            ) : (
+              <ArrowRight size={18} strokeWidth={2.5} />
+            )}
+            <span>{busy ? "Đang xử lý…" : config.button}</span>
+          </button>
         </form>
 
         {type === "verifyEmail" && (
-          <Button
-            className="w-full mt-3"
-            variant="secondary"
-            size="lg"
+          <button
             type="button"
             disabled={resendBusy || busy}
             onClick={resendOtp}
+            className="w-full mt-3 border-3 border-line-strong bg-white rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-black text-sm whitespace-nowrap text-text hover:bg-surface-2 hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
-            {resendBusy ? "Đang gửi lại…" : "Gửi lại mã OTP"}
-          </Button>
+            {resendBusy ? (
+              <RefreshCw size={18} strokeWidth={2.5} className="animate-spin" />
+            ) : (
+              <Mail size={18} strokeWidth={2.5} />
+            )}
+            <span>{resendBusy ? "Đang gửi lại…" : "Gửi lại mã OTP"}</span>
+          </button>
         )}
 
-        <div className="flex flex-col items-center gap-2.5 mt-6 text-sm font-semibold text-text-muted">
+        <div className="flex flex-col items-center gap-2.5 mt-6 text-sm font-bold text-text-muted">
           {type === "login" ? (
             <>
               <Link
                 to="/forgot-password"
-                className="text-primary font-extrabold hover:underline"
+                className="text-primary font-black hover:underline"
               >
                 Quên mật khẩu?
               </Link>
-              <span className="text-xs">
+              <span className="text-xs font-bold">
                 Đã được nhà trường cấp tài khoản?{" "}
                 <Link
                   to="/verify-email"
-                  className="text-primary font-extrabold hover:underline"
+                  className="text-primary font-black hover:underline"
                 >
                   Kích hoạt email
                 </Link>
@@ -665,7 +363,7 @@ export default function AuthScreen({ type }) {
           ) : (
             <Link
               to="/login"
-              className="text-primary font-extrabold hover:underline"
+              className="text-primary font-black hover:underline"
             >
               Quay lại đăng nhập
             </Link>
@@ -673,7 +371,7 @@ export default function AuthScreen({ type }) {
         </div>
 
         {type === "login" && (
-          <p className="mt-5 text-text-muted text-xs font-medium leading-relaxed text-center">
+          <p className="mt-5 text-text-muted text-xs font-bold leading-relaxed text-center">
             Tài khoản sinh viên được nhà trường cấp; DormHub không mở đăng ký
             sinh viên công khai.
           </p>

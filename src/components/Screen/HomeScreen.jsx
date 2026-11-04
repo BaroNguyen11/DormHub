@@ -18,7 +18,6 @@ import {
   Camera,
   Clock,
 } from "lucide-react";
-import { Button } from "../ui/button";
 
 const ROOM_MAP = [
   "free",
@@ -88,7 +87,6 @@ export default function HomeScreen() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-
               <h1 className="font-extrabold text-5xl lg:text-7xl text-[#1a1a1a] leading-[1.1] mb-8">
                 Chỗ ở an tâm
                 <br />
@@ -102,16 +100,20 @@ export default function HomeScreen() {
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
-                <Link to="/rooms">
-                  <Button variant="primary" size="lg">
-                    Khám phá phòng
-                    <ArrowRight size={18} />
-                  </Button>
+                <Link
+                  to="/rooms"
+                  className="border-3 border-(--color-line) bg-(--color-primary) rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-(--color-text) hover:bg-surface hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
+                >
+                  Khám phá phòng
+                  <ArrowRight size={18} />
                 </Link>
-                <Link to="/verify-email">
-                  <Button variant="outline" size="lg">
+                <Link
+                  to="/verify-email"
+                  className="border-3 border-(--color-line) bg-white rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-(--color-text) hover:bg-surface hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
+                >
+     
                     Kích hoạt tài khoản
-                  </Button>
+             
                 </Link>
               </div>
 
@@ -249,10 +251,10 @@ export default function HomeScreen() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
               <div className="inline-flex items-center gap-1 px-3 py-1 mb-3 bg-warning text-black text-xs font-extrabold uppercase tracking-widest rounded-md border-2 border-line-strong shadow-[3px_3px_0_#141413]">
-                <Sparkles size={18}/> TÍNH NĂNG NỔI BẬT
+                <Sparkles size={18} /> TÍNH NĂNG NỔI BẬT
               </div>
               <h2 className="font-extrabold text-3xl lg:text-5xl text-[#1a1a1a] leading-tight">
-                Giải quyết mọi thủ tục 
+                Giải quyết mọi thủ tục
                 <span className="text-primary"> chỉ trong vài cú click.</span>
               </h2>
             </div>
@@ -290,13 +292,13 @@ export default function HomeScreen() {
               {/* Mini UI Demo đè lên Card */}
               <div className="flex flex-wrap gap-2 pt-2 border-t-2 border-black/10">
                 <span className="flex items-center gap-0.5 px-3 py-1 bg-white rounded-lg border-2 border-line-strong text-xs font-bold text-black">
-                  <Building2 size={16} strokeWidth={2}/> Dãy nhà A2
+                  <Building2 size={16} strokeWidth={2} /> Dãy nhà A2
                 </span>
                 <span className="flex items-center gap-0.5 px-3 py-1 bg-success rounded-lg border-2 border-line-strong text-xs font-bold text-black">
-                  <Wind size={16} strokeWidth={2}/> Có Máy lạnh
+                  <Wind size={16} strokeWidth={2} /> Có Máy lạnh
                 </span>
                 <span className="flex items-center gap-0.5 px-3 py-1 bg-warning rounded-lg border-2 border-line-strong text-xs font-bold text-black">
-                  <CircleDollarSign size={16} strokeWidth={2}/> 450.000đ/tháng
+                  <CircleDollarSign size={16} strokeWidth={2} /> 450.000đ/tháng
                 </span>
               </div>
             </motion.div>
@@ -314,7 +316,7 @@ export default function HomeScreen() {
                   02
                 </div>
                 <span className="flex items-center gap-1 px-3 py-1 bg-success text-black rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
-                  <Zap size={17} fill="#fecd00"/> Phê duyệt nhanh
+                  <Zap size={17} fill="#fecd00" /> Phê duyệt nhanh
                 </span>
               </div>
 
@@ -349,7 +351,7 @@ export default function HomeScreen() {
                   03
                 </div>
                 <span className="flex items-center gap-1 px-3 py-1 bg-warning text-black rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
-                  <CreditCard size={17} strokeWidth={2.5}/> QR Code 1-touch
+                  <CreditCard size={17} strokeWidth={2.5} /> QR Code 1-touch
                 </span>
               </div>
 
@@ -398,10 +400,10 @@ export default function HomeScreen() {
 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 px-4 py-2 bg-white rounded-xl border-2 border-line-strong text-xs font-extrabold text-black shadow-[2px_2px_0_#141413]">
-                  <Camera size={16} strokeWidth={2.5}/> Chụp ảnh sự cố
+                  <Camera size={16} strokeWidth={2.5} /> Chụp ảnh sự cố
                 </div>
                 <div className="flex items-center gap-1 px-4 py-2 bg-white rounded-xl border-2 border-line-strong text-xs font-extrabold text-black shadow-[2px_2px_0_#141413]">
-                  <Clock size={16} strokeWidth={2.5}/> Phản hồi &lt; 24h
+                  <Clock size={16} strokeWidth={2.5} /> Phản hồi &lt; 24h
                 </div>
               </div>
             </motion.div>

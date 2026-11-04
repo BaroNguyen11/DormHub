@@ -1,50 +1,53 @@
-// Hiển thị skeleton loading với Hallmark styling
+// ====================================
+// LOADING & SKELETON COMPONENTS (Neo-Brutalism)
+// ====================================
 import { motion } from 'motion/react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 
-// Loading đơn giản - chỉ hiện spinner
+// Loading đơn giản - Spinner xoay tròn nổi bật
 export function SimpleLoading() {
   return (
-    <div className="p-[60px_20px] text-center text-[var(--color-text-muted)]">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        className="inline-block mb-3"
-      >
-        <RefreshCw size={32} className="text-[var(--color-primary)]" />
-      </motion.div>
-      <p className="font-[family-name:var(--font-family-body)] text-sm">Đang tải dữ liệu...</p>
+    <div className="py-16 px-5 text-center text-text-muted flex flex-col items-center justify-center gap-3">
+      <div className="size-12 rounded-xl bg-primary border-3 border-line-strong flex items-center justify-center shadow-[3px_3px_0_#141413]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <RefreshCw size={24} className="text-black" strokeWidth={2.5} />
+        </motion.div>
+      </div>
+      <p className="text-sm font-black text-text">Đang tải dữ liệu...</p>
     </div>
   );
 }
 
-// Loading cho bảng dữ liệu (ví dụ: danh sách phòng)
+// Loading cho bảng dữ liệu (Table Skeleton)
 export function TableSkeleton({ rows = 5, cols = 4 }) {
   return (
-    <div className="p-5">
-      {/* Header của bảng */}
+    <div className="p-6 bg-white border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] space-y-4">
+      {/* Header của bảng giả lập */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        className="h-10 bg-[var(--color-surface-2)] rounded-[var(--radius-md)] mb-4"
+        initial={{ opacity: 0.6 }}
+        animate={{ opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+        className="h-11 bg-surface-2 border-2 border-line-strong rounded-xl shadow-[2px_2px_0_#141413]"
       />
       
-      {/* Các dòng dữ liệu giả */}
+      {/* Các dòng dữ liệu giả lập */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex gap-3 mb-3">
+        <div key={rowIndex} className="flex gap-3">
           {Array.from({ length: cols }).map((_, colIndex) => (
             <motion.div
               key={colIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.5, 1, 0.5] }}
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: [0.6, 1, 0.6] }}
               transition={{ 
-                duration: 1.5, 
+                duration: 1.2, 
                 repeat: Infinity, 
                 ease: "easeInOut",
-                delay: (rowIndex * 0.1) + (colIndex * 0.05)
+                delay: (rowIndex * 0.08) + (colIndex * 0.04)
               }}
-              className="h-8 flex-1 bg-[var(--color-surface-3)] rounded-[var(--radius-sm)]"
+              className="h-9 flex-1 bg-surface border-2 border-line-strong/60 rounded-lg shadow-[1.5px_1.5px_0_#141413]"
             />
           ))}
         </div>
@@ -53,36 +56,36 @@ export function TableSkeleton({ rows = 5, cols = 4 }) {
   );
 }
 
-// Loading cho form (ví dụ: chi tiết hợp đồng)
+// Loading cho form (Form Skeleton)
 export function FormSkeleton() {
   return (
-    <div className="p-5 max-w-[600px]">
-      {/* Giả lập 5 input fields */}
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="mb-5">
-          {/* Label */}
+    <div className="p-6 sm:p-8 bg-white border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] max-w-2xl space-y-6">
+      {/* Giả lập 4-5 input fields */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          {/* Label giả lập */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.5, 1, 0.5] }}
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ 
-              duration: 1.5, 
+              duration: 1.2, 
               repeat: Infinity, 
               ease: "easeInOut",
               delay: i * 0.1
             }}
-            className="w-[120px] h-4 bg-[var(--color-surface-2)] rounded-[var(--radius-sm)] mb-2"
+            className="w-32 h-4 bg-surface-2 border border-line-strong/40 rounded-md"
           />
-          {/* Input */}
+          {/* Input giả lập */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.5, 1, 0.5] }}
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ 
-              duration: 1.5, 
+              duration: 1.2, 
               repeat: Infinity, 
               ease: "easeInOut",
               delay: i * 0.1 + 0.05
             }}
-            className="h-11 bg-[var(--color-surface-3)] rounded-[var(--radius-md)]"
+            className="h-12 bg-white border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413]"
           />
         </div>
       ))}
