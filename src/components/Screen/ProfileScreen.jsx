@@ -55,7 +55,7 @@ function FormFields({ names, values, onChange }) {
                 onChange={(e) => onChange(key, e.target.value)}
                 rows={4}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
-                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] focus:border-primary outline-none resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
+                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
               />
             ) : meta.options ? (
               <CustomSelect
@@ -74,7 +74,7 @@ function FormFields({ names, values, onChange }) {
                 onChange={(e) => onChange(key, e.target.value)}
                 disabled={isDisabled}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
-                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] focus:border-primary outline-none transition-all placeholder:font-medium placeholder:text-text-muted/60 disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
+                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
               />
             )}
           </div>
@@ -136,10 +136,10 @@ export default function ProfileScreen({ config }) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Card Form Chính (8 cột) */}
-          <div className="lg:col-span-8 bg-white border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
+          <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
             {/* Card Header với Avatar viết tắt */}
             <div className="flex items-center gap-4 pb-6 border-b-3 border-line-strong">
-              <div className="size-14 rounded-2xl bg-warning border-3 border-line-strong flex items-center justify-center text-xl font-black text-black shadow-[3px_3px_0_#141413] shrink-0">
+              <div className="size-14 rounded-2xl bg-warning border-3 border-line-strong flex items-center justify-center text-xl font-black text-text shadow-[3px_3px_0_#141413] shrink-0">
                 {(currentValues?.fullName || "U").slice(0, 1).toUpperCase()}
               </div>
               <div>
@@ -191,7 +191,7 @@ export default function ProfileScreen({ config }) {
                 <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
                   <ShieldCheck
                     size={20}
-                    className="text-black"
+                    className="text-text"
                     strokeWidth={2.5}
                   />
                 </div>

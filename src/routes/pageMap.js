@@ -1,7 +1,5 @@
 export const pageMap = {
   "/": "../pages/Guest/Home/Home.jsx",
-  "/rooms": "../pages/Guest/Rooms/RoomList.jsx",
-  "/rooms/:id": "../pages/Guest/Rooms/RoomDetail.jsx",
   "/student": "../pages/Student/Dashboard.jsx",
   "/student/profile": "../pages/Student/Profile.jsx",
   "/student/chat": "../pages/Student/Chat/ChatManager.jsx",
@@ -13,6 +11,8 @@ export const pageMap = {
   "/student/maintenance/:id": "../pages/Student/Maintenance/IssueDetail.jsx",
   "/student/notifications": "../pages/Student/Notifications/Notifications.jsx",
   "/student/payment-result": "../pages/Student/Payments/PaymentResult.jsx",
+  "/student/rooms": "../pages/Student/Rooms/RoomFinder.jsx",
+  "/student/rooms/:id": "../pages/Student/Rooms/RoomFinderDetail.jsx",
   "/student/residence": "../pages/Student/Rooms/RoomList.jsx",
   "/student/applications/new": "../pages/Student/Rooms/RoomRegister.jsx",
   "/manager": "../pages/Manager/Dashboard.jsx",

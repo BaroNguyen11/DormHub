@@ -180,7 +180,7 @@ const statusVariants = {
 
   // 4. Default state - Neutral Gray
   DEFAULT: {
-    className: "bg-[#f3f4f6] text-text-muted border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    className: "bg-surface-3 text-text-muted border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Không xác định",
   },
 };

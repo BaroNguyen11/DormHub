@@ -159,7 +159,7 @@ export default function AuthScreen({ type }) {
             type: "spring",
             stiffness: 200,
           }}
-          className="size-12 rounded-sm bg-primary text-black border-3 border-line-strong grid place-items-center mb-5 shadow-[3px_3px_0_#141413]"
+          className="size-12 rounded-sm bg-primary text-text border-3 border-line-strong grid place-items-center mb-5 shadow-[3px_3px_0_#141413]"
         >
           {type === "login" ? (
             <LockKeyhole size={22} strokeWidth={2.5} />
@@ -182,7 +182,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {location.state.success}
@@ -192,7 +192,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-error/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-error/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="alert"
           >
             {error}
@@ -202,7 +202,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-black border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {success}
@@ -221,7 +221,7 @@ export default function AuthScreen({ type }) {
             </strong>
             <p className="text-text-muted text-xs leading-normal mb-3 font-extrabold">
               Chọn vai trò để điền tài khoản mẫu. Mật khẩu chung:{" "}
-              <code className="px-1.5 py-0.5 rounded-sm bg-white text-black text-xs font-mono border-2 border-line-strong shadow-[1px_1px_0_#141413]">
+              <code className="px-1.5 py-0.5 rounded-sm bg-surface text-text text-xs font-mono border-2 border-line-strong shadow-[1px_1px_0_#141413]">
                 {DEMO_PASSWORD}
               </code>
             </p>
@@ -236,7 +236,7 @@ export default function AuthScreen({ type }) {
                       password: DEMO_PASSWORD,
                     })
                   }
-                  className="border-3 border-line-strong bg-white text-black rounded-sm px-3 py-1.5 inline-flex gap-1.5 items-center justify-center font-extrabold text-xs whitespace-nowrap hover:bg-warning shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+                  className="border-3 border-line-strong bg-surface text-text rounded-sm px-3 py-1.5 inline-flex gap-1.5 items-center justify-center font-extrabold text-xs whitespace-nowrap hover:bg-warning shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
                 >
                   {account.label}
                 </button>
@@ -285,7 +285,7 @@ export default function AuthScreen({ type }) {
                           : "one-time-code"
                     }
                     placeholder={`Nhập ${label.toLowerCase()}...`}
-                    className={`w-full border-3 border-line-strong bg-white rounded-sm h-12 px-4 text-sm font-bold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 ${
+                    className={`w-full border-3 border-line-strong bg-surface rounded-sm h-12 px-4 text-sm font-bold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 ${
                       isPassword ? "pr-12" : ""
                     }`}
                   />
@@ -330,7 +330,7 @@ export default function AuthScreen({ type }) {
             type="button"
             disabled={resendBusy || busy}
             onClick={resendOtp}
-            className="w-full mt-3 border-3 border-line-strong bg-white rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-black text-sm whitespace-nowrap text-text hover:bg-surface-2 hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+            className="w-full mt-3 border-3 border-line-strong bg-surface rounded-sm h-12 px-7 py-3 inline-flex gap-2 items-center justify-center font-black text-sm whitespace-nowrap text-text hover:bg-surface-2 hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
             {resendBusy ? (
               <RefreshCw size={18} strokeWidth={2.5} className="animate-spin" />

@@ -5,19 +5,19 @@ import { cn } from '@/lib/utils';
 const variants = {
   success: {
     icon: CheckCircle,
-    className: 'bg-[#e0f7e8] border-3 border-[#00ff88] text-[#1a1a1a] shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
+    className: 'bg-success-light border-3 border-success text-text shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
   },
   error: {
     icon: XCircle,
-    className: 'bg-[#ffe0e8] border-3 border-[#ff3366] text-[#1a1a1a] shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
+    className: 'bg-error-light border-3 border-error text-text shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
   },
   warning: {
     icon: AlertCircle,
-    className: 'bg-[#fffbe0] border-3 border-[#ffcc00] text-[#1a1a1a] shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
+    className: 'bg-warning-light border-3 border-warning text-text shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
   },
   info: {
     icon: Info,
-    className: 'bg-[#e0f7ff] border-3 border-[#00d2ff] text-[#1a1a1a] shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
+    className: 'bg-primary-light border-3 border-primary text-text shadow-[3px_3px_0_rgba(0,0,0,0.15)]',
   },
 };
 

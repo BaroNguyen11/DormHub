@@ -11,8 +11,8 @@ export function Card({
     <motion.div
       whileHover={hover ? { y: -4 } : undefined}
       className={cn(
-        'bg-white border-3 border-[#333333] rounded-[var(--radius-lg)] p-6 shadow-[4px_4px_0_rgba(0,0,0,0.15)]',
-        hover && 'transition-all hover:shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:border-[#00d2ff]',
+        'bg-surface border-3 border-line rounded-[var(--radius-lg)] p-6 shadow-[4px_4px_0_rgba(0,0,0,0.15)]',
+        hover && 'transition-all hover:shadow-[6px_6px_0_rgba(0,0,0,0.25)] hover:border-primary',
         className
       )}
       {...props}

@@ -5,34 +5,34 @@ import { Loader } from 'lucide-react';
 const buttonVariants = {
   // Neo-Brutalism REAL - 3px borders, neon colors, strong shadows
   primary: {
-    base: 'bg-[#00d2ff] text-(--color-text) font-bold! border-3 border-[#000000] shadow-(--shadow-sm)',
+    base: 'bg-primary text-(--color-text) font-bold! border-3 border-line-strong shadow-(--shadow-sm)',
     hover: ' hover:shadow-(--shadow-md) hover:-translate-0.5',
-    focus: 'focus-visible:ring-[#00d2ff]',
+    focus: 'focus-visible:ring-primary',
   },
   accent: {
-    base: 'bg-[#ff6b6b] text-(--color-text) font-bold! border-3 border-[#000000] shadow-(--shadow-sm)',
-    hover: 'hover:bg-[#ff5252] hover:shadow-(--shadow-md) hover:-translate-0.5',
-    focus: 'focus-visible:ring-[#ff6b6b]',
+    base: 'bg-accent text-(--color-text) font-bold! border-3 border-line-strong shadow-(--shadow-sm)',
+    hover: 'hover:bg-accent-hover hover:shadow-(--shadow-md) hover:-translate-0.5',
+    focus: 'focus-visible:ring-accent',
   },
   secondary: {
-    base: 'bg-white text-[#1a1a1a] border-3 border-[#333333] shadow-(--shadow-sm)',
-    hover: 'hover:shadow-(--shadow-md) hover:border-[#00d2ff] hover:-translate-0.5',
-    focus: 'focus-visible:ring-[#00d2ff]',
+    base: 'bg-surface text-text border-3 border-line shadow-(--shadow-sm)',
+    hover: 'hover:shadow-(--shadow-md) hover:border-primary hover:-translate-0.5',
+    focus: 'focus-visible:ring-primary',
   },
   ghost: {
-    base: 'bg-transparent text-[#1a1a1a] border-3 border-transparent',
-    hover: 'hover:bg-[#f3f4f6]',
-    focus: 'focus-visible:ring-[#00d2ff]',
+    base: 'bg-transparent text-text border-3 border-transparent',
+    hover: 'hover:bg-surface-3',
+    focus: 'focus-visible:ring-primary',
   },
   outline: {
-    base: 'bg-white text-(--color-text) font-bold! border-3 border-[#1a1a1a] shadow-(--shadow-sm)',
+    base: 'bg-surface text-(--color-text) font-bold! border-3 border-line-strong shadow-(--shadow-sm)',
     hover: ' hover:shadow-(--shadow-md) hover:-translate-y-1 hover:translate-x-[-2px]',
-    focus: 'focus-visible:ring-[#00d2ff]',
+    focus: 'focus-visible:ring-primary',
   },
   destructive: {
-    base: 'bg-[#ffe0e8] text-[#ff3366] border-3 border-[#ff3366] shadow-[4px_4px_0_rgba(255,51,102,0.2)]',
-    hover: 'hover:bg-[#ff3366] hover:text-white hover:shadow-[6px_6px_0_rgba(255,51,102,0.3)] hover:-translate-y-1 hover:translate-x-[-2px]',
-    focus: 'focus-visible:ring-[#ff3366]',
+    base: 'bg-error-light text-error border-3 border-error shadow-[4px_4px_0_rgba(255,51,102,0.2)]',
+    hover: 'hover:bg-error hover:text-surface hover:shadow-[6px_6px_0_rgba(255,51,102,0.3)] hover:-translate-y-1 hover:translate-x-[-2px]',
+    focus: 'focus-visible:ring-error',
   },
 };
 

@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils';
 
 const variants = {
-  default: 'bg-[#e5e7eb] text-[#1a1a1a] border-3 border-[#333333]',
-  primary: 'bg-[#00d2ff] text-white border-3 border-[#00d2ff]',
-  success: 'bg-[#00ff88] text-white border-3 border-[#00ff88]',
-  warning: 'bg-[#ffcc00] text-[#1a1a1a] border-3 border-[#ffcc00]',
-  error: 'bg-[#ff3366] text-white border-3 border-[#ff3366]',
-  info: 'bg-[#00d2ff] text-white border-3 border-[#00d2ff]',
+  default: 'bg-surface-2 text-text border-3 border-line',
+  primary: 'bg-primary text-surface border-3 border-primary',
+  success: 'bg-success text-text border-3 border-success',
+  warning: 'bg-warning text-text border-3 border-warning',
+  error: 'bg-error text-surface border-3 border-error',
+  info: 'bg-primary text-surface border-3 border-primary',
 };
 
 export function Badge({ 

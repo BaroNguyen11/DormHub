@@ -13,17 +13,23 @@ import {
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import useAuth from "../hooks/useAuth";
+import useStudentRoom from "../hooks/useStudentRoom";
 import { nav } from "../constants/screenConfig";
 import { isDemoSession } from "../services/demo.service";
+import ThemeToggleSwitch from "./ThemeToggleSwitch";
 
 export default function Workspace({ group, title, children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { hasRoom } = useStudentRoom();
+  // Sinh viên chưa có phòng chỉ thấy các chức năng tìm phòng / đăng ký
+  const noRoom = group === "student" && !hasRoom;
+  const navItems = nav[noRoom ? "studentNoRoom" : group];
   if (group === "guest")
     return (
       <div className="min-h-screen bg-bg">
-        <header className="h-18.5 border-b-4 border-(--color-line) bg-white flex items-center justify-between px-[clamp(20px,5vw,72px)] gap-5 shadow-(--shadow-sm)">
+        <header className="h-18.5 border-b-4 border-(--color-line) bg-surface flex items-center justify-between px-[clamp(20px,5vw,72px)] gap-5 shadow-(--shadow-sm)">
           <Link
             className="inline-flex items-center gap-1 font-(family-name:--font-family-display) font-extrabold text-xl tracking-tight text-(--color-text) whitespace-nowrap"
             to="/"
@@ -44,51 +50,49 @@ export default function Workspace({ group, title, children }) {
             ))}
           </nav>
           <div className="flex gap-3">
-            <Link
-              className="border-3 border-(--color-line) bg-white rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-(--color-text) hover:bg-surface hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
-              to="/login"
-            >
-              Đăng nhập
-            </Link>
-            <Link
-              className="border-3 border-line-strong bg-(--color-primary)  rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5  transition-all duration-200 active:translate-0.5 active:shadow-none"
-              to="/verify-email"
-            >
-              Kích hoạt tài khoản
-            </Link>
+            <>
+              <Link
+                className="border-3 border-(--color-line) bg-surface rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-(--color-text) hover:bg-surface hover:border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 transition-all duration-200 active:translate-0.5 active:shadow-none"
+                to="/login"
+              >
+                Đăng nhập
+              </Link>
+              <Link
+                className="border-3 border-line-strong bg-(--color-primary)  rounded-sm h-10 px-5 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5  transition-all duration-200 active:translate-0.5 active:shadow-none"
+                to="/verify-email"
+              >
+                Kích hoạt tài khoản
+              </Link>
+            </>
           </div>
         </header>
         {children}
-        <footer className="py-8 px-[clamp(20px,5vw,72px)] border-t-4 border-(--color-line) bg-white text-(--color-text-muted) text-sm font-semibold">
+        <footer className="py-8 px-[clamp(20px,5vw,72px)] border-t-4 border-(--color-line) bg-surface text-(--color-text-muted) text-sm font-semibold">
           DormHub · Không gian sống sinh viên
         </footer>
       </div>
     );
   if (group === "auth")
     return (
-      <div className="min-h-screen grid lg:grid-cols-12 bg-white">
+      <div className="min-h-screen grid lg:grid-cols-12 bg-surface">
         {/* Cột trái - Hero & Branding (Chỉ hiện trên LG screen) */}
-        <div className="hidden lg:col-span-5 lg:flex bg-[#e0f7ff] px-10 xl:px-14 py-10 flex-col justify-between border-r-4 border-line-strong relative overflow-hidden">
+        <div className="hidden lg:col-span-5 lg:flex bg-primary-light px-10 xl:px-14 py-10 flex-col justify-between border-r-4 border-line-strong relative overflow-hidden">
           {/* Pattern khối hình trang trí nền */}
           <div className="absolute -top-10 -left-10 w-40 h-40 border-4 border-primary/30 rotate-12 pointer-events-none" />
           <div className="absolute bottom-10 -right-10 w-48 h-48 border-4 border-warning/40 -rotate-12 pointer-events-none" />
 
           {/* Logo */}
           <Link
-            className="inline-flex items-center gap-3 font-extrabold text-2xl tracking-tight text-text whitespace-nowrap z-10"
             to="/"
+            className="inline-flex items-center gap-2 text-xs font-extrabold px-4 py-2.5 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all w-fit z-10"
           >
-            <img
-              src="/logo.png"
-              alt="DormHub Logo"
-              className="size-13 object-contain"
-            />
-            <span>DormHub</span>
+            <ArrowLeft size={16} strokeWidth={2.5} />
+            Quay lại trang chủ
           </Link>
 
           {/* Nội dung giới thiệu */}
           <div className="my-auto py-6 z-10">
-            <div className="inline-block px-3 py-1 mb-4 bg-warning text-black text-xs font-extrabold uppercase tracking-widest rounded-md border-2 border-line-strong shadow-[3px_3px_0_#141413]">
+            <div className="inline-block px-3 py-1 mb-4 bg-warning text-text text-xs font-extrabold uppercase tracking-widest rounded-md border-2 border-line-strong shadow-[3px_3px_0_#141413]">
               Hệ thống nội trú
             </div>
 
@@ -103,38 +107,29 @@ export default function Workspace({ group, title, children }) {
             </p>
 
             {/* Dải điểm nhấn (Tránh cảm giác trống trải) */}
-            <div className="space-y-3.5 pt-6 border-t-2 border-black/10">
-              <div className="flex items-center gap-3 text-xs font-extrabold text-black">
-                <div className="size-7 rounded-lg bg-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
-                  <Zap size={14} className="text-black" />
+            <div className="space-y-3.5 pt-6 border-t-2 border-line/10">
+              <div className="flex items-center gap-3 text-xs font-extrabold text-text">
+                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                  <Zap size={14} className="text-text" />
                 </div>
                 <span>Kích hoạt tài khoản nhanh chóng trong 30s</span>
               </div>
 
-              <div className="flex items-center gap-3 text-xs font-extrabold text-black">
-                <div className="size-7 rounded-lg bg-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
-                  <Receipt size={14} className="text-black" />
+              <div className="flex items-center gap-3 text-xs font-extrabold text-text">
+                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                  <Receipt size={14} className="text-text" />
                 </div>
                 <span>Tra cứu hợp đồng & hóa đơn minh bạch</span>
               </div>
 
-              <div className="flex items-center gap-3 text-xs font-extrabold text-black">
-                <div className="size-7 rounded-lg bg-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
-                  <ShieldCheck size={14} className="text-black" />
+              <div className="flex items-center gap-3 text-xs font-extrabold text-text">
+                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                  <ShieldCheck size={14} className="text-text" />
                 </div>
                 <span>Bảo mật thông tin sinh viên tuyệt đối</span>
               </div>
             </div>
           </div>
-
-          {/* Nút quay lại trang chủ chuẩn Neo-Brutalism */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-xs font-extrabold px-4 py-2.5 bg-white text-black rounded-sm border-2 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all w-fit z-10"
-          >
-            <ArrowLeft size={16} strokeWidth={2.5} />
-            Quay lại trang chủ
-          </Link>
         </div>
 
         {/* Cột phải - Khung Form ({children}) */}
@@ -180,12 +175,16 @@ export default function Workspace({ group, title, children }) {
 
         {/* Section Tag */}
         <div className="text-[11px] tracking-widest text-text-muted font-extrabold px-3 py-4 uppercase">
-          {group === "student" ? "Không gian sinh viên" : "Trung tâm quản lý"}
+          {group === "student"
+            ? noRoom
+              ? "Tìm phòng nội trú"
+              : "Không gian sinh viên"
+            : "Trung tâm quản lý"}
         </div>
 
         {/* Menu Items */}
         <nav className="flex flex-col gap-2">
-          {nav[group]?.map(([name, path, Icon]) => (
+          {navItems?.map(([name, path, Icon]) => (
             <NavLink key={path} to={path} end onClick={() => setOpen(false)}>
               {({ isActive }) => (
                 <div
@@ -212,7 +211,7 @@ export default function Workspace({ group, title, children }) {
             <strong className="block text-xs font-extrabold whitespace-nowrap overflow-hidden text-ellipsis text-text">
               {user?.fullName || user?.name || user?.email || "Tài khoản"}
             </strong>
-            <span className="inline-block text-[10px] bg-primary-light text-black px-1.5 py-0.5 rounded border border-line-strong uppercase tracking-wider font-extrabold mt-0.5">
+            <span className="inline-block text-[10px] bg-primary-light text-text px-1.5 py-0.5 rounded border border-line-strong uppercase tracking-wider font-extrabold mt-0.5">
               {group}
             </span>
           </div>
@@ -226,7 +225,7 @@ export default function Workspace({ group, title, children }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-20 md:hidden"
+            className="fixed inset-0 bg-text/50 backdrop-blur-xs z-20 md:hidden"
             onClick={() => setOpen(false)}
             aria-label="Đóng menu"
           />
@@ -236,7 +235,7 @@ export default function Workspace({ group, title, children }) {
       {/* 2. MAIN CONTENT AREA */}
       <div className="min-w-0 flex-1 flex flex-col bg-surface">
         {/* Header Bar */}
-        <header className="h-16 border-b-4 border-line-strong bg-white flex items-center justify-between px-6 lg:px-10 gap-4 shadow-[0_4px_0_#141413] z-10 sticky top-0">
+        <header className="h-16 border-b-4 border-line-strong bg-surface flex items-center justify-between px-6 lg:px-10 gap-4 shadow-[0_4px_0_#141413] z-10 sticky top-0">
           {/* Left Breadcrumbs */}
           <div className="flex items-center gap-2 text-text-muted text-xs font-bold">
             <button
@@ -244,7 +243,7 @@ export default function Workspace({ group, title, children }) {
               onClick={() => setOpen(true)}
               aria-label="Mở menu"
             >
-              <Menu size={18} className="text-black" />
+              <Menu size={18} className="text-text" />
             </button>
             <span className="hidden sm:inline-flex items-center gap-1.5 text-text-muted">
               <Building2 size={15} />
@@ -261,19 +260,7 @@ export default function Workspace({ group, title, children }) {
 
           {/* Right User Actions */}
           <div className="flex items-center gap-3">
-            {/* Thông báo Button */}
-            <Link
-              to={
-                group === "student"
-                  ? "/student/notifications"
-                  : "/manager/notifications"
-              }
-              className="size-9 rounded-lg bg-white border-2 border-line-strong grid place-items-center shadow-[2px_2px_0_#141413] hover:bg-primary-light hover:-translate-y-0.5 transition-all"
-              aria-label="Thông báo"
-            >
-              <Bell size={18} className="text-black" />
-            </Link>
-
+            <ThemeToggleSwitch />
             {/* Tên User */}
             <span className="font-extrabold text-text hidden md:block text-sm px-2">
               {user?.fullName || user?.email}
@@ -281,14 +268,14 @@ export default function Workspace({ group, title, children }) {
 
             {/* Đăng xuất Button */}
             <button
-              className="size-9 rounded-lg bg-accent text-white border-2 border-line-strong grid place-items-center shadow-[2px_2px_0_#141413] hover:bg-accent-hover hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
+              className="size-9 rounded-lg bg-error text-white border-2 border-line-strong grid place-items-center shadow-[1px_1px_0_#141413] hover:shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all"
               onClick={async () => {
                 try {
                   await logout();
                 } catch {
                   // Xóa session ở client ngay cả khi Backend lỗi
                 } finally {
-                  navigate("/login", { replace: true });
+                  navigate("/", { replace: true });
                 }
               }}
               title="Đăng xuất"
@@ -301,7 +288,7 @@ export default function Workspace({ group, title, children }) {
 
         {/* Demo Mode Banner */}
         {isDemoSession() && (
-          <div className="py-2.5 px-6 bg-warning text-black border-b-4 border-line-strong text-xs font-extrabold text-center shadow-[0_2px_0_#141413] flex items-center justify-center gap-2">
+          <div className="py-2.5 px-6 bg-warning text-text border-b-4 border-line-strong text-xs font-extrabold text-center shadow-[0_2px_0_#141413] flex items-center justify-center gap-2">
             <span>⚠️ CHẾ ĐỘ XEM THỬ:</span>
             <span className="font-semibold">
               Dữ liệu lưu tạm thời trong phiên trình duyệt

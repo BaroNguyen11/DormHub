@@ -136,10 +136,10 @@ Bạn cần hỗ trợ gì hôm nay?`,
         '<ol class="my-2 pl-4 space-y-1 list-decimal font-bold">',
       )
       .replace(/<li>/g, '<li class="leading-relaxed font-semibold">')
-      .replace(/<strong>/g, '<strong class="font-black text-black">')
+      .replace(/<strong>/g, '<strong class="font-black text-text">')
       .replace(
         /<code>/g,
-        '<code class="px-1.5 py-0.5 rounded bg-warning/30 text-black text-xs font-mono border border-line-strong">',
+        '<code class="px-1.5 py-0.5 rounded bg-warning/30 text-text text-xs font-mono border border-line-strong">',
       )
       .replace(
         /<pre>/g,
@@ -156,19 +156,19 @@ Bạn cần hỗ trợ gì hôm nay?`,
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-white border-4 border-line-strong rounded-2xl shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
+          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-2xl shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
         >
           {/* HEADER CHATBOT */}
           <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
-                <Bot size={22} className="text-black" strokeWidth={2.5} />
+                <Bot size={22} className="text-text" strokeWidth={2.5} />
               </div>
               <div>
-                <strong className="block text-base font-black text-black tracking-tight leading-none">
+                <strong className="block text-base font-black text-text tracking-tight leading-none">
                   Trợ lý DormHub AI
                 </strong>
-                <span className="text-[11px] font-extrabold text-black/70 uppercase tracking-wider block mt-1">
+                <span className="text-[11px] font-extrabold text-text/70 uppercase tracking-wider block mt-1">
                   Trực tuyến 24/7
                 </span>
               </div>
@@ -178,7 +178,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               <button
                 type="button"
                 onClick={clearChat}
-                className="size-8 rounded-lg bg-white border-2 border-line-strong flex items-center justify-center text-black shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                className="size-8 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center text-text shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
                 title="Xóa lịch sử chat"
               >
                 <Trash2 size={16} strokeWidth={2.5} />
@@ -187,7 +187,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               <button
                 type="button"
                 onClick={onClose}
-                className="size-8 rounded-lg bg-accent text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] hover:bg-accent-hover hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                className="size-8 rounded-lg bg-error text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
                 title="Đóng cửa sổ"
               >
                 <X size={18} strokeWidth={2.5} />
@@ -218,23 +218,23 @@ Bạn cần hỗ trợ gì hôm nay?`,
                       isAssistant ? "bg-warning" : "bg-primary"
                     }`}
                   >
-                    {isAssistant ? (
-                      <Bot size={18} className="text-black" strokeWidth={2.5} />
+                     {isAssistant ? (
+                      <Bot size={18} className="text-text" strokeWidth={2.5} />
                     ) : (
                       <User
                         size={18}
-                        className="text-black"
+                        className="text-text"
                         strokeWidth={2.5}
                       />
                     )}
                   </div>
 
                   {/* Bong bóng tin nhắn Neo-Brutalism */}
-                  <div
+                   <div
                     className={`p-3.5 rounded-2xl border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
                       isAssistant
-                        ? "bg-white text-text rounded-tl-xs"
-                        : "bg-primary text-black rounded-tr-xs"
+                        ? "bg-surface text-text rounded-tl-xs"
+                        : "bg-primary text-text rounded-tr-xs"
                     }`}
                   >
                     {isAssistant ? (
@@ -262,9 +262,9 @@ Bạn cần hỗ trợ gì hôm nay?`,
                 className="flex gap-2.5 mr-auto max-w-[85%]"
               >
                 <div className="size-8 rounded-lg bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
-                  <Bot size={18} className="text-black" strokeWidth={2.5} />
+                  <Bot size={18} className="text-text" strokeWidth={2.5} />
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-tl-xs bg-white border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
+                <div className="px-4 py-3 rounded-2xl rounded-tl-xs bg-surface border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
                   <RefreshCw
                     size={16}
                     strokeWidth={2.5}
@@ -279,7 +279,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
           </div>
 
           {/* Ô NHẬP TIN NHẮN */}
-          <div className="p-3.5 bg-white border-t-4 border-line-strong flex gap-2.5 items-end shrink-0">
+          <div className="p-3.5 bg-surface border-t-4 border-line-strong flex gap-2.5 items-end shrink-0">
             {/* <textarea
               ref={inputRef}
               value={input}
@@ -288,7 +288,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
               disabled={loading}
               rows={1}
-              className="flex-1 border-3 border-line-strong rounded-xl px-3.5 py-2.5 text-xs! sm:text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
+              className="flex-1 border-3 border-line-strong rounded-xl px-3.5 py-2.5 text-xs! sm:text-sm     font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
             /> */}
             <textarea
               ref={inputRef}
@@ -306,7 +306,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
     ${isExpanded ? "rounded-md" : "rounded-xl"}
     px-3.5   leading-10
     text-xs! sm:text-sm
-    font-bold text-text bg-white
+    font-bold text-text bg-surface
     shadow-[2px_2px_0_#141413]
     focus:shadow-[4px_4px_0_#141413]
     focus:border-primary
@@ -322,7 +322,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="size-10 rounded-xl bg-primary text-black border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+              className="size-10 rounded-xl bg-primary text-text border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
             >
               <Send size={18} strokeWidth={2.5} />
             </button>

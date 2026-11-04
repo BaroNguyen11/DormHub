@@ -32,17 +32,17 @@ export function EmptyState({
     <div style={{
       padding: '80px 20px',
       textAlign: 'center',
-      color: '#6b7280'
+      color: 'var(--color-text-muted)'
     }}>
       <Icon size={48} style={{ 
         marginBottom: '16px',
-        color: '#9ca3af'
+        color: 'var(--color-text-subtle)'
       }} />
       <h3 style={{ 
         fontSize: '18px',
         fontWeight: '600',
         marginBottom: '8px',
-        color: '#374151'
+        color: 'var(--color-text)'
       }}>
         {message || config.title}
       </h3>

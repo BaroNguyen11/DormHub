@@ -23,6 +23,7 @@ import { FIELD_CONFIGS } from "./constants";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { CustomDatePicker } from "../ui/CustomDatePicker";
+import usePermissions from "../../hooks/usePermissions";
 
 /**
  * Component FormFields - Render ô nhập dữ liệu ngày & ghi chú
@@ -61,7 +62,7 @@ function FormFields({ names, values, onChange }) {
                 onChange={(e) => onChange(key, e.target.value)}
                 rows={4}
                 placeholder="Nhập mong muốn hoặc ghi chú cho ban quản lý..."
-                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-white shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
               />
             ) : (
               <CustomDatePicker
@@ -87,6 +88,9 @@ export default function ApplicationScreen({ config }) {
   const [values, setValues] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Check if student already has a room
+  const { canRegisterForRoom, hasActiveRoom, checkingRoom } = usePermissions();
 
   // Load danh sách phòng còn trống
   const { data: rooms, loading } = useLoad("/rooms", {
@@ -128,13 +132,51 @@ export default function ApplicationScreen({ config }) {
     }
   }
 
+  // Show loading while checking room status
+  if (checkingRoom) {
+    return (
+      <div className="space-y-6">
+        <Heading config={config} />
+        <Loading />
+      </div>
+    );
+  }
+
+  // Show warning if student already has a room
+  if (hasActiveRoom) {
+    return (
+      <div className="space-y-6">
+        <Heading config={config} />
+        <Notice
+          type="warning"
+          message="Bạn đã được phân phòng"
+          description="Bạn hiện đang có phòng ở KTX. Vui lòng kiểm tra thông tin phòng tại mục 'Chỗ ở của tôi'. Nếu muốn chuyển phòng, vui lòng liên hệ ban quản lý."
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/student/residence")}
+            className="border-3 border-line-strong bg-primary rounded-sm h-11 px-6 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 active:shadow-none"
+          >
+            Xem thông tin phòng của tôi
+          </button>
+          <button
+            onClick={() => navigate("/student")}
+            className="border-3 border-line bg-surface rounded-sm h-11 px-6 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-text hover:bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 active:shadow-none"
+          >
+            Về trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Heading tiêu đề trang */}
       <Heading config={config} />
 
       {/* Stepper - Dải 4 bước Neo-Brutalism */}
-      <div className="bg-white border-4 border-line-strong rounded-2xl p-4 sm:p-6 shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-2xl p-4 sm:p-6 shadow-[6px_6px_0_#141413]">
         <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:pb-0">
           {steps.map((name, i) => {
             const isCurrent = i === step;
@@ -185,7 +227,7 @@ export default function ApplicationScreen({ config }) {
       <Notice error={error} />
 
       {/* Main Card Nội Dung Form */}
-      <div className="bg-white border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413]">
         <form onSubmit={next} className="space-y-8">
           {/* BƯỚC 0: Xác nhận thông tin tài khoản */}
           {step === 0 && (
@@ -194,7 +236,7 @@ export default function ApplicationScreen({ config }) {
                 <div className="size-11 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
                   <UserCheck
                     size={22}
-                    className="text-black"
+                    className="text-text"
                     strokeWidth={2.5}
                   />
                 </div>
@@ -240,8 +282,8 @@ export default function ApplicationScreen({ config }) {
                         key={room.id}
                         className={`p-5 rounded-2xl border-3 border-line-strong cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                           isSelected
-                            ? "bg-primary-light border-line-strong shadow-[5px_5px_0_#141413] -translate-y-1 ring-2 ring-black"
-                            : "bg-white hover:bg-surface-2 shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5"
+                            ? "bg-primary-light border-line-strong shadow-[5px_5px_0_#141413] -translate-y-1 ring-2 ring-line-strong"
+                            : "bg-surface hover:bg-surface-2 shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5"
                         }`}
                       >
                         <input
@@ -293,7 +335,7 @@ export default function ApplicationScreen({ config }) {
           {step === 2 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-2">
-                <Calendar size={18} className="text-black" />
+                <Calendar size={18} className="text-text" />
                 <h3 className="text-sm font-black text-text uppercase tracking-wider">
                   Thời gian & Ghi chú bổ sung
                 </h3>
@@ -311,7 +353,7 @@ export default function ApplicationScreen({ config }) {
           {step === 3 && (
             <div className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b-3 border-line-strong">
-                <ShieldCheck size={20} className="text-black" />
+                <ShieldCheck size={20} className="text-text" />
                 <h3 className="text-base font-black text-text">
                   Xác nhận thông tin đăng ký nội trú
                 </h3>
@@ -380,7 +422,7 @@ export default function ApplicationScreen({ config }) {
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-white text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-surface text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
               >
                 <ArrowLeft size={18} strokeWidth={2.5} />
                 <span>Quay lại</span>
@@ -392,7 +434,7 @@ export default function ApplicationScreen({ config }) {
             <button
               type="submit"
               disabled={busy || (step === 1 && !values.roomId)}
-              className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
             >
               {busy ? (
                 <RefreshCw

@@ -92,9 +92,9 @@ export default function ListScreen({ config }) {
       <Heading config={config}>
         {createPath && (
           <Link to={createPath}>
-            <button className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-black font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer">
+            <button className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-[#000000] font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer">
               <Plus size={18} strokeWidth={2.5} />
-              <span>Tạo mới</span>
+              <span>{config.createLabel || "Tạo mới"}</span>
             </button>
           </Link>
         )}
@@ -104,7 +104,7 @@ export default function ListScreen({ config }) {
       <Notice error={actionError || error} success={success} />
 
       {/* Panel Bảng dữ liệu Neo-Brutalism */}
-      <div className="bg-white border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413]">
         {/* Toolbar: Tìm kiếm, Lọc trạng thái, Tải lại */}
         <div className="flex flex-wrap items-center gap-3 p-4 border-b-4 border-line-strong bg-surface-2">
           {/* Ô Tìm kiếm */}
@@ -122,7 +122,7 @@ export default function ListScreen({ config }) {
                 setSearch(e.target.value);
                 resetPage();
               }}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-3 border-line-strong bg-white text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! transition-all"
             />
           </div>
 
@@ -147,7 +147,7 @@ export default function ListScreen({ config }) {
 
           {/* Nút Reload */}
           <button
-            className="inline-flex items-center justify-center size-11 bg-white border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+            className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
             onClick={reload}
             aria-label="Tải lại"
             title="Tải lại dữ liệu"
@@ -173,7 +173,7 @@ export default function ListScreen({ config }) {
               className="w-full border-collapse text-left"
             >
               {/* Table Header */}
-              <thead className="bg-warning border-b-4 border-line-strong text-black">
+              <thead className="bg-warning border-b-4 border-line-strong text-[#000000]">
                 <tr>
                   {config.columns.map((key) => (
                     <th
@@ -221,7 +221,7 @@ export default function ListScreen({ config }) {
                         {config.detail && (
                           <Link
                             to={`${config.detail}/${row.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-black font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
                           >
                             <Eye size={14} strokeWidth={2.5} />
                             <span>Chi tiết</span>
@@ -234,7 +234,7 @@ export default function ListScreen({ config }) {
                             key={action.label}
                             disabled={busy === String(row.id)}
                             onClick={() => doAction(row, action)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-black font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
                           >
                             {action.label}
                           </button>
@@ -259,7 +259,7 @@ export default function ListScreen({ config }) {
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-white text-black rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={page === 0}
               onClick={previousPage}
             >
@@ -268,7 +268,7 @@ export default function ListScreen({ config }) {
             </button>
 
             <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-white text-black rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={data?.last === true || rows.length < pageSize}
               onClick={nextPage}
             >

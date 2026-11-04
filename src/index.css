@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource-variable/geist";
 /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); */
-
+@custom-variant dark (&:where(.dark, .dark *));
 /* Neo-Brutalism Design System */
 @theme {
   /* Typography - Inter for readability */
@@ -90,6 +90,64 @@
     0 25px 50px -12px rgba(0, 0, 0, 0.5), 12px 12px 0 rgba(0, 0, 0, 0.25);
   --shadow-lift: var(--shadow-xl);
 }
+
+/* Dark Mode Theme Override */
+.dark {
+  --color-bg: #0a0a0a;
+  --color-surface: #1a1a1a;
+  --color-surface-2: #242424;
+  --color-surface-3: #2d2d2d;
+
+  --color-text: #f5f5f5;
+  --color-text-muted: #a3a3a3;
+  --color-text-subtle: #737373;
+
+  --color-line: #404040;
+  --color-line-strong: #525252;
+
+  --color-primary: #00d2ff;
+  --color-primary-hover: #00b8e6;
+  --color-primary-light: #003d4d;
+
+  --color-success: #00ff88;
+  --color-success-light: #003d2d;
+
+  --color-warning: #ffcc00;
+  --color-warning-light: #4d3d00;
+
+  --color-error: #ff3366;
+  --color-error-light: #4d0d1a;
+
+  --color-accent: #ff6b6b;
+  --color-accent-hover: #ff5252;
+  --color-accent-light: #4d1a1a;
+
+  --color-brand-green: var(--color-primary);
+  --color-brand-dark: var(--color-text);
+  --color-brand-muted: var(--color-text-muted);
+  --color-brand-line: var(--color-line);
+  --color-brand-pale: var(--color-surface-2);
+  --color-brand-paper: #1a1a1a;
+
+  --color-primary-surface: var(--color-primary-light);
+  --color-accent-surface: var(--color-accent-light);
+
+  --color-chat-bg: #141414;
+  --color-chat-surface: #1f1f1f;
+  --color-chat-text: #e5e5e5;
+  --color-chat-accent: #00d2ff;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.8), 4px 4px 0 rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.8), 6px 6px 0 rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 8px 8px 0 rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 12px 12px 0 rgba(0, 0, 0, 0.5);
+  --shadow-lift: var(--shadow-xl);
+}
+
+.dark body {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
 .be-vietnam-pro-thin {
   font-family: "Be Vietnam Pro", sans-serif;
   font-weight: 100;

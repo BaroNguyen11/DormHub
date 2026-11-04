@@ -47,7 +47,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-black text-text bg-white shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
+        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-black text-text bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
       >
         <span className={value ? "text-text" : "text-text-muted/60 font-semibold"}>
           {value
@@ -63,7 +63,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
 
       {/* POPUP LỊCH CHUẨN NEO-BRUTALISM (Thay thế hoàn toàn popup mặc định) */}
       {isOpen && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 bg-white border-3 border-line-strong rounded-sm shadow-[4px_4px_0_#141413] p-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 bg-surface border-3 border-line-strong rounded-sm shadow-[4px_4px_0_#141413] p-4 animate-in fade-in zoom-in-95 duration-150">
           {/* Header Tháng / Năm & Nút chuyển */}
           <div className="flex items-center justify-between pb-3 mb-3 border-b-3 border-line-strong">
             <button

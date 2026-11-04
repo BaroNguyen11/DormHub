@@ -65,7 +65,7 @@ export function CustomSelect({
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-white shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
+        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
       >
         <span
           className={
@@ -87,7 +87,7 @@ export function CustomSelect({
 
       {/* Popover danh sách Lựa chọn */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 bg-white border-3 border-line-strong rounded-sm shadow-[4px_4px_0_#141413] py-1 max-h-60 overflow-y-auto">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 bg-surface border-3 border-line-strong rounded-sm shadow-[4px_4px_0_#141413] py-1 max-h-60 overflow-y-auto">
           {normalizedOptions.map((opt) => {
             const isSelected = value === opt.value;
 
@@ -103,12 +103,12 @@ export function CustomSelect({
                 className={`flex items-center justify-between px-4 py-2 text-xs! font-extrabold cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-primary text-black"
-                    : "hover:bg-warning hover:text-black text-text"
+                    : "hover:bg-warning hover:text-text text-text"
                 }`}
               >
                 <span>{opt.label}</span>
                 {isSelected && (
-                  <Check size={16} strokeWidth={3} className="text-black shrink-0 ml-2" />
+                  <Check size={16} strokeWidth={3} className="text-text shrink-0 ml-2" />
                 )}
               </div>
             );

@@ -1,8 +1,9 @@
 export const screens = {
   "/": { title: "Trang chủ", group: "guest", type: "home" },
-  "/rooms": {
+  // Tìm phòng chỉ dành cho sinh viên đã đăng nhập (guest không xem được phòng)
+  "/student/rooms": {
     title: "Tìm phòng",
-    group: "guest",
+    group: "student",
     type: "list",
     resource: "/rooms",
     columns: [
@@ -13,11 +14,13 @@ export const screens = {
       "monthlyPrice",
     ],
     search: true,
-    detail: "/rooms",
+    detail: "/student/rooms",
+    create: "/student/applications/new",
+    createLabel: "Đăng ký nội trú",
   },
-  "/rooms/:id": {
+  "/student/rooms/:id": {
     title: "Chi tiết phòng",
-    group: "guest",
+    group: "student",
     type: "detail",
     resource: "/rooms",
   },
@@ -110,7 +113,7 @@ export const screens = {
     group: "student",
     type: "form",
     resource: "/student/maintenance",
-    fields: ["title", "description", "priority"],
+    fields: ["title", "description", "image","priority"],
   },
   "/student/maintenance/:id": {
     title: "Chi tiết yêu cầu",
@@ -425,19 +428,23 @@ export const screens = {
 };
 
 export const nav = {
-  guest: [
-    ["Trang chủ", "/"],
-    ["Tìm phòng", "/rooms"],
-  ],
+  // Guest: chỉ có trang chủ, muốn xem phòng phải đăng nhập
+  guest: [["Trang chủ", "/"]],
+  // Sinh viên ĐÃ có phòng: chỉ các chức năng chính
   student: [
     ["Tổng quan", "/student"],
-    ["Đơn đăng ký", "/student/applications"],
     ["Chỗ ở của tôi", "/student/residence"],
     ["Hợp đồng", "/student/contracts"],
     ["Hóa đơn", "/student/invoices"],
     ["Báo hỏng", "/student/maintenance"],
     ["Thông báo", "/student/notifications"],
     ["Tin nhắn", "/student/chat"],
+    ["Hồ sơ", "/student/profile"],
+  ],
+  // Sinh viên CHƯA có phòng: phải tìm phòng & đăng ký trước
+  studentNoRoom: [
+    ["Tìm phòng", "/student/rooms"],
+    ["Đơn đăng ký", "/student/applications"],
     ["Hồ sơ", "/student/profile"],
   ],
   manager: [
@@ -456,3 +463,12 @@ export const nav = {
     ["Tin nhắn", "/manager/chat"],
   ],
 };
+
+// Đường dẫn sinh viên chưa có phòng được phép vào / sinh viên đã có phòng bị chặn
+export const STUDENT_NO_ROOM_ALLOWED = [
+  "/student/rooms",
+  "/student/applications",
+  "/student/profile",
+];
+export const STUDENT_NO_ROOM_HOME = "/student/rooms";
+export const STUDENT_HOUSED_BLOCKED = ["/student/rooms", "/student/applications"];

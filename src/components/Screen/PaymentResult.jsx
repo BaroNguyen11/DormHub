@@ -16,7 +16,7 @@ import { CreditCard } from "lucide-react";
  */
 export default function PaymentResult() {
   return (
-    <div className="bg-white border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] p-8 max-w-md mx-auto mt-12 text-center flex flex-col items-center gap-4">
+    <div className="bg-surface border-2 border-[var(--color-line)] rounded-[var(--radius-lg)] p-8 max-w-md mx-auto mt-12 text-center flex flex-col items-center gap-4">
       {/* Icon thanh toán */}
       <CreditCard size={35} className="text-[var(--color-primary)]" />
       

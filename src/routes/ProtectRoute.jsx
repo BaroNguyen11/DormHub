@@ -1,13 +1,14 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
-import { ROLE_HOME } from '../constants/roles';
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
+import { ROLE_HOME } from "../constants/roles";
+import { AuthLoading } from "@/components/Screen/UIComponents";
 
 export default function ProtectRoute({ role }) {
   const { user, role: current, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div className="page-status">Đang xác thực phiên đăng nhập…</div>;
+    return <AuthLoading />;
   }
 
   if (!user) {
@@ -15,7 +16,7 @@ export default function ProtectRoute({ role }) {
   }
 
   if (current !== role) {
-    return <Navigate to={ROLE_HOME[current] || '/login'} replace />;
+    return <Navigate to={ROLE_HOME[current] || "/login"} replace />;
   }
 
   return <Outlet />;

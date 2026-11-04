@@ -1,6 +1,7 @@
 import {
   BrowserRouter,
   Navigate,
+  Outlet,
   Route,
   Routes,
   useLocation,
@@ -14,6 +15,7 @@ import { pageMap } from "./pageMap";
 import NotFound from "../pages/Guest/NotFound";
 import ProtectRoute from "./ProtectRoute";
 import AuthRoute from "./AuthRoute";
+import StudentRoomGate from "./StudentRoomGate";
 
 const pageModules = import.meta.glob("../pages/**/*.jsx", { eager: true });
 
@@ -82,28 +84,40 @@ export default function AppRoutes() {
           element={<Navigate to="/verify-email" replace />}
         />
 
-        {Object.entries(screens)
-          .filter(([, config]) => config.group === "guest")
-          .map(([path, config]) => (
-            <Route key={path} path={path} element={pageFor(path, config)} />
-          ))}
+        {/* Trang chủ chỉ dành cho khách. Đã đăng nhập thì chuyển về trang của vai trò,
+            muốn ra trang chủ phải đăng xuất. */}
+        <Route element={<AuthRoute />}>
+          {Object.entries(screens)
+            .filter(([, config]) => config.group === "guest")
+            .map(([path, config]) => (
+              <Route key={path} path={path} element={pageFor(path, config)} />
+            ))}
+        </Route>
+
+        {/* Guest không xem được phòng: đường dẫn cũ chuyển sang khu sinh viên
+            (chưa đăng nhập sẽ được đưa tới /login). */}
+        <Route path="/rooms" element={<Navigate to="/student/rooms" replace />} />
 
         {[
           ["student", ROLES.STUDENT],
           ["manager", ROLES.MANAGER],
         ].map(([group, role]) => (
           <Route key={group} element={<ProtectRoute role={role} />}>
-            {Object.entries(screens)
-              .filter(([, config]) => config.group === group)
-              .map(([path, config]) => (
-                <Route
-                  key={path}
-                  path={path}
-                  element={
-                    <AnimatedRoutes>{pageFor(path, config)}</AnimatedRoutes>
-                  }
-                />
-              ))}
+            <Route
+              element={group === "student" ? <StudentRoomGate /> : <Outlet />}
+            >
+              {Object.entries(screens)
+                .filter(([, config]) => config.group === group)
+                .map(([path, config]) => (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={
+                      <AnimatedRoutes>{pageFor(path, config)}</AnimatedRoutes>
+                    }
+                  />
+                ))}
+            </Route>
           </Route>
         ))}
 

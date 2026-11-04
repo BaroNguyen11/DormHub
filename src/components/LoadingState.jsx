@@ -13,7 +13,7 @@ export function SimpleLoading() {
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          <RefreshCw size={24} className="text-black" strokeWidth={2.5} />
+          <RefreshCw size={24} className="text-text" strokeWidth={2.5} />
         </motion.div>
       </div>
       <p className="text-sm font-black text-text">Đang tải dữ liệu...</p>
@@ -24,7 +24,7 @@ export function SimpleLoading() {
 // Loading cho bảng dữ liệu (Table Skeleton)
 export function TableSkeleton({ rows = 5, cols = 4 }) {
   return (
-    <div className="p-6 bg-white border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] space-y-4">
+    <div className="p-6 bg-surface border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] space-y-4">
       {/* Header của bảng giả lập */}
       <motion.div
         initial={{ opacity: 0.6 }}
@@ -59,7 +59,7 @@ export function TableSkeleton({ rows = 5, cols = 4 }) {
 // Loading cho form (Form Skeleton)
 export function FormSkeleton() {
   return (
-    <div className="p-6 sm:p-8 bg-white border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] max-w-2xl space-y-6">
+    <div className="p-6 sm:p-8 bg-surface border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] max-w-2xl space-y-6">
       {/* Giả lập 4-5 input fields */}
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="space-y-2">
@@ -85,7 +85,7 @@ export function FormSkeleton() {
               ease: "easeInOut",
               delay: i * 0.1 + 0.05
             }}
-            className="h-12 bg-white border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413]"
+            className="h-12 bg-surface border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413]"
           />
         </div>
       ))}
