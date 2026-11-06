@@ -60,9 +60,8 @@ async function parseResponse(response) {
 }
 
 async function ensureCsrfToken() {
-  const cookieToken = readCookie(CSRF_COOKIE_NAME);
-  if (cookieToken) return cookieToken;
-
+  // Spring Security rotates the CSRF token after login and refresh. Fetch the
+  // current token for every write so a stale XSRF-TOKEN cookie cannot cause 403.
   let response;
   try {
     response = await fetch(`${API_BASE_URL}/auth/csrf`, {
