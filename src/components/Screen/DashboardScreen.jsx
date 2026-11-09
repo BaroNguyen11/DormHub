@@ -6,19 +6,32 @@ import {
   FileText,
   Wrench,
   DollarSign,
-  CheckCircle,
-  Calendar,
-  Clock,
-  AlertCircle,
-  TrendingUp,
-  Zap,
+  Building2,
+  Receipt,
+  UserPlus,
+  Bell,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { FIELD_LABELS } from "./constants";
 import { Notice, Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+import { useEffect, useState } from "react";
+import { resources } from "../../services/resource.service";
 
-// Mapping cấu hình Icon & Bảng màu Neo-Brutalism
+// Mapping cấu hình Icon & Bảng màu Neo-Brutalism cho dashboard metrics
 const METRIC_CONFIG = {
   totalStudents: { icon: Users, bg: "bg-primary", light: "bg-primary-light" },
   totalRooms: { icon: Home, bg: "bg-success", light: "bg-success-light" },
@@ -28,81 +41,43 @@ const METRIC_CONFIG = {
     bg: "bg-accent",
     light: "bg-accent-light",
   },
-  maintenanceRequests: {
+  openMaintenance: {
     icon: Wrench,
     bg: "bg-error",
     light: "bg-error-light",
   },
-  totalInvoices: {
-    icon: DollarSign,
-    bg: "bg-primary",
-    light: "bg-primary-light",
-  },
-  paidInvoices: {
-    icon: CheckCircle,
-    bg: "bg-success",
-    light: "bg-success-light",
-  },
   unpaidInvoices: {
-    icon: FileText,
+    icon: DollarSign,
     bg: "bg-warning",
     light: "bg-warning-light",
   },
 };
 
 const cardBase =
-  "bg-surface border-4 border-line-strong rounded-2xl shadow-[5px_5px_0_#141413]";
+  "bg-surface border-4 border-line-strong rounded-sm shadow-[5px_5px_0_#141413]";
 
 export default function DashboardScreen({ config }) {
   // Load dashboard data từ API
-  const { data, error, loading, reload } = useLoad(config.resource, {});
+  const { data, error, loading, reload } = useLoad(
+    config.group === "manager" ? "/manager/dashboard/summary" : config.resource,
+    {},
+  );
 
-  // Lấy tối đa 4 metrics đầu tiên
+  // Lấy tối đa 6 metrics từ API (hoặc 4 nếu ít hơn)
   const list = Object.entries(data || {})
-    .filter(([, value]) => ["number", "string"].includes(typeof value))
-    .slice(0, 4);
+    .filter(([, value]) => typeof value === "number")
+    .slice(0, 6);
 
-  // Dữ liệu biểu đồ Tỷ lệ lấp đầy
-  const chartData = [
-    { month: "T1", value: 65 },
-    { month: "T2", value: 72 },
-    { month: "T3", value: 68 },
-    { month: "T4", value: 85 },
-    { month: "T5", value: 92 },
-    { month: "T6", value: 88 },
-  ];
-
-  // Thông tin nhanh
-  const quickStats = [
-    {
-      icon: Clock,
-      label: "Đơn chưa xử lý",
-      value: "24",
-      bg: "bg-warning-light",
-      badge: "bg-warning",
-    },
-    {
-      icon: AlertCircle,
-      label: "Yêu cầu khẩn",
-      value: "3",
-      bg: "bg-error-light",
-      badge: "bg-error",
-    },
-    {
-      icon: CheckCircle,
-      label: "Hoàn thành hôm nay",
-      value: "12",
-      bg: "bg-success-light",
-      badge: "bg-success",
-    },
-    {
-      icon: Calendar,
-      label: "Check-in hôm nay",
-      value: "8",
-      bg: "bg-primary-light",
-      badge: "bg-primary",
-    },
-  ];
+  if (config.group === "manager") {
+    return (
+      <ManagerAnalytics
+        data={data || {}}
+        loading={loading}
+        error={error}
+        reload={reload}
+      />
+    );
+  }
 
   // Shortcuts theo vai trò
   const shortcuts =
@@ -116,7 +91,7 @@ export default function DashboardScreen({ config }) {
           },
           {
             name: "Hợp đồng",
-            path: "/student/contracts",
+            path: "/student/residence",
             icon: FileText,
             bg: "bg-success",
           },
@@ -136,7 +111,7 @@ export default function DashboardScreen({ config }) {
       : [
           {
             name: "Đơn chờ duyệt",
-            path: "/manager/applications",
+            path: "/manager/students",
             icon: FileText,
             bg: "bg-primary",
           },
@@ -148,7 +123,7 @@ export default function DashboardScreen({ config }) {
           },
           {
             name: "Hóa đơn",
-            path: "/manager/invoices",
+            path: "/manager/finance",
             icon: DollarSign,
             bg: "bg-warning",
           },
@@ -194,15 +169,15 @@ export default function DashboardScreen({ config }) {
         <Loading />
       ) : (
         <div className="space-y-8">
-          {/* 1. METRICS GRID */}
+          {/* METRICS GRID */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {list.length ? (
-              list.map(([key, value], idx) => {
+              list.map(([key, value]) => {
                 const itemConfig = METRIC_CONFIG[key] || {
                   icon: FileText,
                   bg: "bg-primary",
@@ -218,7 +193,7 @@ export default function DashboardScreen({ config }) {
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div
-                        className={`size-12 rounded-xl ${itemConfig.bg} border-3 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]`}
+                        className={`size-12 rounded-sm ${itemConfig.bg} border-3 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]`}
                       >
                         <Icon
                           size={24}
@@ -226,10 +201,6 @@ export default function DashboardScreen({ config }) {
                           strokeWidth={2.5}
                         />
                       </div>
-                      <span className="inline-flex items-center gap-1 text-xs font-extrabold px-2.5 py-1 bg-warning text-[#000000] rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413]">
-                        <TrendingUp size={12} strokeWidth={3} />+{(idx + 1) * 8}
-                        %
-                      </span>
                     </div>
 
                     <div>
@@ -237,9 +208,7 @@ export default function DashboardScreen({ config }) {
                         {FIELD_LABELS[key] || key.replace(/([A-Z])/g, " $1")}
                       </h3>
                       <p className="text-3xl font-black text-text tracking-tight">
-                        {typeof value === "number"
-                          ? new Intl.NumberFormat("vi-VN").format(value)
-                          : value}
+                        {new Intl.NumberFormat("vi-VN").format(value)}
                       </p>
                     </div>
                   </motion.div>
@@ -254,138 +223,442 @@ export default function DashboardScreen({ config }) {
             )}
           </motion.div>
 
-          {/* 2. BAR CHART SECTION */}
+          {/* SHORTCUTS */}
           <div className={`${cardBase} p-6 sm:p-8`}>
-            <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-              <div>
-                <div className="inline-block px-3 py-1 mb-2 bg-primary text-[#000000] text-xs font-extrabold uppercase tracking-widest rounded-md border-2 border-line-strong shadow-[2px_2px_0_#141413]">
-                  THỐNG KÊ NỘI TRÚ
-                </div>
-                <h2 className="text-2xl font-extrabold text-text">
-                  Tỷ lệ lấp đầy phòng theo tháng (%)
-                </h2>
-              </div>
-              <div className="flex items-center gap-4 text-xs font-extrabold">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded-xs bg-primary border-2 border-line-strong" />
-                  Đã ở
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-3 rounded-xs bg-warning border-2 border-line-strong" />
-                  Mục tiêu (90%)
-                </span>
-              </div>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-xl">🚀</span>
+              <h2 className="text-xl font-extrabold text-text">Tác vụ nhanh</h2>
             </div>
 
-            {/* Khung Biểu đồ Column */}
-            <div className="flex items-end justify-between h-64 gap-2 sm:gap-4 pt-6 pb-2 px-2 border-b-4 border-line-strong">
-              {chartData.map((d, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col items-center gap-3 flex-1 h-full justify-end group"
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {shortcuts.map(({ name, path, icon: Icon, bg }) => (
+                <Link
+                  key={path}
+                  to={path}
+                  className="flex flex-col items-center justify-center p-4 bg-surface border-3 border-line-strong rounded-sm shadow-[3px_3px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-1 active:translate-y-0 active:shadow-none transition-all duration-200 text-center group"
                 >
-                  <div className="w-full h-full flex flex-col justify-end relative">
-                    {/* Cột dữ liệu */}
-                    <div
-                      className="w-full bg-primary hover:bg-warning rounded-t-xl border-3 border-line-strong transition-all duration-200 cursor-pointer relative shadow-[3px_3px_0_#141413]"
-                      style={{ height: `${d.value}%` }}
-                    >
-                      {/* Tooltip Popup */}
-                      <div className="absolute -top-11 left-1/2 -translate-x-1/2 bg-surface-3 text-surface px-2.5 py-1 rounded-lg text-xs font-extrabold opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border-2 border-white pointer-events-none z-10 shadow-[2px_2px_0_#000]">
-                        {d.value}% Occupancy
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className="text-xs sm:text-sm font-extrabold text-text">
-                    {d.month}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. QUICK STATS & SHORTCUTS GRID */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Quick Stats */}
-            <div
-              className={`${cardBase} p-6 sm:p-8 flex flex-col justify-between`}
-            >
-              <div className="flex items-center gap-2 mb-6">
-                <Zap size={22} className="text-text fill-warning" />
-                <h2 className="text-xl font-extrabold text-text">
-                  Thông tin nhanh
-                </h2>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                {quickStats.map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={i}
-                      className={`flex items-center justify-between p-4 rounded-xl border-3 border-line-strong shadow-[3px_3px_0_#141413] ${item.bg}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`size-9 rounded-lg ${item.badge} border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]`}
-                        >
-                          <Icon
-                            size={18}
-                            className="text-text"
-                            strokeWidth={2.5}
-                          />
-                        </div>
-                        <span className="text-xs font-extrabold text-text">
-                          {item.label}
-                        </span>
-                      </div>
-                      <span className="text-xl font-black text-text">
-                        {item.value}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Shortcuts */}
-            <div
-              className={`${cardBase} p-6 sm:p-8 flex flex-col justify-between`}
-            >
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-xl">🚀</span>
-                <h2 className="text-xl font-extrabold text-text">
-                  Tác vụ nhanh
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {shortcuts.map(({ name, path, icon: Icon, bg }) => (
-                  <Link
-                    key={path}
-                    to={path}
-                    className="flex flex-col items-center justify-center p-4 bg-surface border-3 border-line-strong rounded-xl shadow-[3px_3px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-1 active:translate-y-0 active:shadow-none transition-all duration-200 text-center group"
+                  <div
+                    className={`size-11 rounded-sm ${bg} border-2 border-line-strong flex items-center justify-center mb-2 shadow-[2px_2px_0_#141413] group-hover:scale-110 transition-transform`}
                   >
-                    <div
-                      className={`size-11 rounded-xl ${bg} border-2 border-line-strong flex items-center justify-center mb-2 shadow-[2px_2px_0_#141413] group-hover:scale-110 transition-transform`}
-                    >
-                      <Icon
-                        size={22}
-                        className="text-text"
-                        strokeWidth={2.5}
-                      />
-                    </div>
-                    <span className="text-xs font-extrabold text-text">
-                      {name}
-                    </span>
-                  </Link>
-                ))}
-              </div>
+                    <Icon size={22} className="text-text" strokeWidth={2.5} />
+                  </div>
+                  <span className="text-xs font-extrabold text-text">
+                    {name}
+                  </span>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+const chartTooltip = {
+  contentStyle: {
+    border: "3px solid var(--color-line-strong)",
+    borderRadius: "2px",
+    boxShadow: "3px 3px 0 #141413",
+    background: "var(--color-surface)",
+    fontWeight: 800,
+  },
+  itemStyle: { transition: "all 200ms" },
+};
+
+function ManagerAnalytics({ data, loading, error, reload }) {
+  const [applications, setApplications] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceDataAvailable, setInvoiceDataAvailable] = useState(false);
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      resources.list("/manager/dorm-applications", { page: 0, size: 100 }),
+      resources.list("/manager/maintenance", { page: 0, size: 100 }),
+      resources.list("/invoices", { page: 0, size: 500 }),
+    ]).then(([appsResult, issuesResult, invoicesResult]) => {
+      if (!active) return;
+      const apps = appsResult.status === "fulfilled" ? appsResult.value : [];
+      const issues =
+        issuesResult.status === "fulfilled" ? issuesResult.value : [];
+      const invoiceRows =
+        invoicesResult.status === "fulfilled" ? invoicesResult.value : [];
+      const newest = (rows) =>
+        [...rows]
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt || b.requestedAt || 0) -
+              new Date(a.createdAt || a.requestedAt || 0),
+          )
+          .slice(0, 3);
+      setApplications(
+        newest(Array.isArray(apps) ? apps : apps?.content || apps?.items || []),
+      );
+      setMaintenance(
+        newest(
+          Array.isArray(issues)
+            ? issues
+            : issues?.content || issues?.items || [],
+        ),
+      );
+      setInvoices(
+        Array.isArray(invoiceRows)
+          ? invoiceRows
+          : invoiceRows?.content || invoiceRows?.items || [],
+      );
+      setInvoiceDataAvailable(invoicesResult.status === "fulfilled");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const totalRooms = Number(data.totalRooms || 0);
+  const occupied = Number(data.occupiedRooms || 0);
+  const maintenanceRooms = Number(
+    data.maintenanceRooms || data.roomsInMaintenance || 0,
+  );
+  const available = Number(
+    data.availableRooms ??
+      data.vacantRooms ??
+      Math.max(0, totalRooms - occupied - maintenanceRooms),
+  );
+  const occupancy = totalRooms ? Math.round((occupied / totalRooms) * 100) : 0;
+  const monthKeys = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - i));
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const invoiceMonthly = monthKeys.map((month) => {
+    const rows = invoices.filter(
+      (invoice) =>
+        String(
+          invoice.billingMonth || invoice.issueDate || invoice.createdAt || "",
+        ).slice(0, 7) === month,
+    );
+    const issued = rows.reduce(
+      (sum, invoice) =>
+        sum + Number(invoice.totalAmount ?? invoice.amount ?? 0),
+      0,
+    );
+    const collected = rows
+      .filter(
+        (invoice) => String(invoice.status || "").toUpperCase() === "PAID",
+      )
+      .reduce(
+        (sum, invoice) =>
+          sum + Number(invoice.totalAmount ?? invoice.amount ?? 0),
+        0,
+      );
+    return { month, issued, collected };
+  });
+  const currentMonthInvoiceTotal = invoiceMonthly.at(-1)?.issued || 0;
+  const revenue = Number(
+    data.currentMonthRevenue ??
+      (typeof data.monthlyRevenue === "number"
+        ? data.monthlyRevenue
+        : currentMonthInvoiceTotal),
+  );
+  const metrics = [
+    {
+      label: "Tỷ lệ lấp đầy phòng",
+      value: `${occupancy}%`,
+      progress: occupancy,
+      icon: Building2,
+      bar: "bg-success",
+    },
+    {
+      label: "Doanh thu tháng này",
+      value: new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(revenue),
+      progress: revenue ? 100 : 0,
+      icon: Receipt,
+      bar: "bg-primary",
+    },
+    {
+      label: "Đơn đăng ký chờ duyệt",
+      value: data.pendingApplications ?? 0,
+      progress: Number(data.pendingApplications || 0) ? 100 : 0,
+      icon: UserPlus,
+      badge: "bg-warning",
+      bar: "bg-warning",
+    },
+    {
+      label: "Báo hỏng chưa xử lý",
+      value: data.openMaintenance ?? 0,
+      progress: Number(data.openMaintenance || 0) ? 100 : 0,
+      icon: Wrench,
+      badge: "bg-error",
+      bar: "bg-error",
+    },
+  ];
+  const roomData = [
+    { name: "Đang ở", value: occupied, color: "#8ee3a1" },
+    { name: "Còn trống", value: available, color: "#ffd166" },
+    { name: "Bảo trì", value: maintenanceRooms, color: "#ff6b6b" },
+  ];
+  const monthly =
+    data.monthlyRevenue || data.monthlyStats || data.revenueByMonth || [];
+  const monthlyDataFromSummary = Array.isArray(monthly)
+    ? monthly.slice(-6).map((item) => ({
+        month: item.month || item.label || item.billingMonth,
+        issued: Number(
+          item.issuedAmount ?? item.totalInvoiced ?? item.invoiceAmount ?? 0,
+        ),
+        collected: Number(
+          item.collectedAmount ?? item.paidAmount ?? item.receivedAmount ?? 0,
+        ),
+      }))
+    : [];
+  const monthlyData = monthlyDataFromSummary.length
+    ? monthlyDataFromSummary
+    : invoiceDataAvailable
+      ? invoiceMonthly
+      : [];
+  const revenueChartData = monthlyData.map((item) => ({
+    ...item,
+    month: /^\d{4}-\d{2}$/.test(item.month || "")
+      ? `Thg ${Number(item.month.slice(5))}`
+      : item.month,
+    uncollected: Math.max(0, item.issued - item.collected),
+  }));
+  const quickActions = [
+    [
+      "+ Tạo tài khoản SV",
+      "/manager/students?tab=create",
+      UserPlus,
+      "bg-primary",
+    ],
+    [
+      "Duyệt đơn đăng ký",
+      "/manager/students?tab=applications",
+      FileText,
+      "bg-warning",
+    ],
+    [
+      "Tạo hóa đơn tháng",
+      "/manager/finance?tab=invoices",
+      Receipt,
+      "bg-success",
+    ],
+    ["Xử lý báo hỏng", "/manager/maintenance?tab=tickets", Wrench, "bg-error"],
+    [
+      "Gửi thông báo chung",
+      "/manager/maintenance?tab=announcements",
+      Bell,
+      "bg-accent",
+    ],
+  ];
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-black">Tổng quan quản lý</h1>
+        <button
+          onClick={reload}
+          className="flex items-center gap-2 text-sm! px-4 font-medium  py-2 border-3 border-line-strong rounded-sm bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none outline-none! transition-all"
+        >
+          <RefreshCw />
+          Tải lại
+        </button>
+      </div>
+      {error && (
+        <div className="border-3 border-line-strong bg-error-light p-4 rounded-sm font-bold">
+          {error}
+        </div>
+      )}
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+            {metrics.map(
+              ({ label, value, progress, icon: Icon, badge, bar }) => (
+                <article
+                  key={label}
+                  className="bg-surface border-3 border-line-strong rounded-md p-4 shadow-[4px_4px_0_#141413] transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-extrabold text-text-muted">
+                      {label}
+                    </p>
+                    <span
+                      className={`grid size-9 place-items-center rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] ${badge || "bg-surface-2"}`}
+                    >
+                      <Icon size={19} />
+                    </span>
+                  </div>
+                  <p className="mt-2 text-2xl font-black text-text">{value}</p>
+                  <div className="mt-4 h-3 border-2 border-line-strong bg-surface-3">
+                    <div
+                      className={`h-full ${bar} transition-all`}
+                      style={{
+                        width: `${Math.max(0, Math.min(progress, 100))}%`,
+                      }}
+                    />
+                  </div>
+                </article>
+              ),
+            )}
+          </div>
+          <section className="bg-surface border-3 border-line-strong rounded-md p-5 shadow-[4px_4px_0_#141413]">
+            <h2 className="font-black text-lg mb-4">Tác vụ nhanh</h2>
+            <div className="flex flex-wrap gap-4">
+              {quickActions.map(([label, to, Icon, color]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`inline-flex items-center gap-2 border-3 border-line-strong rounded-sm px-4 py-3 ${color} font-black text-sm shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer outline-none!`}
+                >
+                  <Icon size={18} />
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </section>
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+            <section className="xl:col-span-3 bg-surface border-3 border-line-strong rounded-md p-5 shadow-[4px_4px_0_#141413] transition-all">
+              <h2 className="font-black text-lg mb-4">
+                Doanh thu 6 tháng gần nhất
+              </h2>
+              {revenueChartData.length ? (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis
+                        tickFormatter={(value) =>
+                          `${(value / 1_000_000).toFixed(0)}m`
+                        }
+                      />
+                      <Tooltip
+                        {...chartTooltip}
+                        formatter={(value) =>
+                          `${(Number(value) / 1_000_000).toFixed(1)} triệu VNĐ`
+                        }
+                      />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="issued"
+                        name="Doanh thu"
+                        stroke="#22c55e"
+                        fill="#22c55e"
+                        fillOpacity={0.2}
+                        strokeWidth={3}
+                        dot={{ r: 5 }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="uncollected"
+                        name="Chưa thu"
+                        stroke="#eab308"
+                        fill="#eab308"
+                        fillOpacity={0.2}
+                        strokeWidth={3}
+                        dot={{ r: 5 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-72 grid place-items-center text-center font-bold text-text-muted">
+                  Máy chủ chưa cung cấp dữ liệu doanh thu theo tháng.
+                </div>
+              )}
+            </section>
+            <section className="xl:col-span-2 bg-surface border-3 border-line-strong rounded-md p-5 shadow-[4px_4px_0_#141413] transition-all">
+              <h2 className="font-black text-lg mb-4">Trạng thái phòng</h2>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={roomData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={48}
+                      outerRadius={92}
+                      stroke="#141413"
+                      strokeWidth={3}
+                      label
+                    >
+                      {roomData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip {...chartTooltip} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          </div>
+          <section className="grid lg:grid-cols-2 gap-6">
+            <FeedCard
+              title="Đơn đăng ký phòng mới nhất"
+              empty="Chưa có đơn đăng ký mới."
+              items={applications}
+              render={(item) => (
+                <>
+                  <strong>
+                    {item.studentName ||
+                      item.fullName ||
+                      item.student?.fullName ||
+                      "Sinh viên"}
+                  </strong>
+                  <span className="block text-xs text-text-muted">
+                    Phòng{" "}
+                    {item.requestedRoomNumber || item.roomNumber || "Chưa chọn"}{" "}
+                    · {item.status || "Mới"}
+                  </span>
+                </>
+              )}
+            />
+            <FeedCard
+              title="Báo hỏng cần xử lý"
+              empty="Chưa có yêu cầu báo hỏng."
+              items={maintenance}
+              render={(item) => (
+                <>
+                  <strong>
+                    {item.title || item.description || "Yêu cầu sửa chữa"}
+                  </strong>
+                  <span className="block text-xs text-text-muted">
+                    {item.studentName || item.fullName || "Sinh viên"} ·{" "}
+                    {item.status || "Mới"}
+                  </span>
+                </>
+              )}
+            />
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FeedCard({ title, empty, items, render }) {
+  return (
+    <section className="bg-surface border-3 border-line-strong rounded-md p-5 shadow-[4px_4px_0_#141413]">
+      <h2 className="text-lg font-black mb-3">{title}</h2>
+      {items.length ? (
+        <ul className="space-y-2">
+          {items.slice(0, 3).map((item, index) => (
+            <li
+              key={item.id ?? item.applicationId ?? item.maintenanceId ?? index}
+              className="p-3 border-2 border-line-strong rounded-sm bg-surface-2"
+            >
+              {render(item)}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm font-bold text-text-muted">{empty}</p>
+      )}
+    </section>
   );
 }

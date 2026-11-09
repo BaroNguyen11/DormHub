@@ -18,24 +18,7 @@ import ApplicationScreen from "./ApplicationScreen";
 import ChatScreen from "./ChatScreen";
 import PaymentResult from "./PaymentResult";
 
-/**
- * Component Screen - Router cho tất cả màn hình
- * @param {object} props
- * @param {object} props.config - Cấu hình màn hình
- * 
- * Config structure:
- * {
- *   type: "list",  // Loại màn hình: home, list, detail, form, dashboard...
- *   group: "student",  // Nhóm user: guest, student, manager
- *   title: "Danh sách phòng",  // Tiêu đề màn hình
- *   resource: "/rooms",  // API endpoint
- *   columns: ["id", "name", "status"],  // Cột hiển thị (cho list screen)
- *   fields: ["name", "capacity"],  // Fields hiển thị (cho form screen)
- *   // ... các config khác tùy theo type
- * }
- * 
- * Dựa vào config.type, component này sẽ render đúng screen tương ứng
- */
+
 export default function Screen({ config }) {
   const location = useLocation();
   

@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Filter,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { asList } from "../../api/apiClient";
@@ -19,8 +18,9 @@ import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import useDebounce from "../../hooks/useDebounce";
 import usePagination from "../../hooks/usePagination";
-import { STATUS_LABELS, FILTERABLE_STATUSES } from "../../constants/status";
-import { Button, StatusBadge } from "../ui";
+import { STATUS_LABELS } from "../../constants/status";
+import { StatusBadge } from "../ui";
+import { toast } from "sonner";
 import { CustomSelect } from "../ui/CustomSelect";
 
 export default function ListScreen({ config }) {
@@ -41,22 +41,13 @@ export default function ListScreen({ config }) {
   const { data, error, loading, reload } = useLoad(config.resource, {
     page,
     size: pageSize,
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(debouncedSearch ? { [config.searchParam || "search"]: debouncedSearch } : {}),
     ...(status ? { status } : {}),
   });
 
   const rows = asList(data);
 
-  const createPath =
-    config.create ||
-    (config.group === "student" && config.resource.includes("applications")
-      ? "/student/applications/new"
-      : config.group === "student" && config.resource.includes("maintenance")
-        ? "/student/maintenance/new"
-        : config.group === "manager" &&
-            ["/rooms", "/invoices"].includes(config.resource)
-          ? `${location.pathname}/new`
-          : null);
+  const createPath = config.create;
 
   async function doAction(row, action) {
     if (
@@ -66,21 +57,25 @@ export default function ListScreen({ config }) {
       return;
     }
 
-    setBusy(String(row.id));
+    setBusy(String(row.id || row.invoiceId || row.contractId || row.assignmentId));
     setActionError("");
     setSuccess("");
 
     try {
+      // Một số DTO dùng invoiceId / contractId / assignmentId thay vì id.
+      const rowId = config.idField
+        ? row[config.idField]
+        : row.id || row.invoiceId || row.contractId || row.assignmentId;
       await resources.action(
-        `${config.resource.replace(/\/me$/, "")}/${row.id}${action.suffix}`,
+        `${config.resource.replace(/\/me$/, "")}/${rowId}${action.suffix}`,
         action.method,
         action.body,
       );
 
-      setSuccess("Thao tác đã được lưu thành công.");
+      toast.success("Thao tác đã được lưu thành công.");
       reload();
     } catch (e) {
-      setActionError(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy("");
     }
@@ -104,7 +99,7 @@ export default function ListScreen({ config }) {
       <Notice error={actionError || error} success={success} />
 
       {/* Panel Bảng dữ liệu Neo-Brutalism */}
-      <div className="bg-surface border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-sm overflow-hidden shadow-[6px_6px_0_#141413]">
         {/* Toolbar: Tìm kiếm, Lọc trạng thái, Tải lại */}
         <div className="flex flex-wrap items-center gap-3 p-4 border-b-4 border-line-strong bg-surface-2">
           {/* Ô Tìm kiếm */}
@@ -122,32 +117,34 @@ export default function ListScreen({ config }) {
                 setSearch(e.target.value);
                 resetPage();
               }}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-sm border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! transition-all"
             />
           </div>
 
           {/* Dropdown Filter trạng thái */}
-          <div className="w-56 shrink-0">
-            <CustomSelect
-              value={status}
-              placeholder="-- Tất cả trạng thái --"
-              options={[
-                { value: "", label: "-- Tất cả trạng thái --" },
-                ...FILTERABLE_STATUSES.map((x) => ({
-                  value: x,
-                  label: STATUS_LABELS[x] || x,
-                })),
-              ]}
-              onChange={(val) => {
-                setStatus(val);
-                resetPage();
-              }}
-            />
-          </div>
+          {config.statusOptions && (
+            <div className="w-56 shrink-0">
+              <CustomSelect
+                value={status}
+                placeholder="-- Tất cả trạng thái --"
+                options={[
+                  { value: "", label: "-- Tất cả trạng thái --" },
+                  ...config.statusOptions.map((x) => ({
+                    value: x,
+                    label: STATUS_LABELS[x] || x,
+                  })),
+                ]}
+                onChange={(val) => {
+                  setStatus(val);
+                  resetPage();
+                }}
+              />
+            </div>
+          )}
 
           {/* Nút Reload */}
           <button
-            className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-xl shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+            className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
             onClick={reload}
             aria-label="Tải lại"
             title="Tải lại dữ liệu"
@@ -218,27 +215,49 @@ export default function ListScreen({ config }) {
                     <td className="px-4 py-3.5 text-sm text-right whitespace-nowrap">
                       <div className="inline-flex items-center justify-end gap-2">
                         {/* Link Chi tiết */}
-                        {config.detail && (
-                          <Link
-                            to={`${config.detail}/${row.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
-                          >
-                            <Eye size={14} strokeWidth={2.5} />
-                            <span>Chi tiết</span>
-                          </Link>
-                        )}
+                        {config.detail && (() => {
+                          const rowId = config.idField
+                            ? row[config.idField]
+                            : row.id ||
+                              row.invoiceId ||
+                              row.contractId ||
+                              row.assignmentId;
+                          return (
+                            <Link
+                              to={`${config.detail}/${rowId}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
+                            >
+                              <Eye size={14} strokeWidth={2.5} />
+                              <span>Chi tiết</span>
+                            </Link>
+                          );
+                        })()}
 
                         {/* Action Buttons */}
                         {config.actions?.map((action) => (
                           <button
                             key={action.label}
-                            disabled={busy === String(row.id)}
+                            disabled={busy === String(row.id || row.invoiceId || row.contractId || row.assignmentId)}
                             onClick={() => doAction(row, action)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-lg border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
                           >
                             {action.label}
                           </button>
                         ))}
+
+                        {/* Public Actions for Guest (redirect to login) */}
+                        {config.publicActions?.map((action) => {
+                          const rowId = row.id || row.invoiceId || row.contractId || row.assignmentId;
+                          return (
+                            <Link
+                              key={action.label}
+                              to={`${action.redirect}?redirect=${encodeURIComponent(location.pathname + '/' + rowId)}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-[#000000] font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
+                            >
+                              {action.label}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </td>
                   </motion.tr>
@@ -259,7 +278,7 @@ export default function ListScreen({ config }) {
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={page === 0}
               onClick={previousPage}
             >
@@ -268,7 +287,7 @@ export default function ListScreen({ config }) {
             </button>
 
             <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-xl border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               disabled={data?.last === true || rows.length < pageSize}
               onClick={nextPage}
             >

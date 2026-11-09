@@ -42,7 +42,7 @@ export function useLoad(path, params) {
 
   // Convert params thành string để dùng làm dependency của useEffect
   // Vì object mới luôn khác object cũ, nên cần stringify để so sánh giá trị
-  const paramsKey = JSON.stringify(params);
+const paramsKey = JSON.stringify(params ?? {});
 
   // useEffect: chạy mỗi khi path, paramsKey, hoặc version thay đổi
   useEffect(() => {

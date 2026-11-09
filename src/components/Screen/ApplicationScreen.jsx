@@ -1,17 +1,14 @@
 // ====================================
 // APPLICATION SCREEN - Màn hình đăng ký nội trú (Neo-Brutalism)
 // ====================================
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   ArrowLeft,
   Check,
   RefreshCw,
   UserCheck,
-  Home,
-  Calendar,
-  FileText,
   BedDouble,
   ShieldCheck,
 } from "lucide-react";
@@ -19,102 +16,77 @@ import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
 import { money } from "../../utils/format";
-import { FIELD_CONFIGS } from "./constants";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
-import { CustomDatePicker } from "../ui/CustomDatePicker";
 import usePermissions from "../../hooks/usePermissions";
+import { toast } from "sonner";
 
 /**
- * Component FormFields - Render ô nhập dữ liệu ngày & ghi chú
- */
-function FormFields({ names, values, onChange }) {
-  const FIELD_LABELS = {
-    expectedCheckInDate: "Ngày nhận phòng dự kiến",
-    note: "Ghi chú bổ sung",
-  };
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {names.map((key) => {
-        const meta = FIELD_CONFIGS[key] || {};
-        const isNote = key === "note";
-
-        return (
-          <div
-            className={`flex flex-col gap-2 ${
-              meta.tag === "textarea" || isNote ? "md:col-span-2" : ""
-            }`}
-            key={key}
-          >
-            <div className="flex items-center justify-between text-sm font-extrabold text-text">
-              <span>{FIELD_LABELS[key] || key}</span>
-              {isNote && (
-                <span className="text-xs font-semibold text-text-muted">
-                  (Không bắt buộc)
-                </span>
-              )}
-            </div>
-
-            {meta.tag === "textarea" || isNote ? (
-              <textarea
-                value={values[key] ?? ""}
-                onChange={(e) => onChange(key, e.target.value)}
-                rows={4}
-                placeholder="Nhập mong muốn hoặc ghi chú cho ban quản lý..."
-                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
-              />
-            ) : (
-              <CustomDatePicker
-                value={values[key] ?? ""}
-                required
-                min={meta.min || new Date().toISOString().split("T")[0]}
-                onChange={(val) => onChange(key, val)}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Component ApplicationScreen - Form đăng ký nội trú 4 bước
+ * Component ApplicationScreen - Form đăng ký nội trú 3 bước
  */
 export default function ApplicationScreen({ config }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [values, setValues] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   // Check if student already has a room
-  const { canRegisterForRoom, hasActiveRoom, checkingRoom } = usePermissions();
+  const { hasActiveRoom, checkingRoom } = usePermissions();
 
-  // Load danh sách phòng còn trống
-  const { data: rooms, loading } = useLoad("/rooms", {
-    availableOnly: true,
+  // Fetch student profile
+  const {
+    data: profile,
+    loading: loadingProfile,
+    error: profileError,
+    reload: reloadProfile,
+  } = useLoad("/student/profile", {});
+
+  // Force reload profile when component mounts to avoid stale data
+  useEffect(() => {
+    reloadProfile();
+  }, [reloadProfile]);
+
+  // Load danh sách phòng còn trống theo giới tính của sinh viên đang đăng nhập
+  const { data: rooms, loading } = useLoad("/student/rooms-available", {
     size: 100,
   });
+
+  // Get roomId from URL query parameter
+  const preselectedRoomId = searchParams.get("roomId");
 
   const roomList = asList(rooms);
   const selectedRoom = roomList.find((r) => r.id === values.roomId);
 
+  // Check if profile is complete
+  const isProfileComplete =
+    profile &&
+    profile.studentCode &&
+    profile.gender &&
+    profile.dateOfBirth &&
+    profile.address;
+
   const steps = [
     "Thông tin SV",
     "Chọn nguyện vọng",
-    "Thời gian",
     "Kiểm tra & Gửi",
   ];
 
   const change = (key, value) =>
     setValues((prev) => ({ ...prev, [key]: value }));
 
+  // Pre-fill roomId from URL on mount
+  useEffect(() => {
+    if (preselectedRoomId && !values.roomId) {
+      change("roomId", parseInt(preselectedRoomId, 10));
+    }
+  }, [preselectedRoomId, values.roomId]);
+
   async function next(e) {
     e.preventDefault();
 
-    if (step < 3) {
+    if (step < 2) {
       setStep(step + 1);
       return;
     }
@@ -123,17 +95,26 @@ export default function ApplicationScreen({ config }) {
     setError("");
 
     try {
-      const result = await resources.create("/applications", values);
+      // Only send roomId and note to backend
+      const payload = {
+        roomId: values.roomId,
+        note: values.note || undefined,
+      };
+      const result = await resources.create(
+        "/student/dorm-applications",
+        payload,
+      );
+      toast.success("Đơn đăng ký đã được gửi.");
       navigate(`/student/applications/${result?.id}`, { replace: true });
     } catch (e) {
-      setError(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
 
-  // Show loading while checking room status
-  if (checkingRoom) {
+  // Show loading while checking room status or profile
+  if (checkingRoom || loadingProfile) {
     return (
       <div className="space-y-6">
         <Heading config={config} />
@@ -170,13 +151,41 @@ export default function ApplicationScreen({ config }) {
     );
   }
 
+  // Show warning if profile is incomplete
+  if (!isProfileComplete) {
+    return (
+      <div className="space-y-6">
+        <Heading config={config} />
+        <Notice
+          type="warning"
+          message="Hồ sơ cá nhân chưa đầy đủ"
+          description="Bạn cần hoàn thiện thông tin hồ sơ (mã sinh viên, giới tính, ngày sinh, địa chỉ) trước khi đăng ký nội trú."
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/student/profile")}
+            className="border-3 border-line-strong bg-primary rounded-sm h-11 px-6 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 active:shadow-none"
+          >
+            Đến trang Hồ sơ
+          </button>
+          <button
+            onClick={() => navigate("/student")}
+            className="border-3 border-line bg-surface rounded-sm h-11 px-6 py-2 inline-flex gap-2 items-center justify-center font-bold text-sm whitespace-nowrap text-text hover:bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 transition-all duration-200 active:translate-y-0 active:shadow-none"
+          >
+            Về trang chủ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Heading tiêu đề trang */}
       <Heading config={config} />
 
       {/* Stepper - Dải 4 bước Neo-Brutalism */}
-      <div className="bg-surface border-4 border-line-strong rounded-2xl p-4 sm:p-6 shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-sm p-4 sm:p-6 shadow-[6px_6px_0_#141413]">
         <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:pb-0">
           {steps.map((name, i) => {
             const isCurrent = i === step;
@@ -189,7 +198,7 @@ export default function ApplicationScreen({ config }) {
               >
                 {/* Badge Số Thứ Tự */}
                 <div
-                  className={`size-9  rounded-xl border-2 border-line-strong flex items-center justify-center text-xs! font-black shrink-0 transition-all ${
+                  className={`size-9  rounded-sm border-2 border-line-strong flex items-center justify-center text-xs! font-black shrink-0 transition-all ${
                     isCurrent
                       ? "bg-primary text-black shadow-[2px_2px_0_#141413] -translate-y-0.5"
                       : isCompleted
@@ -215,7 +224,7 @@ export default function ApplicationScreen({ config }) {
 
                 {/* Đường nối giữa các bước */}
                 {i < steps.length - 1 && (
-                  <div className="flex-1 h-1 bg-line-strong/20 mx-2 rounded-full hidden md:block" />
+                  <div className="flex-1 h-1 bg-line-strong/20 mx-2 rounded-sm hidden md:block" />
                 )}
               </div>
             );
@@ -227,13 +236,13 @@ export default function ApplicationScreen({ config }) {
       <Notice error={error} />
 
       {/* Main Card Nội Dung Form */}
-      <div className="bg-surface border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413]">
+      <div className="bg-surface border-4 border-line-strong rounded-sm p-6 sm:p-8 shadow-[6px_6px_0_#141413]">
         <form onSubmit={next} className="space-y-8">
           {/* BƯỚC 0: Xác nhận thông tin tài khoản */}
           {step === 0 && (
-            <div className="p-6 rounded-2xl bg-primary-light border-3 border-line-strong shadow-[4px_4px_0_#141413] space-y-4">
+            <div className="p-6 rounded-sm bg-primary-light border-3 border-line-strong shadow-[4px_4px_0_#141413] space-y-4">
               <div className="flex items-center gap-3">
-                <div className="size-11 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                <div className="size-11 rounded-sm bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
                   <UserCheck
                     size={22}
                     className="text-text"
@@ -270,6 +279,35 @@ export default function ApplicationScreen({ config }) {
                 </span>
               </div>
 
+              {/* Hiển thị thông tin phòng đã chọn từ URL nếu có */}
+              {preselectedRoomId && selectedRoom && (
+                <div className="p-4 rounded-sm bg-primary-light border-3 border-line-strong shadow-[3px_3px_0_#141413] mb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="text-xs font-extrabold text-text-muted uppercase mb-1">
+                        Phòng đã chọn từ danh sách
+                      </div>
+                      <div className="text-base font-black text-text">
+                        Phòng {selectedRoom.roomNumber || selectedRoom.name} -{" "}
+                        {selectedRoom.buildingName ||
+                          selectedRoom.building?.name}
+                      </div>
+                      <div className="text-xs font-bold text-text-muted mt-1">
+                        {money(selectedRoom.monthlyPrice)} / tháng •{" "}
+                        {selectedRoom.availableSlots ?? 0} chỗ trống
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => change("roomId", null)}
+                      className="text-xs font-bold text-text-muted hover:text-text underline"
+                    >
+                      Đổi phòng khác
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <Loading />
               ) : roomList.length > 0 ? (
@@ -280,7 +318,7 @@ export default function ApplicationScreen({ config }) {
                     return (
                       <label
                         key={room.id}
-                        className={`p-5 rounded-2xl border-3 border-line-strong cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                        className={`p-5 rounded-sm border-3 border-line-strong cursor-pointer transition-all flex flex-col justify-between gap-3 ${
                           isSelected
                             ? "bg-primary-light border-line-strong shadow-[5px_5px_0_#141413] -translate-y-1 ring-2 ring-line-strong"
                             : "bg-surface hover:bg-surface-2 shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5"
@@ -308,7 +346,7 @@ export default function ApplicationScreen({ config }) {
                             </span>
                           </div>
 
-                          <span className="px-2.5 py-1 bg-warning text-black text-xs font-black rounded-lg border-2 border-line-strong shadow-[1.5px_1.5px_0_#141413]">
+                          <span className="px-2.5 py-1 bg-warning text-black text-xs font-black rounded-sm border-2 border-line-strong shadow-[1.5px_1.5px_0_#141413]">
                             {room.availableSlots ?? 0} chỗ trống
                           </span>
                         </div>
@@ -328,30 +366,36 @@ export default function ApplicationScreen({ config }) {
               ) : (
                 <Empty text="Hiện tại chưa có phòng trống để đăng ký." />
               )}
+
+              {/* Ghi chú bổ sung */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between text-sm font-extrabold text-text mb-2">
+                  <span>Ghi chú bổ sung</span>
+                  <span className="text-xs font-semibold text-text-muted">
+                    (Không bắt buộc)
+                  </span>
+                </div>
+                <textarea
+                  value={values.note ?? ""}
+                  onChange={(e) => change("note", e.target.value)}
+                  rows={4}
+                  placeholder="Nhập mong muốn hoặc ghi chú cho ban quản lý..."
+                  className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
+                />
+              </div>
             </div>
           )}
 
-          {/* BƯỚC 2: Chọn ngày nhận phòng & Ghi chú */}
+          {/* BƯỚC 2: Kiểm tra thông tin & Gửi hồ sơ */}
           {step === 2 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2">
-                <Calendar size={18} className="text-text" />
-                <h3 className="text-sm font-black text-text uppercase tracking-wider">
-                  Thời gian & Ghi chú bổ sung
-                </h3>
+            <div className="space-y-6">
+              {/* Static info box about contract terms */}
+              <div className="mb-6 p-4 bg-primary/10 border-2 border-primary rounded-sm">
+                <p className="text-sm font-bold text-text">
+                  ℹ️ Hợp đồng 12 tháng tính từ ngày đơn được duyệt. Tiền cọc = 1 tháng tiền phòng.
+                </p>
               </div>
 
-              <FormFields
-                names={["expectedCheckInDate", "note"]}
-                values={values}
-                onChange={change}
-              />
-            </div>
-          )}
-
-          {/* BƯỚC 3: Kiểm tra thông tin & Gửi hồ sơ */}
-          {step === 3 && (
-            <div className="space-y-6">
               <div className="flex items-center gap-2 pb-2 border-b-3 border-line-strong">
                 <ShieldCheck size={20} className="text-text" />
                 <h3 className="text-base font-black text-text">
@@ -359,7 +403,7 @@ export default function ApplicationScreen({ config }) {
                 </h3>
               </div>
 
-              <div className="p-6 rounded-2xl bg-surface-2 border-3 border-line-strong shadow-[4px_4px_0_#141413] space-y-4">
+              <div className="p-6 rounded-sm bg-surface-2 border-3 border-line-strong shadow-[4px_4px_0_#141413] space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="block text-xs font-extrabold text-text-muted uppercase">
@@ -389,15 +433,6 @@ export default function ApplicationScreen({ config }) {
                     </span>
                     <strong className="text-base font-black text-text">
                       {selectedRoom ? money(selectedRoom.monthlyPrice) : "---"}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span className="block text-xs font-extrabold text-text-muted uppercase">
-                      Ngày nhận phòng dự kiến:
-                    </span>
-                    <strong className="text-base font-black text-text">
-                      {values.expectedCheckInDate || "Chưa chọn"}
                     </strong>
                   </div>
                 </div>
@@ -442,7 +477,7 @@ export default function ApplicationScreen({ config }) {
                   strokeWidth={2.5}
                   className="animate-spin"
                 />
-              ) : step === 3 ? (
+              ) : step === 2 ? (
                 <Check size={18} strokeWidth={2.5} />
               ) : (
                 <ArrowRight size={18} strokeWidth={2.5} />
@@ -450,7 +485,7 @@ export default function ApplicationScreen({ config }) {
               <span>
                 {busy
                   ? "Đang gửi..."
-                  : step === 3
+                  : step === 2
                     ? "Gửi hồ sơ đăng ký"
                     : "Tiếp tục"}
               </span>

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, MessageSquare, User, RefreshCw, Bot, CheckCircle2 } from "lucide-react";
+import { Send, MessageSquare, User, RefreshCw, Bot } from "lucide-react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
-import { Notice, Loading, Empty, Heading } from "./UIComponents";
+import { Notice, Loading, Empty } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import useAuth from "../../hooks/useAuth";
 
@@ -87,10 +87,10 @@ export default function ChatScreen({ config }) {
       {/* Khung Chat Layout 2 Cột Neo-Brutalism */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-220px)] min-h-137.5">
         {/* CỘT TRÁI: Danh sách Cuộc trò chuyện (4 cột) */}
-        <div className="lg:col-span-4 bg-surface border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
+        <div className="lg:col-span-4 bg-surface border-4 border-line-strong rounded-sm overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
           {/* Header danh sách */}
           <div className="p-4 bg-surface-2 border-b-4 border-line-strong flex items-center gap-2">
-            <div className="size-8 rounded-lg  border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
+            <div className="size-8 rounded-sm  border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
               <MessageSquare
                 size={18}
                 className="text-text"
@@ -129,7 +129,7 @@ export default function ChatScreen({ config }) {
                     }`}
                   >
                     <div
-                      className={`size-10 rounded-xl border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] ${
+                      className={`size-10 rounded-sm border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] ${
                         isSelected ? "bg-surface" : "bg-warning"
                       }`}
                     >
@@ -163,13 +163,13 @@ export default function ChatScreen({ config }) {
         </div>
 
         {/* CỘT PHẢI: Khung Cửa sổ Chat (8 cột) */}
-        <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-2xl overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
+        <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-sm overflow-hidden shadow-[6px_6px_0_#141413] flex flex-col h-full">
           {selected ? (
             <>
               {/* Header Cửa sổ Chat đang chọn */}
               <div className="p-4 bg-surface-2 border-b-4 border-line-strong flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+                  <div className="size-9 rounded-sm bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
                     <User size={18} className="text-text" strokeWidth={2.5} />
                   </div>
                   <div>
@@ -179,7 +179,7 @@ export default function ChatScreen({ config }) {
                         `Cuộc trò chuyện #${selected}`}
                     </h3>
                     <span className="text-[11px] font-extrabold text-text-muted uppercase tracking-wider flex items-center gap-1">
-                      <span className="size-2 rounded-full bg-success inline-block animate-pulse"></span>
+                      <span className="size-2 rounded-sm bg-success inline-block animate-pulse"></span>
                       Trực tuyến
                     </span>
                   </div>
@@ -228,7 +228,7 @@ export default function ChatScreen({ config }) {
 
                         {/* Bong bóng nội dung tin nhắn */}
                         <div
-                          className={`px-4 py-3 rounded-2xl border-3 border-line-strong text-sm! font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
+                          className={`px-4 py-3 rounded-sm border-3 border-line-strong text-sm! font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
                             isSelf
                               ? "bg-primary text-text rounded-tr-xs"
                               : "bg-surface text-text rounded-tl-xs"
@@ -254,13 +254,13 @@ export default function ChatScreen({ config }) {
                   placeholder="Nhập nội dung tin nhắn..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="flex-1 border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60"
+                  className="flex-1 border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60"
                 />
 
                 <button
                   type="submit"
                   disabled={busy || !text.trim()}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-text font-extrabold text-sm rounded-xl border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none cursor-pointer shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none cursor-pointer shrink-0"
                 >
                   {busy ? (
                     <RefreshCw
@@ -278,7 +278,7 @@ export default function ChatScreen({ config }) {
           ) : (
             // Trạng thái chưa chọn cuộc trò chuyện
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-surface/30">
-              <div className="size-16 rounded-2xl bg-warning border-4 border-line-strong flex items-center justify-center shadow-[4px_4px_0_#141413] mb-4">
+              <div className="size-16 rounded-sm bg-warning border-4 border-line-strong flex items-center justify-center shadow-[4px_4px_0_#141413] mb-4">
                 <Bot size={32} className="text-text" strokeWidth={2.5} />
               </div>
               <h3 className="text-lg font-black text-text mb-1">

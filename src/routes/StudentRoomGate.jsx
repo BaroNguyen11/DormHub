@@ -9,8 +9,6 @@ import {
 } from '../constants/screenConfig';
 import { ROLE_HOME } from '../constants/roles';
 
-const ENDED_STATUSES = ['CHECKED_OUT', 'CANCELLED', 'TERMINATED', 'ENDED'];
-
 const startsWithAny = (pathname, prefixes) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -27,18 +25,26 @@ export default function StudentRoomGate() {
 
   const refresh = useCallback(async () => {
     try {
-      const data = await api('/room-assignments/me', { method: 'GET' });
-      const assigned =
-        !!(data?.roomNumber || data?.room) &&
-        !ENDED_STATUSES.includes(String(data?.status || '').toUpperCase());
+      // Backend trả về Page<RoomAssignmentResponse> tại /student/room-assignments
+      // (endpoint cũ /room-assignments/me đã bị xoá → 404).
+      const data = await api('/student/room-assignments', {
+        method: 'GET',
+        // Backend default page=0, size=20 — đủ để biết SV có đang ở phòng nào không.
+      });
+      const items = Array.isArray(data)
+        ? data
+        : data?.content || data?.items || [];
+      const assigned = items.some((a) =>
+        ['ASSIGNED', 'CHECKED_IN'].includes(
+          String(a?.assignmentStatus || a?.status || '').toUpperCase(),
+        ),
+      );
       hasRoomRef.current = assigned;
       setHasRoom(assigned);
-    } catch (error) {
-      // 404 = chưa có phòng. Lỗi khác (mạng, 5xx): giữ nguyên trạng thái cũ.
-      if (error?.status === 404) {
-        hasRoomRef.current = false;
-        setHasRoom(false);
-      }
+    } catch {
+      // 404 / 403 / mạng: coi như chưa có phòng để SV vẫn vào được Tìm phòng.
+      hasRoomRef.current = false;
+      setHasRoom(false);
     } finally {
       setLoading(false);
     }

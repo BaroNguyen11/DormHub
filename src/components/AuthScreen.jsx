@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
 import useAuth from "../hooks/useAuth";
+import { api } from "../api/apiClient";
 import { authService } from "../services/auth.service";
 import { errorMessage } from "../utils/errorHandler";
 import {
@@ -87,7 +88,26 @@ export default function AuthScreen({ type }) {
         const role = String(account?.role || account?.roles?.[0] || "STUDENT")
           .replace(/^ROLE_/, "")
           .toLowerCase();
-        const destination = role === "manager" ? "/manager" : "/student";
+
+        if (role === "manager") {
+          navigate(location.state?.from || "/manager", { replace: true });
+          return;
+        }
+
+        // SINH VIÊN: hỏi backend "bước tiếp theo là gì" rồi tự động chuyển hướng:
+        //   - đang có phiên thanh toán chờ -> trang kết quả thanh toán (tự poll)
+        //   - đã có phòng (cọc đã được xác nhận) -> "Phòng của tôi"
+        //   - có hóa đơn cọc chưa trả -> chi tiết hóa đơn cọc
+        //   - còn lại -> dashboard (tự hướng dẫn tìm phòng)
+        let destination = "/student";
+        if (!location.state?.from) {
+          try {
+            const overview = await api("/student/overview");
+            if (overview?.redirect) destination = overview.redirect;
+          } catch {
+            /* lỗi overview: rơi về dashboard mặc định */
+          }
+        }
         navigate(location.state?.from || destination, { replace: true });
       } else if (type === "verifyEmail") {
         await authService.verifyEmail({
@@ -209,7 +229,7 @@ export default function AuthScreen({ type }) {
           </motion.div>
         )}
 
-        {type === "login" && DEMO_ENABLED && (
+        {/* {type === "login" && DEMO_ENABLED && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -243,7 +263,7 @@ export default function AuthScreen({ type }) {
               ))}
             </div>
           </motion.div>
-        )}
+        )} */}
 
         <form onSubmit={submit} className="space-y-4">
           {config.fields.map(([key, label, inputType]) => {
@@ -275,6 +295,18 @@ export default function AuthScreen({ type }) {
                         [key]: event.target.value,
                       }))
                     }
+                    onPaste={(event) => {
+                      event.preventDefault();
+
+                      const pastedText = event.clipboardData
+                        .getData("text")
+                        .trim();
+
+                      setValues((previous) => ({
+                        ...previous,
+                        [key]: pastedText,
+                      }));
+                    }}
                     autoComplete={
                       isPassword
                         ? key === "password"

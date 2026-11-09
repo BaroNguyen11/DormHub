@@ -7,8 +7,14 @@
 // Sử dụng Vite proxy trong development để bypass CORS
 // Trong production, cần setup backend proxy
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || '/ai-proxy/v1';
-const AI_API_KEY = import.meta.env.VITE_AI_API_KEY || 'sk-c5a30fbce7ee2c04-8jv8c0-1ea4a431';
+const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
 const AI_MODEL = import.meta.env.VITE_AI_MODEL || 'kr/claude-sonnet-4.5';
+
+// Validate API key is configured
+if (!AI_API_KEY) {
+  console.error('❌ VITE_AI_API_KEY is not configured. Set it in .env file.');
+  throw new Error('AI_API_KEY is not configured. Set VITE_AI_API_KEY in .env file.');
+}
 
 /**
  * Gửi tin nhắn tới AI và nhận phản hồi
@@ -93,7 +99,7 @@ export async function sendChatMessage(messages, options = {}) {
     
     // Re-throw với message thân thiện
     if (error.message.includes('fetch')) {
-      throw new Error('Không thể kết nối tới AI server. Kiểm tra mạng của bạn.');
+      throw new Error('Không thể kết nối tới AI server. Kiểm tra mạng của bạn.', { cause: error });
     }
     
     throw error;

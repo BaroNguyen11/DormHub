@@ -1,5 +1,7 @@
+// Demo mode đã TẮT để frontend gọi thẳng backend thật (Spring Boot /api/v1/*).
+// Nếu muốn bật lại xem thử, đặt VITE_ENABLE_DEMO=true trong file .env.
 export const DEMO_ENABLED =
-  import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO === "true";
+  import.meta.env.VITE_ENABLE_DEMO === "true";
 export const DEMO_PASSWORD = "DormHub@123";
 export const DEMO_ACCOUNTS = [
   {

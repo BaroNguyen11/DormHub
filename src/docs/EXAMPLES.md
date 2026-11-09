@@ -8,13 +8,13 @@ Các ví dụ copy-paste được ngay.
 
 ```javascript
 // src/pages/Student/RoomList.jsx
-import { useResource } from '../../hooks/useResource';
+import { useLoad } from '../../components/Screen/useLoad';
 import { SimpleLoading } from '../../components/LoadingState';
 import { EmptyState } from '../../components/EmptyState';
 
 export default function RoomList() {
   // Load rooms từ API
-  const { data, loading, error } = useResource('/rooms');
+  const { data, loading, error } = useLoad('/rooms');
   
   // Xử lý các trạng thái
   if (loading) return <SimpleLoading />;
@@ -164,7 +164,7 @@ export default function MaintenanceCreate() {
 ```javascript
 import { useState } from 'react';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useResource } from '../../hooks/useResource';
+import { useLoad } from '../../components/Screen/useLoad';
 
 export default function StudentSearch() {
   const [search, setSearch] = useState('');
@@ -173,7 +173,7 @@ export default function StudentSearch() {
   const debouncedSearch = useDebounce(search, 300);
   
   // Load data với search đã debounce
-  const { data, loading } = useResource('/students', {
+  const { data, loading } = useLoad('/students', {
     search: debouncedSearch
   });
   
@@ -204,13 +204,13 @@ export default function StudentSearch() {
 
 ```javascript
 import { useState } from 'react';
-import { useResource } from '../../hooks/useResource';
+import { useLoad } from '../../components/Screen/useLoad';
 
 export default function InvoiceList() {
   const [page, setPage] = useState(0);
   const pageSize = 10;
   
-  const { data, loading } = useResource('/invoices/me', {
+  const { data, loading } = useLoad('/student/invoices', {
     page,
     size: pageSize
   });

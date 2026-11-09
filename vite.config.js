@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       // Proxy cho 9Router AI API để bypass CORS trong development
       '/ai-proxy': {
-        target: 'https://decide-garlic-mia-save.trycloudflare.com',
+        target: 'https://rendering-includes-fruits-new.trycloudflare.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ai-proxy/, ''),
         configure: (proxy, options) => {

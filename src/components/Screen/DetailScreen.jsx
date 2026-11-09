@@ -1,7 +1,7 @@
 // ====================================
 // DETAIL SCREEN - Màn hình chi tiết (Neo-Brutalism)
 // ====================================
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -16,13 +16,15 @@ import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_LABELS } from "./constants";
 import { formatValue } from "./formatters";
-import { Notice, Loading, Empty, Heading, SystemInfo } from "./UIComponents";
+import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
-import { Button, StatusBadge } from "../ui";
+import { StatusBadge } from "../ui";
+import { toast } from "sonner";
 
 export default function DetailScreen({ config }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -32,7 +34,19 @@ export default function DetailScreen({ config }) {
     ? config.resource
     : `${config.resource}/${encodeURIComponent(id)}`;
 
-  const { data, error, loading, reload } = useLoad(path, {});
+  const { data: raw, error, loading, reload } = useLoad(path, {});
+
+  // Khi single: true, backend có thể trả về Page (vd /student/room-assignments
+  // trả Page<RoomAssignmentResponse>). Lấy phần tử đầu tiên của content/items
+  // để hiển thị như bản ghi chi tiết của sinh viên.
+  const data =
+    config.single && raw && typeof raw === "object" && !Array.isArray(raw)
+      ? Array.isArray(raw.content)
+        ? raw.content[0] || null
+        : Array.isArray(raw.items)
+          ? raw.items[0] || null
+          : raw
+      : raw;
 
   async function doAction(action) {
     if (action.confirm && !window.confirm(`Xác nhận: ${action.label}?`)) {
@@ -41,10 +55,36 @@ export default function DetailScreen({ config }) {
 
     let body = action.body;
 
-    if (action.reason) {
+    // Handle promptField logic (new mechanism for rejection reason, etc.)
+    if (action.promptField) {
+      const promptText = action.promptLabel || `Nhập ${action.promptField}`;
+      let promptValue = window.prompt(promptText);
+      
+      // Validation
+      if (action.promptRequired && !promptValue?.trim()) {
+        toast.error(`${action.promptLabel || action.promptField} là bắt buộc.`);
+        return;
+      }
+      
+      if (promptValue && action.promptMaxLength && promptValue.length > action.promptMaxLength) {
+        toast.error(`${action.promptLabel || action.promptField} không được vượt quá ${action.promptMaxLength} ký tự.`);
+        return;
+      }
+      
+      // Build body using bodyBuilder if provided
+      if (action.bodyBuilder) {
+        body = action.bodyBuilder(data, promptValue?.trim());
+      } else {
+        body = { ...(action.body || {}), [action.promptField]: promptValue?.trim() };
+      }
+    }
+
+    // Legacy reason mechanism (for backward compatibility)
+    if (action.reason && !action.promptField) {
       const reason = window.prompt("Nhập lý do từ chối");
       if (!reason?.trim()) return;
-      body = { reason: reason.trim() };
+      // Backend /review yêu cầu {status, note} — giữ status từ action.body, thêm note.
+      body = { ...(action.body || {}), note: reason.trim() };
     }
 
     if (action.room) {
@@ -54,12 +94,27 @@ export default function DetailScreen({ config }) {
     }
 
     if (action.payment) {
-      const method = window.prompt(
-        "Phương thức thanh toán: CASH hoặc BANK_TRANSFER",
-        "BANK_TRANSFER",
-      );
-      if (!method) return;
-      body = { invoiceId: id, method };
+      // Backend: POST /api/v1/student/invoices/{invoiceId}/payments (không cần body).
+      // Sau khi tạo payment thành công, chuyển sang trang kết quả thanh toán.
+      try {
+        setBusy(true);
+        const result = await resources.action(
+          `${config.resource}/${id}${action.suffix}`,
+          action.method,
+        );
+        const paymentId = result?.paymentId || result?.id;
+        toast.success("Đã tạo yêu cầu thanh toán.");
+        if (paymentId) {
+          navigate(
+            `/student/payment-result?paymentId=${paymentId}&invoiceId=${id}`,
+          );
+        }
+      } catch (e) {
+        toast.error(errorMessage(e));
+      } finally {
+        setBusy(false);
+      }
+      return;
     }
 
     setBusy(true);
@@ -68,17 +123,15 @@ export default function DetailScreen({ config }) {
 
     try {
       await resources.action(
-        action.payment
-          ? "/payments"
-          : `${config.resource}/${id}${action.suffix}`,
+        `${config.resource}/${id}${action.suffix}`,
         action.method,
         body,
       );
 
-      setSuccess("Thao tác đã được lưu thành công.");
+      toast.success("Thao tác đã được lưu thành công.");
       reload();
     } catch (e) {
-      setActionError(errorMessage(e));
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -117,13 +170,40 @@ export default function DetailScreen({ config }) {
         )}
 
         {/* Các nút Action linh hoạt (Duyệt, Từ chối, Thanh toán, Phân phòng...) */}
-        {config.actions?.map((action) => (
-          <button
-            key={action.label}
-            type="button"
-            disabled={busy || loading}
-            onClick={() => doAction(action)}
-            className={`
+        {/* visibleWhen: { field: value, ... } — chỉ hiện nút khi mọi điều kiện khớp dữ liệu hiện tại */}
+        {(config.actions || [])
+          .filter((action) =>
+            !action.visibleWhen ||
+            Object.entries(action.visibleWhen).every(
+              ([field, value]) =>
+                String(data?.[field] ?? "") === String(value),
+            ),
+          )
+          .map((action) => {
+          // Handle redirect actions
+          if (action.type === "redirect") {
+            const targetPath = action.useRoomId
+              ? `${action.path}?roomId=${id}`
+              : action.path;
+            return (
+              <Link
+                key={action.label}
+                to={targetPath}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-success text-[#000000] font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              >
+                {action.label}
+              </Link>
+            );
+          }
+
+          // Existing action button logic
+          return (
+            <button
+              key={action.label}
+              type="button"
+              disabled={busy || loading}
+              onClick={() => doAction(action)}
+              className={`
     inline-flex items-center gap-2
     px-3 py-2
     font-extrabold! text-sm!
@@ -139,19 +219,31 @@ export default function DetailScreen({ config }) {
     disabled:cursor-not-allowed
     disabled:shadow-none
   `}
-          >
-            {action.payment ? (
-              <CreditCard size={18} strokeWidth={2.5} />
-            ) : action.room ? (
-              <Home size={18} strokeWidth={2.5} />
-            ) : action.reason ? (
-              <XCircle size={18} strokeWidth={2.5} />
-            ) : (
-              <CheckCircle2 size={18} strokeWidth={2.5} />
-            )}
+            >
+              {action.payment ? (
+                <CreditCard size={18} strokeWidth={2.5} />
+              ) : action.room ? (
+                <Home size={18} strokeWidth={2.5} />
+              ) : action.reason ? (
+                <XCircle size={18} strokeWidth={2.5} />
+              ) : (
+                <CheckCircle2 size={18} strokeWidth={2.5} />
+              )}
 
-            <span>{busy ? "Đang xử lý..." : action.label}</span>
-          </button>
+              <span>{busy ? "Đang xử lý..." : action.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Public Actions for Guest */}
+        {config.publicActions?.map((action) => (
+          <Link
+            key={action.label}
+            to={`${action.redirect}?redirect=${encodeURIComponent(location.pathname)}`}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-[#000000] font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+          >
+            {action.label}
+          </Link>
         ))}
       </Heading>
 
@@ -166,10 +258,10 @@ export default function DetailScreen({ config }) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Khung Thông tin chi tiết chính (Chiếm 8 cột ở màn hình rộng) */}
-          <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
+          <div className="lg:col-span-12 bg-surface border-4 border-line-strong rounded-sm p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
             <div className="flex items-center justify-between pb-4 border-b-3 border-line-strong">
               <div className="flex items-center gap-2.5">
-                <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+                <div className="size-9 rounded-sm bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
                   <FileText
                     size={18}
                     className="text-text"
@@ -210,9 +302,9 @@ export default function DetailScreen({ config }) {
           </div>
 
           {/* Sidebar Thông tin hệ thống (Chiếm 4 cột ở màn hình rộng) */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* <div className="lg:col-span-4 space-y-6">
             <SystemInfo />
-          </div>
+          </div> */}
         </div>
       )}
     </div>
