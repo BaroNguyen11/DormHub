@@ -117,12 +117,12 @@ Thay vì viết code cho từng màn hình (Invoice, Room, Contract...), bạn c
 ```javascript
 const config = {
   type: "list",
-  resource: "/invoices/me",
+  resource: "/student/invoices",
   columns: ["id", "totalAmount", "status"]
 };
 
 // Screen sẽ tự động:
-// - Gọi API GET /invoices/me
+// - Gọi API GET /student/invoices
 // - Hiển thị table với 3 cột
 // - Thêm search box, pagination
 // - Format số tiền, status đẹp
@@ -136,7 +136,7 @@ Hooks là **functions đặc biệt** giúp bạn sử dụng React features.
 **Hooks phổ biến trong project:**
 
 - `useAuth()` - Lấy thông tin user hiện tại
-- `useResource(path)` - Load data từ API
+- `useLoad(path)` - Load data từ API (từ Screen/useLoad.js)
 - `useDebounce(value, delay)` - Trì hoãn search để giảm API calls
 - `usePagination()` - Quản lý phân trang
 
@@ -154,19 +154,19 @@ function MyComponent() {
 }
 ```
 
-**Ví dụ useResource:**
+**Ví dụ useLoad:**
 ```javascript
-import { useResource } from '../../hooks/useResource';
+import { useLoad } from '../../components/Screen/useLoad';
 
 function InvoiceList() {
-  const { data, loading, error } = useResource('/invoices/me');
+  const { data, loading, error } = useLoad('/student/invoices');
   
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>Lỗi: {error}</div>;
   
   return (
     <div>
-      {data.map(invoice => (
+      {data?.content?.map(invoice => (
         <div key={invoice.id}>{invoice.totalAmount}</div>
       ))}
     </div>

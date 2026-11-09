@@ -51,10 +51,21 @@ function unwrapResponse(data) {
 
 async function parseResponse(response) {
   const raw = await response.text();
+  
+  // Empty response
   if (!raw) return null;
+  
+  // Backend bug: trả về string "undefined" hoặc "null"
+  if (raw === "undefined" || raw === "null") {
+    console.warn("⚠️ Backend trả về string 'undefined' hoặc 'null' - treating as null");
+    return null;
+  }
+  
   try {
     return JSON.parse(raw);
   } catch {
+    // Nếu không parse được JSON, trả về raw string
+    console.warn("⚠️ Response không phải JSON:", raw.substring(0, 100));
     return raw;
   }
 }

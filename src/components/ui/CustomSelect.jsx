@@ -65,7 +65,7 @@ export function CustomSelect({
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
+        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all cursor-pointer"
       >
         <span
           className={

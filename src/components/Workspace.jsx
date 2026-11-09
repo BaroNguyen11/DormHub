@@ -1,7 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   Menu,
-  Bell,
   LogOut,
   ArrowLeft,
   Building2,
@@ -9,20 +8,126 @@ import {
   ShieldCheck,
   Zap,
   ChevronRight,
+  Bell,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import useAuth from "../hooks/useAuth";
 import useStudentRoom from "../hooks/useStudentRoom";
 import { nav } from "../constants/screenConfig";
 import { isDemoSession } from "../services/demo.service";
 import ThemeToggleSwitch from "./ThemeToggleSwitch";
+import { resources } from "../services/resource.service";
+import { api } from "../api/apiClient";
+import { toast } from "sonner";
 
 export default function Workspace({ group, title, children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const { hasRoom } = useStudentRoom();
+  useEffect(() => {
+    if (!["student", "manager"].includes(group)) return undefined;
+    let active = true;
+    const loadCount = async () => {
+      try {
+        const result = await api("/notifications/unread-count");
+        if (active)
+          setUnreadCount(
+            Number(result?.unreadCount ?? result?.count ?? result ?? 0),
+          );
+      } catch {
+        /* Keep the header usable if notifications are temporarily unavailable. */
+      }
+    };
+    loadCount();
+    const timer = setInterval(loadCount, 60_000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [group]);
+
+  async function toggleNotifications() {
+    const nextOpen = !notificationOpen;
+    setNotificationOpen(nextOpen);
+    if (!nextOpen) return;
+    setNotificationsLoading(true);
+    try {
+      const result = await resources.list("/notifications", {
+        page: 0,
+        size: 5,
+      });
+      setNotifications(
+        Array.isArray(result) ? result : result?.content || result?.items || [],
+      );
+    } catch (e) {
+      toast.error(
+        e?.details?.message || e?.message || "Không tải được thông báo.",
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    try {
+      await api("/notifications/read-all", { method: "PATCH" });
+      setNotifications((items) =>
+        items.map((item) => ({ ...item, isRead: true })),
+      );
+      setUnreadCount(0);
+      toast.success("Đã đánh dấu tất cả đã đọc.");
+    } catch (e) {
+      toast.error(
+        e?.details?.message || e?.message || "Không thể cập nhật thông báo.",
+      );
+    }
+  }
+
+  function handleNotificationClick(item) {
+    const id = item.id ?? item.notificationId;
+    setNotificationOpen(false);
+    if (!item.isRead && id != null) {
+      setNotifications((items) =>
+        items.map((row) =>
+          String(row.id ?? row.notificationId) === String(id)
+            ? { ...row, isRead: true }
+            : row,
+        ),
+      );
+      setUnreadCount((count) => Math.max(0, count - 1));
+      api(`/notifications/${encodeURIComponent(id)}/read`, {
+        method: "PATCH",
+      }).catch((e) =>
+        toast.error(
+          e?.details?.message || e?.message || "Không thể cập nhật thông báo.",
+        ),
+      );
+    }
+    const type = String(item.type || "GENERAL").toUpperCase();
+    const targets = {
+      INVOICE: group === "student" ? "/student/invoices" : "/manager/finance",
+      PAYMENT: group === "student" ? "/student/invoices" : "/manager/finance",
+      MAINTENANCE:
+        group === "student" ? "/student/maintenance" : "/manager/maintenance",
+      ROOM_ASSIGNMENT:
+        group === "student" ? "/student/residence" : "/manager/contracts",
+      CONTRACT:
+        group === "student" ? "/student/residence" : "/manager/contracts",
+      APPLICATION:
+        group === "student" ? "/student/residence" : "/manager/contracts",
+    };
+    const target = item.targetUrl || targets[type];
+    if (target) navigate(target);
+    else setSelectedNotification(item);
+  }
   // Sinh viên chưa có phòng chỉ thấy các chức năng tìm phòng / đăng ký
   const noRoom = group === "student" && !hasRoom;
   const navItems = nav[noRoom ? "studentNoRoom" : group];
@@ -109,21 +214,21 @@ export default function Workspace({ group, title, children }) {
             {/* Dải điểm nhấn (Tránh cảm giác trống trải) */}
             <div className="space-y-3.5 pt-6 border-t-2 border-line/10">
               <div className="flex items-center gap-3 text-xs font-extrabold text-text">
-                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                <div className="size-7 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
                   <Zap size={14} className="text-text" />
                 </div>
                 <span>Kích hoạt tài khoản nhanh chóng trong 30s</span>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-extrabold text-text">
-                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                <div className="size-7 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
                   <Receipt size={14} className="text-text" />
                 </div>
                 <span>Tra cứu hợp đồng & hóa đơn minh bạch</span>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-extrabold text-text">
-                <div className="size-7 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
+                <div className="size-7 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413] shrink-0">
                   <ShieldCheck size={14} className="text-text" />
                 </div>
                 <span>Bảo mật thông tin sinh viên tuyệt đối</span>
@@ -239,7 +344,7 @@ export default function Workspace({ group, title, children }) {
           {/* Left Breadcrumbs */}
           <div className="flex items-center gap-2 text-text-muted text-xs font-bold">
             <button
-              className="md:hidden size-9 rounded-lg bg-surface border-2 border-line-strong inline-grid place-items-center hover:bg-warning transition-colors shadow-[2px_2px_0_#141413]"
+              className="md:hidden size-9 rounded-sm bg-surface border-2 border-line-strong inline-grid place-items-center hover:bg-warning transition-colors shadow-[2px_2px_0_#141413]"
               onClick={() => setOpen(true)}
               aria-label="Mở menu"
             >
@@ -260,6 +365,115 @@ export default function Workspace({ group, title, children }) {
 
           {/* Right User Actions */}
           <div className="flex items-center gap-3">
+            {["student", "manager"].includes(group) && (
+              <div className="relative">
+                <button
+                  onClick={toggleNotifications}
+                  className="relative size-10 rounded-full bg-surface border-3 border-line-strong grid place-items-center shadow-[1px_1px_0_#141413] hover:shadow-[2px_2px_0_#141413] hover:-translate-0.5 active:shadow-none active:translate-0 outline-none! transition-all"
+                  title="Thông báo"
+                  aria-label="Thông báo"
+                  aria-expanded={notificationOpen}
+                >
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-2 -top-2 min-w-5 h-5 px-1 grid place-items-center rounded-sm border-2 border-line-strong bg-error text-white text-[10px] font-black shadow-[1px_1px_0_#141413]">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {notificationOpen && (
+                  <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] bg-surface border-3 border-line-strong rounded-sm p-3 shadow-[4px_4px_0_#141413]">
+                    <div className="flex items-center justify-between gap-3 border-b-2 border-line-strong pb-2 mb-2">
+                      <strong className="font-black">Thông báo</strong>
+                      <button
+                        onClick={markAllNotificationsRead}
+                        disabled={!unreadCount}
+                        className="text-xs! font-bold! underline disabled:opacity-50 outline-none! transition-all"
+                      >
+                        Đánh dấu tất cả đã đọc
+                      </button>
+                    </div>
+                    {notificationsLoading ? (
+                      <p className="p-3 text-sm font-bold">Đang tải…</p>
+                    ) : notifications.length ? (
+                      <ul className="max-h-96 overflow-y-auto space-y-2">
+                        {notifications.map((item) => (
+                          <li key={item.id ?? item.notificationId}>
+                            <button
+                              onClick={() => handleNotificationClick(item)}
+                              className={`w-full text-left p-3 rounded-sm border-2 border-line-strong outline-none! transition-all ${item.isRead ? "bg-surface-2 text-text-muted" : "bg-primary-light text-text shadow-[2px_2px_0_#141413]"}`}
+                            >
+                              <span className="flex items-start justify-between gap-2">
+                                <strong className="text-sm font-extrabold">
+                                  {item.title || "Thông báo"}
+                                </strong>
+                                {!item.isRead && (
+                                  <span
+                                    className="mt-1 size-2 shrink-0 rounded-full bg-primary"
+                                    aria-label="Chưa đọc"
+                                  />
+                                )}
+                              </span>
+                              <span className="block mt-1 text-xs">
+                                {item.body || item.message || ""}
+                              </span>
+                              {item.createdAt && (
+                                <time className="block mt-2 text-[10px] opacity-70">
+                                  {new Date(item.createdAt).toLocaleString(
+                                    "vi-VN",
+                                  )}
+                                </time>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="p-3 text-sm font-bold text-text-muted">
+                        Chưa có thông báo.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {selectedNotification && (
+                  <div
+                    className="fixed inset-0 z-100 grid place-items-center bg-black/50 p-4"
+                    onMouseDown={(event) =>
+                      event.target === event.currentTarget &&
+                      setSelectedNotification(null)
+                    }
+                  >
+                    <section
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="general-notification-title"
+                      className="w-full max-w-lg rounded-sm border-3 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413]"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <h2
+                          id="general-notification-title"
+                          className="text-lg font-black"
+                        >
+                          {selectedNotification.title || "Thông báo"}
+                        </h2>
+                        <button
+                          onClick={() => setSelectedNotification(null)}
+                          aria-label="Đóng"
+                          className="grid size-8 place-items-center rounded-sm border-3 border-line-strong shadow-[2px_2px_0_#141413] outline-none! transition-all"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <p className="mt-4 whitespace-pre-wrap text-sm font-semibold">
+                        {selectedNotification.body ||
+                          selectedNotification.message ||
+                          ""}
+                      </p>
+                    </section>
+                  </div>
+                )}
+              </div>
+            )}
             <ThemeToggleSwitch />
             {/* Tên User */}
             <span className="font-extrabold text-text hidden md:block text-sm px-2">
@@ -268,7 +482,7 @@ export default function Workspace({ group, title, children }) {
 
             {/* Đăng xuất Button */}
             <button
-              className="size-9 rounded-lg bg-error text-white border-2 border-line-strong grid place-items-center shadow-[1px_1px_0_#141413] hover:shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all"
+              className="size-9 rounded-sm bg-error text-white border-2 border-line-strong grid place-items-center shadow-[1px_1px_0_#141413] hover:shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all"
               onClick={async () => {
                 try {
                   await logout();
@@ -297,7 +511,7 @@ export default function Workspace({ group, title, children }) {
         )}
 
         {/* Content Body */}
-        <main className="max-w-375 w-full mx-auto px-6 lg:px-12 py-10 pb-16 flex-1">
+        <main className="w-full px-6 lg:px-12 py-10 pb-16 flex-1">
           {children}
         </main>
       </div>

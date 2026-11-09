@@ -18,58 +18,144 @@ export const FIELD_LABELS = {
   studentCode: "Mã sinh viên",
   email: "Email",
   phone: "Số điện thoại",
+  phoneNumber: "Số điện thoại",
   address: "Địa chỉ",
   gender: "Giới tính",
-  
+  dateOfBirth: "Ngày sinh",
+  username: "Tên đăng nhập",
+  password: "Mật khẩu",
+  oldPassword: "Mật khẩu hiện tại",
+  newPassword: "Mật khẩu mới",
+  confirmPassword: "Xác nhận mật khẩu mới",
+
   // Thông tin phòng
   roomNumber: "Phòng",
   buildingName: "Tòa nhà",
   buildingId: "Mã tòa nhà",
+  buildingCode: "Mã tòa",
   roomId: "Mã phòng",
   roomType: "Loại phòng",
   capacity: "Sức chứa",
+  currentOccupancy: "Đang ở",
   availableSlots: "Chỗ trống",
   floor: "Tầng",
-  
+
   // Thông tin tài chính
   monthlyPrice: "Giá hàng tháng",
+  pricePerMonth: "Giá hàng tháng",
+  monthlyRent: "Tiền thuê tháng",
+  depositAmount: "Tiền cọc",
   price: "Giá",
   totalAmount: "Tổng tiền",
   amount: "Số tiền",
   electricityAmount: "Tiền điện",
   waterAmount: "Tiền nước",
   serviceAmount: "Phí dịch vụ",
-  
+
   // Thông tin thời gian
   createdAt: "Ngày tạo",
+  updatedAt: "Ngày cập nhật",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",
   dueDate: "Hạn thanh toán",
-  period: "Kỳ",
+  issueDate: "Ngày phát hành",
+  billingMonth: "Kỳ thanh toán",
   month: "Tháng",
   year: "Năm",
-  
+  requestDate: "Ngày nộp",
+  processedAt: "Ngày xử lý",
+  assignedAt: "Ngày phân phòng",
+  checkInAt: "Ngày nhận phòng",
+  checkOutAt: "Ngày trả phòng",
+  readAt: "Ngày đọc",
+
   // Trạng thái và phân loại
   status: "Trạng thái",
+  assignmentStatus: "Trạng thái phân phòng",
+  contractStatus: "Trạng thái hợp đồng",
   type: "Loại",
+  invoiceType: "Loại hóa đơn",
   priority: "Mức ưu tiên",
-  
+  overdue: "Quá hạn",
+
   // Thông tin hợp đồng và hóa đơn
-  termName: "Đợt đăng ký",
   contractId: "Mã hợp đồng",
   invoiceId: "Mã hóa đơn",
+  paymentId: "Mã thanh toán",
   method: "Phương thức",
-  
+
+  // Thanh toán / giao dịch SePay (màn quản lý)
+  paymentReference: "Mã tham chiếu",
+  expectedAmount: "Số tiền",
+  transferAmount: "Số tiền GD",
+  receivingBankCode: "Ngân hàng nhận",
+  receivingAccountNumber: "TK nhận",
+  expiresAt: "Hiệu lực đến",
+  paidAt: "Thời gian trả tiền",
+  sepayTransactionId: "Mã GD SePay",
+  gateway: "Ngân hàng (SePay)",
+  accountNumber: "Số TK nhận",
+  transferType: "Chiều GD",
+  code: "Mã trong nội dung CK",
+  content: "Nội dung CK",
+  bankReferenceCode: "Mã GD ngân hàng",
+  transactionAt: "Thời gian GD",
+  receivedAt: "Nhận lúc",
+  reviewReason: "Lý do chờ đối soát",
+
+  // Đơn đăng ký
+  requestedRoomId: "Mã phòng chọn",
+  requestedRoomNumber: "Phòng chọn",
+  requestedBuildingId: "Mã tòa chọn",
+  requestedBuildingName: "Tòa nhà chọn",
+  note: "Ghi chú",
+  reviewNote: "Ghi chú duyệt",
+  studentId: "Mã sinh viên",
+  studentGender: "Giới tính SV",
+
+  // Checkout requests (Trả phòng)
+  checkoutRequestId: "Mã yêu cầu",
+  checkoutDate: "Ngày trả phòng",
+  reason: "Lý do",
+  depositStatus: "Trạng thái cọc",
+  depositDisposition: "Xử lý cọc",
+
+  // Renewal requests (Gia hạn)
+  renewalRequestId: "Mã yêu cầu",
+  requestedEndDate: "Ngày kết thúc mới",
+  contractEndDate: "Ngày kết thúc HĐ",
+  reviewedById: "Người duyệt",
+  reviewedAt: "Ngày duyệt",
+
+  // Room transfer requests (Chuyển phòng)
+  transferId: "Mã yêu cầu",
+  currentRoomId: "Phòng hiện tại",
+  preferredRoomId: "Phòng mong muốn",
+  approvedRoomId: "Phòng được duyệt",
+  currentAssignmentId: "Mã phân phòng hiện tại",
+  requestedAt: "Ngày yêu cầu",
+
   // Nội dung
   title: "Tiêu đề",
   body: "Nội dung",
   description: "Mô tả",
-  
+  rejectionReason: "Lý do từ chối",
+  imageUrl: "Ảnh đính kèm",
+
   // Phân quyền
   role: "Vai trò",
+  isRead: "Đã đọc",
   read: "Đã đọc",
   action: "Hành động",
   resource: "Đối tượng",
+
+  // Dashboard metrics (manager)
+  totalStudents: "Tổng số sinh viên",
+  totalRooms: "Tổng số phòng",
+  occupiedRooms: "Phòng đã sử dụng",
+  pendingApplications: "Đơn chờ duyệt",
+  openMaintenance: "Báo hỏng đang xử lý",
+  unpaidInvoices: "Hóa đơn chưa thanh toán",
 };
 
 /**
@@ -79,43 +165,79 @@ export const FIELD_LABELS = {
 export const FIELD_CONFIGS = {
   // Input type = email (tự động validate email format)
   email: { type: "email" },
-  
+
   // Input type = tel (keyboard điện thoại trên mobile)
   phone: { type: "tel" },
-  
+  phoneNumber: { type: "tel" },
+
+  // Password fields
+  password: { type: "password", minLength: 8, placeholder: "Tối thiểu 8 ký tự" },
+  oldPassword: { type: "password", required: true },
+  newPassword: { type: "password", required: true, minLength: 8 },
+  confirmPassword: { type: "password", required: true },
+
+  // Username
+  username: { type: "text", minLength: 3, maxLength: 30, required: true },
+
   // Textarea (dùng cho nội dung dài)
   description: { tag: "textarea" },
   body: { tag: "textarea" },
   note: { tag: "textarea" },
-  
+  reason: { tag: "textarea" },
+
   // Date picker
+  dateOfBirth: { type: "date", max: new Date().toISOString().split("T")[0] },
   expectedCheckInDate: { type: "date" },
   dueDate: { type: "date" },
   startDate: { type: "date" },
   endDate: { type: "date" },
-  
+  checkoutDate: { type: "date" },
+  requestedEndDate: { type: "date" },
+
   // Number với min/max
   month: { type: "number", min: 1, max: 12 },
   year: { type: "number", min: 2020 },
   capacity: { type: "number", min: 1 },
-  floor: { type: "number", min: 0 },
+  floor: { type: "number", min: 1 },
   monthlyPrice: { type: "number", min: 0 },
+  pricePerMonth: { type: "number", min: 0 },
   electricityAmount: { type: "number", min: 0 },
   waterAmount: { type: "number", min: 0 },
   serviceAmount: { type: "number", min: 0 },
-  
+  amount: { type: "number", min: 0 },
+  totalAmount: { type: "number", min: 0 },
+  depositAmount: { type: "number", min: 0 },
+
   // Dropdown với options cố định
-  gender: { options: ["Nam", "Nữ"] },
+  gender: {
+    options: [
+      { label: "Nam", value: "MALE" },
+      { label: "Nữ", value: "FEMALE" }, 
+      { label: "Khác", value: "OTHER" }, 
+    ],
+  },
   role: { options: ["STUDENT", "MANAGER"] },
   status: { options: ["ACTIVE", "OPEN", "CLOSED", "MAINTENANCE", "LOCKED"] },
   priority: { options: ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+  type: {
+    options: [
+      { label: "Quạt", value: "FAN" },
+      { label: "Điều hòa", value: "AIR_CONDITIONER" },
+      { label: "Tủ lạnh", value: "REFRIGERATOR" },
+      { label: "Chiếu sáng", value: "LIGHTING" },
+      { label: "Hệ thống nước", value: "PLUMBING" },
+      { label: "Nội thất", value: "FURNITURE" },
+      { label: "Cửa/Cửa sổ", value: "DOOR_WINDOW" },
+      { label: "Khác", value: "OTHER" },
+    ],
+  },
 };
 
 /**
  * Hàm xác định màu sắc cho status badge
  * @param {string} status - Trạng thái (vd: "APPROVED", "REJECTED", "PENDING")
  * @returns {string} - Tên class CSS ("green", "red", "amber")
- * 
+ *
  * Logic:
  * - green: trạng thái thành công, hoàn thành
  * - red: trạng thái bị từ chối, thất bại
@@ -123,15 +245,17 @@ export const FIELD_CONFIGS = {
  */
 export function getStatusColor(status) {
   // Kiểm tra status có phải trạng thái "tích cực" không
-  if (/^(APPROVED|ACTIVE|PAID|RESOLVED|OPEN|SUCCESS|CHECKED_IN)$/i.test(status)) {
+  if (
+    /^(APPROVED|ACTIVE|PAID|COMPLETED|OPEN|SUCCESS|CHECKED_IN|MATCHED)$/i.test(status)
+  ) {
     return "green";
   }
-  
+
   // Kiểm tra status có phải trạng thái "tiêu cực" không
-  if (/^(REJECTED|FAILED|OVERDUE|CLOSED)$/i.test(status)) {
+  if (/^(REJECTED|FAILED|CLOSED|HELD)$/i.test(status)) {
     return "red";
   }
-  
+
   // Mặc định: màu amber cho trạng thái chờ xử lý
   return "amber";
 }

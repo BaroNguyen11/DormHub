@@ -1,22 +1,15 @@
 // ====================================
 // PROFILE SCREEN - Màn hình cập nhật hồ sơ (Neo-Brutalism)
 // ====================================
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save, RefreshCw, Lock, ShieldCheck } from "lucide-react";
 import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
-import { FIELD_CONFIGS } from "./constants";
-import { Notice, Loading, Heading } from "./UIComponents";
+import { FIELD_CONFIGS, FIELD_LABELS } from "./constants";
+import { Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { CustomSelect } from "../ui/CustomSelect";
-
-const FIELD_LABELS = {
-  fullName: "Họ và tên",
-  studentCode: "Mã sinh viên",
-  phone: "Số điện thoại",
-  gender: "Giới tính",
-  address: "Địa chỉ",
-};
+import { toast } from "sonner";
 
 /**
  * Component FormFields - Render các input fields chuẩn Neo-Brutalism
@@ -26,7 +19,9 @@ function FormFields({ names, values, onChange }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {names.map((key) => {
         const meta = FIELD_CONFIGS[key] || {};
-        const isDisabled = key === "studentCode";
+        // Mã SV chỉ khóa khi ĐÃ có mã; chưa có thì cho nhập một lần duy nhất
+        const isDisabled =
+          key === "fullName" || (key === "studentCode" && !!values.studentCode);
 
         return (
           <div
@@ -55,7 +50,7 @@ function FormFields({ names, values, onChange }) {
                 onChange={(e) => onChange(key, e.target.value)}
                 rows={4}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
-                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
               />
             ) : meta.options ? (
               <CustomSelect
@@ -74,7 +69,7 @@ function FormFields({ names, values, onChange }) {
                 onChange={(e) => onChange(key, e.target.value)}
                 disabled={isDisabled}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
-                className="w-full border-3 border-line-strong rounded-xl px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
               />
             )}
           </div>
@@ -89,35 +84,56 @@ function FormFields({ names, values, onChange }) {
  */
 export default function ProfileScreen({ config }) {
   const { data, error, loading, reload } = useLoad(config.resource, {});
+  useEffect(() => { if (error) toast.error(error); }, [error]);
 
   const [values, setValues] = useState({});
   const [busy, setBusy] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const currentValues = { ...(data || {}), ...values };
-  const names = ["fullName", "studentCode", "phone", "gender", "address"];
+  const names = [
+    "fullName",
+    "studentCode",
+    "phone",
+    "gender",
+    "dateOfBirth",
+    "address",
+  ];
+
+  // Profile data loaded via useLoad hook
+  // No action needed on data change
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
-    setSaveError("");
-    setSuccess("");
 
     try {
-      await api(config.resource, {
-        method: "PATCH",
-        body: Object.fromEntries(
-          names
-            .filter((key) => key !== "studentCode")
-            .map((key) => [key, currentValues[key]]),
-        ),
+      // Chỉ gửi các fields backend chấp nhận
+      const allowedFields = [
+        "studentCode",
+        "phone",
+        "gender",
+        "dateOfBirth",
+        "address",
+        "avatarUrl",
+      ];
+      const body = {};
+      allowedFields.forEach((key) => {
+        const val = currentValues[key];
+        if (val === undefined || val === null) return;
+        if (key === "studentCode" && !String(val).trim()) return;
+        body[key] = val;
       });
 
-      setSuccess("Hồ sơ cá nhân đã được cập nhật thành công.");
+      await api(config.resource, {
+        method: "PATCH",
+        body,
+      });
+
+      toast.success("Hồ sơ cá nhân đã được cập nhật thành công.");
       reload();
     } catch (e) {
-      setSaveError(errorMessage(e));
+      console.error("Profile update error:", e);
+      toast.error(errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -129,17 +145,16 @@ export default function ProfileScreen({ config }) {
       <Heading config={config} />
 
       {/* Thông báo Lỗi / Thành công */}
-      <Notice error={saveError || error} success={success} />
 
       {loading ? (
         <Loading />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Card Form Chính (8 cột) */}
-          <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-2xl p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
+          <div className="lg:col-span-8 bg-surface border-4 border-line-strong rounded-sm p-6 sm:p-8 shadow-[6px_6px_0_#141413] space-y-6">
             {/* Card Header với Avatar viết tắt */}
             <div className="flex items-center gap-4 pb-6 border-b-3 border-line-strong">
-              <div className="size-14 rounded-2xl bg-warning border-3 border-line-strong flex items-center justify-center text-xl font-black text-text shadow-[3px_3px_0_#141413] shrink-0">
+              <div className="size-14 rounded-sm bg-warning border-3 border-line-strong flex items-center justify-center text-xl font-black text-text shadow-[3px_3px_0_#141413] shrink-0">
                 {(currentValues?.fullName || "U").slice(0, 1).toUpperCase()}
               </div>
               <div>
@@ -167,7 +182,7 @@ export default function ProfileScreen({ config }) {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-black font-extrabold text-sm rounded-xl border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
                 >
                   {busy ? (
                     <RefreshCw
@@ -186,9 +201,9 @@ export default function ProfileScreen({ config }) {
 
           {/* Sidebar Thông tin Bảo mật KTX (4 cột) */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="p-6 border-4 border-line-strong rounded-2xl bg-surface-2 shadow-[6px_6px_0_#141413]">
+            <div className="p-6 border-4 border-line-strong rounded-sm bg-surface-2 shadow-[6px_6px_0_#141413]">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="size-9 rounded-xl bg-primary border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
+                <div className="size-9 rounded-sm bg-primary border-2 border-line-strong flex items-center justify-center shadow-[1.5px_1.5px_0_#141413]">
                   <ShieldCheck
                     size={20}
                     className="text-text"
@@ -200,9 +215,9 @@ export default function ProfileScreen({ config }) {
                 </h3>
               </div>
               <p className="text-xs font-semibold text-text-muted leading-relaxed m-0">
-                Mã sinh viên do nhà trường cố định để đồng bộ hợp đồng KTX. Nếu
-                phát hiện sai sót thông tin cá nhân, vui lòng liên hệ trực tiếp
-                Ban quản lý DormHub để điều chỉnh.
+                Nếu hồ sơ chưa có mã sinh viên, bạn tự nhập mã 8 chữ số một lần
+                duy nhất. Sau khi đã lưu, mã không thể thay đổi — nếu sai sót
+                vui lòng liên hệ trực tiếp Ban quản lý DormHub để được hỗ trợ.
               </p>
             </div>
           </div>

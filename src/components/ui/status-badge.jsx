@@ -137,6 +137,24 @@ const statusVariants = {
     className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Thành công",
   },
+  // FIX: trạng thái phòng/hợp đồng/phân phòng trước đây rơi vào "KHÔNG XÁC ĐỊNH"
+  AVAILABLE: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Còn trống",
+  },
+  ASSIGNED: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã phân phòng",
+  },
+  HELD: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đang giữ cọc",
+  },
+  // FIX: trạng thái giao dịch SePay (màn "Giao dịch SePay" của quản lý)
+  MATCHED: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã khớp",
+  },
 
   // 2. Warning states - NEON Yellow
   OPEN: {
@@ -154,6 +172,18 @@ const statusVariants = {
   PENDING: {
     className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Đợi xử lý",
+  },
+  MAINTENANCE: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Bảo trì",
+  },
+  EXPIRED: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Hết hạn",
+  },
+  REVIEW_REQUIRED: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Chờ đối soát",
   },
 
   // 3. Error states - NEON Red
@@ -177,6 +207,22 @@ const statusVariants = {
     className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Đã khóa",
   },
+  CHECKED_OUT: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã trả phòng",
+  },
+  CANCELLED: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã hủy",
+  },
+  TERMINATED: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã chấm dứt",
+  },
+  UNMATCHED: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Không khớp",
+  },
 
   // 4. Default state - Neutral Gray
   DEFAULT: {
@@ -194,7 +240,7 @@ export function StatusBadge({ status, className }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-[11px] font-extrabold uppercase tracking-wider whitespace-nowrap select-none transition-transform ",
+        "inline-flex items-center justify-center px-2.5 py-1 rounded-sm text-[11px] font-extrabold uppercase tracking-wider whitespace-nowrap select-none transition-transform ",
         variant.className,
         className
       )}

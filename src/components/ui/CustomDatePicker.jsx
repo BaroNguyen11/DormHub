@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
-export function CustomDatePicker({ value, onChange, min, required }) {
+export function CustomDatePicker({ value, onChange, min, required, className = "" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(
     value ? new Date(value) : new Date()
@@ -36,7 +36,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
   };
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
+    <div className={`relative w-full ${className}`} ref={dropdownRef}>
       <input type="hidden" value={value || ""} required={required} />
 
       {/* Nút bấm hiển thị ngày đã chọn */}
@@ -47,7 +47,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-black text-text bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none transition-all cursor-pointer"
+        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-black text-text bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all cursor-pointer"
       >
         <span className={value ? "text-text" : "text-text-muted/60 font-semibold"}>
           {value
@@ -72,7 +72,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
                 e.stopPropagation();
                 setCurrentMonth(new Date(year, month - 1, 1));
               }}
-              className="size-8 bg-surface-2 rounded-sm border-2 border-line-strong flex items-center justify-center hover:bg-warning cursor-pointer shadow-[1.5px_1.5px_0_#141413]"
+              className="size-8 bg-surface-2 rounded-sm border-3 border-line-strong flex items-center justify-center hover:bg-warning cursor-pointer shadow-[3px_3px_0_#141413] outline-none! transition-all"
             >
               <ChevronLeft size={16} strokeWidth={2.5} />
             </button>
@@ -87,7 +87,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
                 e.stopPropagation();
                 setCurrentMonth(new Date(year, month + 1, 1));
               }}
-              className="size-8 bg-surface-2 rounded-sm border-2 border-line-strong flex items-center justify-center hover:bg-warning cursor-pointer shadow-[1.5px_1.5px_0_#141413]"
+              className="size-8 bg-surface-2 rounded-sm border-3 border-line-strong flex items-center justify-center hover:bg-warning cursor-pointer shadow-[3px_3px_0_#141413] outline-none! transition-all"
             >
               <ChevronRight size={16} strokeWidth={2.5} />
             </button>
@@ -130,7 +130,7 @@ export function CustomDatePicker({ value, onChange, min, required }) {
                     e.stopPropagation();
                     handleSelectDay(day);
                   }}
-                  className={`size-8 rounded-sm text-xs font-black flex items-center justify-center transition-all cursor-pointer ${
+                  className={`size-8 rounded-sm text-xs font-black flex items-center justify-center border-3 border-line-strong shadow-[3px_3px_0_#141413] outline-none! transition-all cursor-pointer ${
                     isSelected
                       ? "bg-primary text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]"
                       : isDisabled

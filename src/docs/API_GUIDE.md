@@ -17,16 +17,16 @@ Có 5 methods cơ bản:
 import { resources } from '../services/resource.service';
 
 // Lấy tất cả
-const invoices = await resources.list('/invoices/me');
+const invoices = await resources.list('/student/invoices');
 
 // Với query params
-const filtered = await resources.list('/invoices/me', {
+const filtered = await resources.list('/student/invoices', {
   page: 0,
   size: 10,
   search: 'keyword',
   status: 'UNPAID'
 });
-// → GET /api/v1/invoices/me?page=0&size=10&search=keyword&status=UNPAID
+// → GET /api/v1/student/invoices?page=0&size=10&search=keyword&status=UNPAID
 ```
 
 ### 2. get() - Lấy 1 item
@@ -72,16 +72,16 @@ await resources.action('/invoices/123/pay', 'POST', {
 
 ---
 
-## 🪝 Dùng với Hook
+## 🪝 Dùng với useLoad Hook
 
-Thay vì gọi trực tiếp, nên dùng **useResource hook**:
+Thay vì gọi trực tiếp, nên dùng **useLoad hook** từ Screen/useLoad.js:
 
 ```javascript
-import { useResource } from '../hooks/useResource';
+import { useLoad } from '../components/Screen/useLoad';
 
 function InvoiceList() {
   // Hook tự động gọi API khi component mount
-  const { data, loading, error, refetch } = useResource('/invoices/me', {
+  const { data, loading, error, reload } = useLoad('/student/invoices', {
     page: 0,
     size: 10
   });
@@ -91,8 +91,8 @@ function InvoiceList() {
   
   return (
     <div>
-      {data.map(item => <div key={item.id}>{item.totalAmount}</div>)}
-      <button onClick={refetch}>Tải lại</button>
+      {data?.content?.map(item => <div key={item.id}>{item.totalAmount}</div>)}
+      <button onClick={reload}>Tải lại</button>
     </div>
   );
 }
@@ -101,7 +101,7 @@ function InvoiceList() {
 **Lợi ích:**
 - ✅ Tự động handle loading state
 - ✅ Tự động handle error
-- ✅ Có function refetch để reload
+- ✅ Có function reload để tải lại data
 - ✅ Cleanup khi component unmount
 
 ---
@@ -147,9 +147,9 @@ try {
 
 ### ✅ DO:
 
-1. **Dùng useResource cho GET requests**
+1. **Dùng useLoad cho GET requests**
 ```javascript
-const { data } = useResource('/rooms');
+const { data } = useLoad('/rooms');
 ```
 
 2. **Dùng resources.create/update cho mutations**
@@ -170,7 +170,7 @@ if (error) return <ErrorMessage error={error} />;
 const [search, setSearch] = useState('');
 const debouncedSearch = useDebounce(search, 300);
 
-const { data } = useResource('/rooms', { 
+const { data } = useLoad('/rooms', { 
   search: debouncedSearch 
 });
 ```
@@ -187,7 +187,7 @@ function MyComponent() {
 
 // ✅ GOOD
 function MyComponent() {
-  const { data } = useResource('/rooms');
+  const { data } = useLoad('/rooms');
   return <div>{data}</div>;
 }
 ```
@@ -220,7 +220,7 @@ Trong browser console:
 const { resources } = await import('/src/services/resource.service.js');
 
 // Test API
-const data = await resources.list('/invoices/me');
+const data = await resources.list('/student/invoices');
 console.table(data);
 ```
 

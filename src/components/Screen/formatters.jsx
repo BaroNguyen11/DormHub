@@ -22,14 +22,14 @@ function isDateField(fieldName) {
 
 /**
  * Kiểm tra xem field có phải là tiền không
- * @param {string} fieldName - Tên field (vd: "totalAmount", "monthlyPrice")
+ * @param {string} fieldName - Tên field (vd: "totalAmount", "monthlyPrice", "pricePerMonth")
  * @returns {boolean} - true nếu là field money
- * 
- * Logic: Field kết thúc bằng "Amount", "Price", hoặc "Fee" -> là money
- * Ví dụ: totalAmount, monthlyPrice, serviceFee
+ *
+ * Logic: Field kết thúc bằng Amount / Price / Fee / PerMonth / Rent / Deposit -> là money
+ * Ví dụ: totalAmount, monthlyPrice, pricePerMonth, monthlyRent, depositAmount
  */
 function isMoneyField(fieldName) {
-  return /(Amount|Price|Fee)$/.test(fieldName);
+  return /(Amount|Price|Fee|PerMonth|Rent|Deposit)$/.test(fieldName);
 }
 
 /**

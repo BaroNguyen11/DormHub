@@ -16,6 +16,9 @@ import NotFound from "../pages/Guest/NotFound";
 import ProtectRoute from "./ProtectRoute";
 import AuthRoute from "./AuthRoute";
 import StudentRoomGate from "./StudentRoomGate";
+import { useState } from "react";
+import Chatbot from "../components/Chatbot";
+import ChatbotToggle from "../components/ChatbotToggle";
 
 const pageModules = import.meta.glob("../pages/**/*.jsx", { eager: true });
 
@@ -54,8 +57,10 @@ function AnimatedRoutes({ children }) {
 }
 
 export default function AppRoutes() {
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   return (
     <BrowserRouter>
+      <>
       <Routes>
         <Route element={<AuthRoute />}>
           {[
@@ -94,9 +99,7 @@ export default function AppRoutes() {
             ))}
         </Route>
 
-        {/* Guest không xem được phòng: đường dẫn cũ chuyển sang khu sinh viên
-            (chưa đăng nhập sẽ được đưa tới /login). */}
-        <Route path="/rooms" element={<Navigate to="/student/rooms" replace />} />
+        {/* Guest có thể xem phòng công khai tại /rooms */}
 
         {[
           ["student", ROLES.STUDENT],
@@ -124,6 +127,9 @@ export default function AppRoutes() {
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Chatbot isOpen={chatbotOpen} onClose={() => setChatbotOpen(false)} />
+      {!chatbotOpen && <ChatbotToggle onClick={() => setChatbotOpen(true)} />}
+      </>
     </BrowserRouter>
   );
 }

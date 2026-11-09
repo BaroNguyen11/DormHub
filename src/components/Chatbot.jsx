@@ -143,7 +143,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
       )
       .replace(
         /<pre>/g,
-        '<pre class="bg-surface-2 border-2 border-line-strong rounded-xl p-3 my-2 overflow-x-auto text-xs font-mono shadow-[2px_2px_0_#141413]">',
+        '<pre class="bg-surface-2 border-2 border-line-strong rounded-sm p-3 my-2 overflow-x-auto text-xs font-mono shadow-[2px_2px_0_#141413]">',
       );
     return html;
   }
@@ -156,12 +156,12 @@ Bạn cần hỗ trợ gì hôm nay?`,
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-2xl shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
+          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-sm shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
         >
           {/* HEADER CHATBOT */}
           <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+              <div className="size-10 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
                 <Bot size={22} className="text-text" strokeWidth={2.5} />
               </div>
               <div>
@@ -178,7 +178,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               <button
                 type="button"
                 onClick={clearChat}
-                className="size-8 rounded-lg bg-surface border-2 border-line-strong flex items-center justify-center text-text shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
+                className="size-8 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center text-text shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
                 title="Xóa lịch sử chat"
               >
                 <Trash2 size={16} strokeWidth={2.5} />
@@ -187,7 +187,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               <button
                 type="button"
                 onClick={onClose}
-                className="size-8 rounded-lg bg-error text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
+                className="size-8 rounded-sm bg-error text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
                 title="Đóng cửa sổ"
               >
                 <X size={18} strokeWidth={2.5} />
@@ -214,7 +214,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
                 >
                   {/* Badge Avatar */}
                   <div
-                    className={`size-8 rounded-lg border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413] mt-0.5 ${
+                    className={`size-8 rounded-sm border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413] mt-0.5 ${
                       isAssistant ? "bg-warning" : "bg-primary"
                     }`}
                   >
@@ -231,7 +231,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
 
                   {/* Bong bóng tin nhắn Neo-Brutalism */}
                    <div
-                    className={`p-3.5 rounded-2xl border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
+                    className={`p-3.5 rounded-sm border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
                       isAssistant
                         ? "bg-surface text-text rounded-tl-xs"
                         : "bg-primary text-text rounded-tr-xs"
@@ -261,10 +261,10 @@ Bạn cần hỗ trợ gì hôm nay?`,
                 animate={{ opacity: 1, y: 0 }}
                 className="flex gap-2.5 mr-auto max-w-[85%]"
               >
-                <div className="size-8 rounded-lg bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
+                <div className="size-8 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
                   <Bot size={18} className="text-text" strokeWidth={2.5} />
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-tl-xs bg-surface border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
+                <div className="px-4 py-3 rounded-sm rounded-tl-xs bg-surface border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
                   <RefreshCw
                     size={16}
                     strokeWidth={2.5}
@@ -288,7 +288,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
               disabled={loading}
               rows={1}
-              className="flex-1 border-3 border-line-strong rounded-xl px-3.5 py-2.5 text-xs! sm:text-sm     font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
+              className="flex-1 border-3 border-line-strong rounded-sm px-3.5 py-2.5 text-xs! sm:text-sm     font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
             /> */}
             <textarea
               ref={inputRef}
@@ -303,7 +303,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
     flex-1 min-w-0
       min-h-11 max-h-30
     border-3 border-line-strong
-    ${isExpanded ? "rounded-md" : "rounded-xl"}
+    ${isExpanded ? "rounded-md" : "rounded-sm"}
     px-3.5   leading-10
     text-xs! sm:text-sm
     font-bold text-text bg-surface
@@ -322,7 +322,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="size-10 rounded-xl bg-primary text-text border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+              className="size-10 rounded-sm bg-primary text-text border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
             >
               <Send size={18} strokeWidth={2.5} />
             </button>

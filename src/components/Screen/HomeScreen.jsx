@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
   ArrowRight,
-  Home,
-  FileText,
   CreditCard,
   Wrench,
   Zap,
@@ -42,32 +40,9 @@ const FEATURES = [
   { icon: ShieldCheck, title: "An ninh", desc: "Khu ở được bảo vệ" },
 ];
 
-const card =
-  "border-4 border-line-strong rounded-2xl shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-0.5 transition-all duration-300";
-
 export default function HomeScreen() {
-  const features = [
-    {
-      icon: Home,
-      title: "Tìm phòng dễ dàng",
-      description: "Xem sức chứa, vị trí và mức phí trước khi chọn.",
-    },
-    {
-      icon: FileText,
-      title: "Đăng ký minh bạch",
-      description: "Theo dõi hồ sơ từ khi nộp đến khi được phân phòng.",
-    },
-    {
-      icon: CreditCard,
-      title: "Tài chính rõ ràng",
-      description: "Xem hóa đơn và trạng thái thanh toán ở một nơi.",
-    },
-    {
-      icon: Wrench,
-      title: "Hỗ trợ kịp thời",
-      description: "Gửi yêu cầu sửa chữa và theo dõi tiến độ.",
-    },
-  ];
+  const card =
+    "border-4 border-line-strong rounded-sm shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-0.5 transition-all duration-300";
 
   return (
     <>
@@ -79,7 +54,7 @@ export default function HomeScreen() {
           <div className="absolute bottom-20 right-20 w-48 h-48 border-4 border-success" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-8 lg:px-16 py-16 lg:py-24">
+        <div className="relative w-full mx-auto px-8 lg:px-16 py-16 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Content */}
             <motion.div
@@ -147,12 +122,12 @@ export default function HomeScreen() {
                   />
 
                   {/* Thẻ nổi 1: Giá phòng */}
-                  <div className="absolute top-3 left-3 bg-primary text-text text-xs font-extrabold px-3 py-1.5 rounded-lg border-2 border-line-strong shadow-[3px_3px_0_#141413]">
+                  <div className="absolute top-3 left-3 bg-primary text-text text-xs font-extrabold px-3 py-1.5 rounded-sm border-2 border-line-strong shadow-[3px_3px_0_#141413]">
                     Phòng 4 người · 450k/tháng
                   </div>
 
                   {/* Thẻ nổi 3: Khoảng cách */}
-                  <div className="absolute bottom-3 left-3 bg-surface text-text text-xs font-extrabold px-3 py-1.5 rounded-lg border-2 border-line-strong shadow-[3px_3px_0_#141413]">
+                  <div className="absolute bottom-3 left-3 bg-surface text-text text-xs font-extrabold px-3 py-1.5 rounded-sm border-2 border-line-strong shadow-[3px_3px_0_#141413]">
                     Cách trường 5p đi bộ
                   </div>
                 </motion.div>
@@ -221,7 +196,7 @@ export default function HomeScreen() {
               >
                 {FEATURES.map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="flex items-center gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-line-strong bg-surface shadow-[2px_2px_0_#141413]">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-sm border-2 border-line-strong bg-surface shadow-[2px_2px_0_#141413]">
                       <Icon
                         size={18}
                         strokeWidth={2.5}
@@ -246,7 +221,7 @@ export default function HomeScreen() {
 
       {/* Features Section - Neo-Brutalism Bento Grid */}
       <section className="bg-surface py-20 border-t-4 border-line-strong">
-        <div className="max-w-7xl mx-auto px-8 lg:px-16">
+        <div className="w-full mx-auto px-8 lg:px-16">
           {/* Section Header - Căn trái cá tính hơn */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -268,13 +243,13 @@ export default function HomeScreen() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
-              className="lg:col-span-2 bg-primary-light border-4 border-line-strong rounded-2xl p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
+              className="lg:col-span-2 bg-primary-light border-4 border-line-strong rounded-sm p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
             >
               <div className="flex justify-between items-start">
-                <div className="size-12 rounded-xl bg-surface border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
+                <div className="size-12 rounded-sm bg-surface border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
                   01
                 </div>
-                <span className="flex items-center gap-1 px-3 py-1 bg-surface rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
+                <span className="flex items-center gap-1 px-3 py-1 bg-surface rounded-sm border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
                   <Search size={14} strokeWidth={3} /> Trực quan 100%
                 </span>
               </div>
@@ -291,13 +266,13 @@ export default function HomeScreen() {
 
               {/* Mini UI Demo đè lên Card */}
               <div className="flex flex-wrap gap-2 pt-2 border-t-2 border-line/10">
-                <span className="flex items-center gap-0.5 px-3 py-1 bg-surface rounded-lg border-2 border-line-strong text-xs font-bold text-text">
+                <span className="flex items-center gap-0.5 px-3 py-1 bg-surface rounded-sm border-2 border-line-strong text-xs font-bold text-text">
                   <Building2 size={16} strokeWidth={2} /> Dãy nhà A2
                 </span>
-                <span className="flex items-center gap-0.5 px-3 py-1 bg-success rounded-lg border-2 border-line-strong text-xs font-bold text-text">
+                <span className="flex items-center gap-0.5 px-3 py-1 bg-success rounded-sm border-2 border-line-strong text-xs font-bold text-text">
                   <Wind size={16} strokeWidth={2} /> Có Máy lạnh
                 </span>
-                <span className="flex items-center gap-0.5 px-3 py-1 bg-warning rounded-lg border-2 border-line-strong text-xs font-bold text-text">
+                <span className="flex items-center gap-0.5 px-3 py-1 bg-warning rounded-sm border-2 border-line-strong text-xs font-bold text-text">
                   <CircleDollarSign size={16} strokeWidth={2} /> 450.000đ/tháng
                 </span>
               </div>
@@ -309,13 +284,13 @@ export default function HomeScreen() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="bg-surface border-4 border-line-strong rounded-2xl p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
+              className="bg-surface border-4 border-line-strong rounded-sm p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
             >
               <div className="flex justify-between items-start">
-                <div className="size-12 rounded-xl bg-success-light border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
+                <div className="size-12 rounded-sm bg-success-light border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
                   02
                 </div>
-                <span className="flex items-center gap-1 px-3 py-1 bg-success text-text rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
+                <span className="flex items-center gap-1 px-3 py-1 bg-success text-text rounded-sm border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
                   <Zap size={17} fill="#fecd00" /> Phê duyệt nhanh
                 </span>
               </div>
@@ -330,8 +305,8 @@ export default function HomeScreen() {
                 </p>
               </div>
 
-              <div className="bg-surface-2 p-3 rounded-xl border-2 border-line-strong flex items-center gap-3">
-                <div className="size-3 rounded-full bg-success animate-pulse" />
+              <div className="bg-surface-2 p-3 rounded-sm border-2 border-line-strong flex items-center gap-3">
+                <div className="size-3 rounded-sm bg-success animate-pulse" />
                 <span className="text-xs font-extrabold text-text">
                   Trạng thái: Đã tiếp nhận hồ sơ
                 </span>
@@ -344,13 +319,13 @@ export default function HomeScreen() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.2 }}
-              className="bg-surface border-4 border-line-strong rounded-2xl p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
+              className="bg-surface border-4 border-line-strong rounded-sm p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
             >
               <div className="flex justify-between items-start">
-                <div className="size-12 rounded-xl bg-warning-light border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
+                <div className="size-12 rounded-sm bg-warning-light border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
                   03
                 </div>
-                <span className="flex items-center gap-1 px-3 py-1 bg-warning text-text rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
+                <span className="flex items-center gap-1 px-3 py-1 bg-warning text-text rounded-sm border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
                   <CreditCard size={17} strokeWidth={2.5} /> QR Code 1-touch
                 </span>
               </div>
@@ -365,7 +340,7 @@ export default function HomeScreen() {
                 </p>
               </div>
 
-              <div className="bg-warning-light px-3 py-2 rounded-xl border-2 border-line-strong flex justify-between items-center text-xs font-extrabold">
+              <div className="bg-warning-light px-3 py-2 rounded-sm border-2 border-line-strong flex justify-between items-center text-xs font-extrabold">
                 <span>Tiền điện T10: 120.000đ</span>
                 <span className="text-success">✓ Đã thu</span>
               </div>
@@ -377,13 +352,13 @@ export default function HomeScreen() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.3 }}
-              className="lg:col-span-2 bg-error-light border-4 border-line-strong rounded-2xl p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
+              className="lg:col-span-2 bg-error-light border-4 border-line-strong rounded-sm p-7 shadow-[6px_6px_0_#141413] hover:shadow-[9px_9px_0_#141413] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-6"
             >
               <div className="flex justify-between items-start">
-                <div className="size-12 rounded-xl bg-surface border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
+                <div className="size-12 rounded-sm bg-surface border-3 border-line-strong flex items-center justify-center font-extrabold text-xl shadow-[3px_3px_0_#141413]">
                   04
                 </div>
-                <span className="flex items-center gap-1 px-3 py-1 bg-accent text-surface rounded-full border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
+                <span className="flex items-center gap-1 px-3 py-1 bg-accent text-surface rounded-sm border-2 border-line-strong text-xs font-bold shadow-[2px_2px_0_#141413]">
                   <Wrench size={16} strokeWidth={2.5} /> Kỹ thuật 24/7
                 </span>
               </div>
@@ -399,10 +374,10 @@ export default function HomeScreen() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 px-4 py-2 bg-surface rounded-xl border-2 border-line-strong text-xs font-extrabold text-text shadow-[2px_2px_0_#141413]">
+                <div className="flex items-center gap-1 px-4 py-2 bg-surface rounded-sm border-2 border-line-strong text-xs font-extrabold text-text shadow-[2px_2px_0_#141413]">
                   <Camera size={16} strokeWidth={2.5} /> Chụp ảnh sự cố
                 </div>
-                <div className="flex items-center gap-1 px-4 py-2 bg-surface rounded-xl border-2 border-line-strong text-xs font-extrabold text-text shadow-[2px_2px_0_#141413]">
+                <div className="flex items-center gap-1 px-4 py-2 bg-surface rounded-sm border-2 border-line-strong text-xs font-extrabold text-text shadow-[2px_2px_0_#141413]">
                   <Clock size={16} strokeWidth={2.5} /> Phản hồi &lt; 24h
                 </div>
               </div>
