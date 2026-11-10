@@ -1,6 +1,6 @@
 const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || "/ai-proxy/v1";
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
-const AI_MODEL = import.meta.env.VITE_AI_MODEL || "llama3-8b-8192";
+const AI_MODEL = import.meta.env.VITE_AI_MODEL || "llama-3.3-70b-versatile";
 
 // Validate API key is configured
 if (!AI_API_KEY) {
@@ -27,15 +27,6 @@ export async function sendChatMessage(messages, options = {}) {
       ...options.extra,
     };
 
-    console.log("🤖 Sending to AI:", {
-      url: AI_BASE_URL + "/chat/completions",
-      model: requestBody.model,
-      messageCount: messages.length,
-    });
-
-    // Call API
-    // Nếu dùng proxy (/ai-proxy), Authorization đã được thêm bởi Vite proxy
-    // Nếu gọi trực tiếp (production), cần Authorization header
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${AI_API_KEY}`, 
