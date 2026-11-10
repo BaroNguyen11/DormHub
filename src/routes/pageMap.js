@@ -8,7 +8,7 @@ export const pageMap = {
   "/student/contracts": "../pages/shared/ContractList.jsx",
   "/student/invoices": "../pages/shared/InvoiceList.jsx",
   "/student/invoices/:id": "../pages/shared/InvoiceDetail.jsx",
-  "/student/maintenance": "../pages/shared/MaintenanceList.jsx",
+  "/student/maintenance": "../pages/Student/Maintenance.jsx",
   "/student/maintenance/new": "../pages/Student/Maintenance/IssueCreate.jsx",
   "/student/maintenance/:id": "../pages/Student/Maintenance/IssueDetail.jsx",
   "/student/notifications": "../pages/Student/Notifications/Notifications.jsx",

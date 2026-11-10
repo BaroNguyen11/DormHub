@@ -23,6 +23,7 @@ Bạn cần hỗ trợ gì hôm nay?`,
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -109,14 +110,17 @@ Bạn cần hỗ trợ gì hôm nay?`,
   };
 
   const clearChat = () => {
-    if (window.confirm("Xóa toàn bộ lịch sử trò chuyện này?")) {
-      setMessages([
-        {
-          role: "assistant",
-          content: "Đã xóa lịch sử chat. Bạn cần hỗ trợ thông tin gì mới?",
-        },
-      ]);
-    }
+    setConfirmClear(true);
+  };
+
+  const applyClearChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        content: "Đã xóa lịch sử chat. Bạn cần hỗ trợ thông tin gì mới?",
+      },
+    ]);
+    setConfirmClear(false);
   };
 
   // Parse markdown sang HTML chuẩn Neo-Brutalism
@@ -151,12 +155,13 @@ Bạn cần hỗ trợ gì hôm nay?`,
   return (
     <AnimatePresence>
       {isOpen && (
+        <>
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-6 right-6 z-9999 w-105 max-w-[calc(100vw-32px)] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-sm shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
+          className="fixed bottom-6 right-6 z-9999 box-border w-[420px] max-w-[95vw] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-sm shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
         >
           {/* HEADER CHATBOT */}
           <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
@@ -328,6 +333,19 @@ Bạn cần hỗ trợ gì hôm nay?`,
             </button>
           </div>
         </motion.div>
+        {confirmClear && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="box-border w-[480px] max-w-[95vw] bg-surface border-3 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413]">
+              <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">Xóa lịch sử trò chuyện?</h3>
+              <p className="w-full block leading-normal text-sm font-bold text-text-muted mb-6">Toàn bộ tin nhắn trong phiên trò chuyện này sẽ bị xóa.</p>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setConfirmClear(false)} className="px-4 py-2 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 outline-none! transition-all">Hủy</button>
+                <button type="button" onClick={applyClearChat} className="px-4 py-2 border-3 border-line-strong rounded-sm font-black bg-error text-white shadow-[3px_3px_0_#141413] outline-none! transition-all">Xóa lịch sử</button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </AnimatePresence>
   );

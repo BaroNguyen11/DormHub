@@ -8,11 +8,12 @@ import {
   RefreshCw,
   Upload,
   Image as ImageIcon,
+  Eye,
+  EyeOff,
   Trash2,
   ZoomIn,
 } from "lucide-react";
 import { resources } from "../../services/resource.service";
-import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_LABELS, FIELD_CONFIGS } from "./constants";
 import { Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
@@ -84,7 +85,7 @@ function ImageUploadField({ value, onChange, isRequired }) {
               onClick={() => setIsModalOpen(false)}
             >
               <div
-                className="relative max-w-5xl max-h-[90vh] bg-surface border-4 border-line-strong rounded-sm p-3 shadow-[8px_8px_0_#141413] flex flex-col items-center justify-center overflow-hidden"
+                className="relative box-border w-[960px] max-w-[95vw] max-h-[90vh] bg-surface border-4 border-line-strong rounded-sm p-3 shadow-[8px_8px_0_#141413] flex flex-col items-center justify-center overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Nút Đóng Modal */}
@@ -137,10 +138,33 @@ function ImageUploadField({ value, onChange, isRequired }) {
   );
 }
 
+function calculateStrength(password) {
+  return [
+    password.length >= 8,
+    /[A-Z]/.test(password) && /[a-z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ].filter(Boolean).length;
+}
+
+function getStrengthHint(password) {
+  const suggestions = [];
+  if (password.length < 8) suggestions.push("ít nhất 8 ký tự");
+  if (!(/[A-Z]/.test(password) && /[a-z]/.test(password))) {
+    suggestions.push("chữ hoa và chữ thường");
+  }
+  if (!/\d/.test(password)) suggestions.push("chữ số");
+  if (!/[^A-Za-z0-9]/.test(password)) suggestions.push("ký tự đặc biệt");
+  return suggestions.length
+    ? `Cần bổ sung ${suggestions.join(", ")}.`
+    : "Mật khẩu đáp ứng đầy đủ các tiêu chí bảo mật.";
+}
+
 /**
  * Component FormFields - Render các input fields
  */
 function FormFields({ names = [], values = {}, onChange, optionsByField = {}, config = {} }) {
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {names.filter(Boolean).map((key) => {
@@ -243,6 +267,65 @@ function FormFields({ names = [], values = {}, onChange, optionsByField = {}, co
                 required={isRequired}
                 onChange={(val) => onChange(key, val)}
               />
+            ) : config?.resource === "/auth/register" && key === "password" ? (
+              <>
+                <div className="relative">
+                  <input
+                    required={isRequired}
+                    type={showPassword ? "text" : "password"}
+                    minLength={meta.minLength || 8}
+                    value={values[key] ?? ""}
+                    onChange={(event) => onChange(key, event.target.value)}
+                    placeholder={meta.placeholder || "Nhập mật khẩu..."}
+                    autoComplete="new-password"
+                    className="w-full h-12 border-3 border-line-strong bg-surface rounded-sm px-4 pr-11 text-sm font-bold text-text shadow-[3px_3px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text cursor-pointer outline-none! transition-all"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {values[key] !== undefined && values[key] !== "" && (() => {
+                  const password = String(values[key]);
+                  const strength = calculateStrength(password);
+                  const level = Math.max(1, strength);
+                  const strengthLabels = [
+                    "Mật khẩu quá yếu",
+                    "Mật khẩu trung bình",
+                    "Mật khẩu khá mạnh",
+                    "Mật khẩu rất mạnh",
+                  ];
+                  const strengthColors = [
+                    "bg-error",
+                    "bg-warning",
+                    "bg-blue-300",
+                    "bg-success",
+                  ];
+                  return (
+                    <div className="mt-2">
+                      <div className="grid grid-cols-4 gap-1.5" aria-label={strengthLabels[level - 1]}>
+                        {strengthColors.map((color, index) => (
+                          <span
+                            key={color}
+                            className={`h-2 rounded-xs border-2 border-line-strong transition-all duration-300 ${index < level ? color : "bg-surface-2"}`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-1.5 text-xs font-extrabold text-text">
+                        {strengthLabels[level - 1]}
+                      </p>
+                      <p className="text-xs font-semibold text-text-muted">
+                        {getStrengthHint(password)}
+                      </p>
+                    </div>
+                  );
+                })()}
+              </>
             ) : (
               <input
                 required={isRequired}
@@ -456,19 +539,23 @@ export default function FormScreen({ config }) {
         );
       }
 
+      if (config.fixedFields && !(payload instanceof FormData)) {
+        Object.assign(payload, config.fixedFields);
+      }
+
       if (config.notificationForm) {
         payload.buildingId = payload.buildingId == null || payload.buildingId === "" ? null : Number(payload.buildingId);
       }
-      const result = config.edit
-        ? await resources.update(
+      if (config.edit) {
+        await resources.update(
             config.resource,
             id,
             payload,
             config.updateMethod || "PATCH",
-          )
-        : await resources.create(config.resource, payload);
-
-      toast.success(config.notificationForm ? "Đã gửi thông báo thành công" : `Đã lưu ${result?.id ? `mã #${result.id}` : "thành công"}.`);
+          );
+      } else {
+        await resources.create(config.resource, payload);
+      }
 
       navigate(
         config.edit
@@ -480,8 +567,8 @@ export default function FormScreen({ config }) {
               : location.pathname.replace(/\/new$/, ""),
         {},
       );
-    } catch (e) {
-      toast.error(e?.response?.data?.message || e?.details?.message || errorMessage(e));
+    } catch {
+      // API client reports request failures globally.
     } finally {
       setBusy(false);
     }

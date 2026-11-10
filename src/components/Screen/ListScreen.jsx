@@ -11,7 +11,6 @@ import {
 import { motion } from "motion/react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
-import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_LABELS } from "./constants";
 import { formatValue, getNestedValue } from "./formatters";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
@@ -19,8 +18,7 @@ import { useLoad } from "./useLoad";
 import useDebounce from "../../hooks/useDebounce";
 import usePagination from "../../hooks/usePagination";
 import { STATUS_LABELS } from "../../constants/status";
-import { StatusBadge } from "../ui";
-import { toast } from "sonner";
+import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { CustomSelect } from "../ui/CustomSelect";
 
 export default function ListScreen({ config }) {
@@ -31,6 +29,7 @@ export default function ListScreen({ config }) {
   const [busy, setBusy] = useState("");
   const [success, setSuccess] = useState("");
   const [actionError, setActionError] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const { page, pageSize, nextPage, previousPage, resetPage } = usePagination(
     0,
@@ -49,11 +48,9 @@ export default function ListScreen({ config }) {
 
   const createPath = config.create;
 
-  async function doAction(row, action) {
-    if (
-      action.confirm &&
-      !window.confirm(`${action.label} cho mục #${row.id || row.title}?`)
-    ) {
+  async function doAction(row, action, confirmed = false) {
+    if (action.confirm && !confirmed) {
+      setConfirmAction({ row, action });
       return;
     }
 
@@ -72,10 +69,10 @@ export default function ListScreen({ config }) {
         action.body,
       );
 
-      toast.success("Thao tác đã được lưu thành công.");
+      setConfirmAction(null);
       reload();
-    } catch (e) {
-      toast.error(errorMessage(e));
+    } catch {
+      // API client reports request failures globally.
     } finally {
       setBusy("");
     }
@@ -204,7 +201,11 @@ export default function ListScreen({ config }) {
                       >
                         {key === "status" &&
                         typeof getNestedValue(row, key) === "string" ? (
-                          <StatusBadge status={getNestedValue(row, key)} />
+                          config.resource === "/manager/maintenance" ? (
+                            <MaintenanceStatusBadge status={getNestedValue(row, key)} />
+                          ) : (
+                            <StatusBadge status={getNestedValue(row, key)} />
+                          )
                         ) : (
                           formatValue(key, getNestedValue(row, key))
                         )}
@@ -234,7 +235,27 @@ export default function ListScreen({ config }) {
                         })()}
 
                         {/* Action Buttons */}
-                        {config.actions?.map((action) => (
+                        {config.actions?.filter((action) => {
+                          const rowStatus = String(row?.status || "").toUpperCase();
+                          if (typeof action.visibleWhen === "function") {
+                            if (!action.visibleWhen(row)) return false;
+                          }
+                          if (action.visibleWhen && typeof action.visibleWhen === "object") {
+                            const matches = Object.entries(action.visibleWhen).every(
+                              ([field, value]) => String(row?.[field] ?? "") === String(value),
+                            );
+                            if (!matches) return false;
+                          }
+                          const terminal = [
+                            "APPROVED", "REJECTED", "CANCELLED", "COMPLETED",
+                            "RESOLVED", "DONE", "PAID", "LOCKED",
+                          ].includes(rowStatus);
+                          const changesState = Boolean(
+                            action.body?.status || action.bodyBuilder ||
+                            action.promptField || action.reason || action.room,
+                          );
+                          return !(terminal && changesState);
+                        }).map((action) => (
                           <button
                             key={action.label}
                             disabled={busy === String(row.id || row.invoiceId || row.contractId || row.assignmentId)}
@@ -297,6 +318,21 @@ export default function ListScreen({ config }) {
           </div>
         </div>
       </div>
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="box-border w-[480px] max-w-[95vw] bg-surface border-3 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413]">
+            <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">Xác nhận thao tác?</h3>
+            <p className="w-full block leading-normal text-sm font-bold text-text-muted mb-6">
+              {confirmAction.action.label} cho mục #{confirmAction.row.id || confirmAction.row.title || confirmAction.row.invoiceId || confirmAction.row.contractId}?
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button type="button" onClick={() => setConfirmAction(null)} className="px-4 h-10 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 transition-all cursor-pointer outline-none!">Hủy bỏ</button>
+              <button type="button" disabled={Boolean(busy)} onClick={() => void doAction(confirmAction.row, confirmAction.action, true)} className="px-4 h-10 border-3 border-line-strong rounded-sm font-black bg-primary text-black shadow-[3px_3px_0_#141413] transition-all cursor-pointer outline-none! disabled:opacity-50">Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

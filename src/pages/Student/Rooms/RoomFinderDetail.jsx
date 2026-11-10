@@ -15,43 +15,34 @@ function RoomDetailContent() {
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
 
-  // DEBUG: Log khi component mount và khi id thay đổi
   useEffect(() => {
-    console.log("🏠 RoomFinderDetail mounted/updated:", {
-      id,
-      idType: typeof id,
-      pathname: window.location.pathname,
-      search: window.location.search,
-    });
-  }, [id]);
-
-  useEffect(() => {
+    let active = true;
     async function fetchRoom() {
-      console.log("📡 Fetching room details for id:", id);
-      
       if (!id) {
-        console.error("❌ Room ID is undefined! Not fetching.");
-        setError("Không tìm thấy mã phòng");
-        setLoading(false);
+        if (active) {
+          setError("Không tìm thấy mã phòng");
+          setLoading(false);
+        }
         return;
       }
       
-      setLoading(true);
-      setError("");
+      if (active) {
+        setLoading(true);
+        setError("");
+      }
       try {
-        // Student endpoint
-        console.log("📤 GET /student/rooms-available/" + id);
         const data = await resources.get("/student/rooms-available", id);
-        console.log("✅ Room data received:", data);
-        setRoom(data);
+        if (active) setRoom(data);
       } catch (err) {
-        console.error("❌ Failed to fetch room:", err);
-        setError(errorMessage(err));
+        if (active) setError(errorMessage(err));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
-    fetchRoom();
+    void fetchRoom();
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   if (loading) {
@@ -111,7 +102,7 @@ function RoomDetailContent() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-surface text-text font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all"
         >
           <ArrowLeft size={18} strokeWidth={2.5} />
           Quay lại
@@ -148,7 +139,7 @@ function RoomDetailContent() {
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-sm border-3 overflow-hidden transition-all ${
+                      className={`shrink-0 w-20 h-20 rounded-sm border-3 overflow-hidden transition-all ${
                         selectedImage === idx
                           ? "border-primary shadow-[3px_3px_0_#141413]"
                           : "border-line-strong opacity-60 hover:opacity-100"
@@ -231,7 +222,7 @@ function RoomDetailContent() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {amenities.map(({ icon: Icon, label }, idx) => (
                     <div key={idx} className="flex items-center gap-3 p-3 bg-surface-2 border-2 border-line-strong rounded-sm">
-                      <div className="size-10 rounded-sm bg-success/10 border-2 border-line-strong flex items-center justify-center flex-shrink-0">
+                      <div className="size-10 rounded-sm bg-success/10 border-2 border-line-strong flex items-center justify-center shrink-0">
                         <Icon size={18} className="text-success" strokeWidth={2.5} />
                       </div>
                       <span className="text-sm font-bold text-text">{label}</span>
@@ -256,7 +247,7 @@ function RoomDetailContent() {
           <div className="bg-surface border-4 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413] sticky top-6">
             {/* Price Highlight */}
             <div className="mb-6 pb-6 border-b-3 border-line-strong">
-              <p className="text-sm font-bold text-text-muted uppercase mb-2">Giá thuê</p>
+              <p className="text-sm! font-bold! text-text-muted uppercase mb-2">Giá thuê</p>
               <p className="text-4xl font-black text-primary">
                 {room.pricePerMonth?.toLocaleString("vi-VN")}đ
               </p>
@@ -266,7 +257,7 @@ function RoomDetailContent() {
             {/* Quick Info */}
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-bold text-text-muted">Trạng thái</span>
+                <span className="text-sm! font-bold text-text-muted">Trạng thái</span>
                 <StatusBadge status={room.status} />
               </div>
               <div className="flex items-center justify-between py-2">
@@ -285,7 +276,7 @@ function RoomDetailContent() {
             <div className="space-y-3">
               <button
                 onClick={() => navigate(`/student/applications/new?roomId=${room.id}`)}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-primary text-black font-extrabold text-base rounded-sm border-3 border-line-strong shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-2 bg-primary text-black font-extrabold!  text-sm! rounded-sm border-3 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all"
               >
                 <CheckCircle2 size={20} strokeWidth={2.5} />
                 Đăng ký phòng này
@@ -293,7 +284,7 @@ function RoomDetailContent() {
               
               <button
                 onClick={() => navigate(-1)}
-                className="w-full px-6 py-3 bg-surface-3 text-text font-bold text-sm rounded-sm border-3 border-line-strong hover:shadow-[3px_3px_0_#141413] transition-all"
+                className="w-full px-6 py-2 bg-surface-3 text-text font-bold! text-sm! rounded-sm border-3 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all"
               >
                 Quay lại danh sách
               </button>

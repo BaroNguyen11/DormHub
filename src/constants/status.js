@@ -32,6 +32,12 @@ export const STATUS_LABELS = Object.freeze({
   OPEN: 'Đang mở',
   CLOSED: 'Đã đóng',
   REVIEW_REQUIRED: 'Cần đối soát',
+  PROCESSING: 'Đang xử lý',
+  WAITING: 'Đang chờ xử lý',
+  DONE: 'Đã hoàn thành',
+  CONFIRMED: 'Đã xác nhận',
+  OVERDUE: 'Quá hạn',
+  EXPIRED_PAYMENT: 'Đã hết hạn thanh toán',
 
   // Phòng / Tòa nhà
   AVAILABLE: 'Còn trống',

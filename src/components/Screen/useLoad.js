@@ -4,7 +4,7 @@
 // Custom hook để load data từ API với auto-reload
 // Mục đích: Tái sử dụng logic load data, tránh lặp code
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { resources } from "../../services/resource.service";
 import { errorMessage } from "../../utils/errorHandler";
 
@@ -38,7 +38,7 @@ export function useLoad(path, params) {
 
   // Function để reload data
   // Cách dùng: gọi reload() khi muốn fetch lại data
-  const reload = () => setVersion((v) => v + 1);
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   // Convert params thành string để dùng làm dependency của useEffect
   // Vì object mới luôn khác object cũ, nên cần stringify để so sánh giá trị
@@ -46,6 +46,13 @@ const paramsKey = JSON.stringify(params ?? {});
 
   // useEffect: chạy mỗi khi path, paramsKey, hoặc version thay đổi
   useEffect(() => {
+    if (typeof path !== "string" || !path.trim()) {
+      setData(null);
+      setError("");
+      setLoading(false);
+      return undefined;
+    }
+
     // Flag để tránh update state sau khi component đã unmount
     // (tránh memory leak và warning)
     let isActive = true;

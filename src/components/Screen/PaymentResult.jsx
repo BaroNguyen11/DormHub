@@ -296,7 +296,7 @@ export default function PaymentResult() {
                 <button
                   type="button"
                   onClick={() => copy(String(payment.expectedAmount || ""), "amount")}
-                  className="shrink-0 self-center inline-flex items-center gap-1 px-2 py-1 bg-surface-2 border-2 border-line-strong rounded-sm text-[11px] font-extrabold shadow-[2px_2px_0_#141413] active:translate-y-0.5 active:shadow-none transition-all"
+                  className="shrink-0 self-center inline-flex items-center gap-1 px-2 py-1 bg-surface-2 border-2 border-line-strong rounded-sm text-[11px] font-extrabold! shadow-[2px_2px_0_#141413] active:translate-y-0.5 active:shadow-none transition-all"
                 >
                   <Copy size={12} strokeWidth={2.5} />
                   {copied === "amount" ? "Đã chép" : "Chép"}
@@ -313,7 +313,7 @@ export default function PaymentResult() {
                 <button
                   type="button"
                   onClick={() => copy(payment.paymentReference, "ref")}
-                  className="shrink-0 self-center inline-flex items-center gap-1 px-2 py-1 bg-surface-2 border-2 border-line-strong rounded-sm text-[11px] font-extrabold shadow-[2px_2px_0_#141413] active:translate-y-0.5 active:shadow-none transition-all"
+                  className="shrink-0 self-center inline-flex items-center gap-1 px-2 py-1 bg-surface-2 border-2 border-line-strong rounded-sm text-[11px] font-extrabold! shadow-[2px_2px_0_#141413] active:translate-y-0.5 active:shadow-none transition-all"
                 >
                   <Copy size={12} strokeWidth={2.5} />
                   {copied === "ref" ? "Đã chép" : "Chép"}
@@ -366,7 +366,7 @@ export default function PaymentResult() {
           type="button"
           onClick={checkNow}
           disabled={syncing}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-surface border-3 border-line-strong rounded-sm font-extrabold text-sm text-text shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-6 py-2 bg-surface border-3 border-line-strong rounded-sm font-extrabold! text-sm! text-text shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} strokeWidth={2.5} className={syncing ? "animate-spin" : ""} />
           {syncing ? "Đang kiểm tra…" : "Kiểm tra lại"}

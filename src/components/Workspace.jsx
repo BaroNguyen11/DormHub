@@ -20,7 +20,6 @@ import { isDemoSession } from "../services/demo.service";
 import ThemeToggleSwitch from "./ThemeToggleSwitch";
 import { resources } from "../services/resource.service";
 import { api } from "../api/apiClient";
-import { toast } from "sonner";
 
 export default function Workspace({ group, title, children }) {
   const { user, logout } = useAuth();
@@ -67,10 +66,8 @@ export default function Workspace({ group, title, children }) {
       setNotifications(
         Array.isArray(result) ? result : result?.content || result?.items || [],
       );
-    } catch (e) {
-      toast.error(
-        e?.details?.message || e?.message || "Không tải được thông báo.",
-      );
+    } catch {
+      // API client reports request failures globally.
     } finally {
       setNotificationsLoading(false);
     }
@@ -83,11 +80,8 @@ export default function Workspace({ group, title, children }) {
         items.map((item) => ({ ...item, isRead: true })),
       );
       setUnreadCount(0);
-      toast.success("Đã đánh dấu tất cả đã đọc.");
-    } catch (e) {
-      toast.error(
-        e?.details?.message || e?.message || "Không thể cập nhật thông báo.",
-      );
+    } catch {
+      // API client reports request failures globally.
     }
   }
 
@@ -105,26 +99,37 @@ export default function Workspace({ group, title, children }) {
       setUnreadCount((count) => Math.max(0, count - 1));
       api(`/notifications/${encodeURIComponent(id)}/read`, {
         method: "PATCH",
-      }).catch((e) =>
-        toast.error(
-          e?.details?.message || e?.message || "Không thể cập nhật thông báo.",
-        ),
-      );
+      }).catch(() => {
+        // API client reports request failures globally.
+      });
     }
-    const type = String(item.type || "GENERAL").toUpperCase();
-    const targets = {
-      INVOICE: group === "student" ? "/student/invoices" : "/manager/finance",
-      PAYMENT: group === "student" ? "/student/invoices" : "/manager/finance",
-      MAINTENANCE:
-        group === "student" ? "/student/maintenance" : "/manager/maintenance",
-      ROOM_ASSIGNMENT:
-        group === "student" ? "/student/residence" : "/manager/contracts",
-      CONTRACT:
-        group === "student" ? "/student/residence" : "/manager/contracts",
-      APPLICATION:
-        group === "student" ? "/student/residence" : "/manager/contracts",
-    };
-    const target = item.targetUrl || targets[type];
+    const type = String(item.type || item.targetType || "GENERAL").toUpperCase();
+    const targetId = item.targetId ?? item.entityId ?? item.referenceId;
+    let target;
+
+    if (type.includes("MAINTENANCE")) {
+      target = group === "student"
+        ? `/student/maintenance${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`
+        : targetId == null
+          ? "/manager/maintenance"
+          : `/manager/maintenance/${encodeURIComponent(targetId)}`;
+    } else if (type.includes("INVOICE") || type.includes("PAYMENT")) {
+      target = group === "student"
+        ? `/student/invoices${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`
+        : `/manager/finance${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`;
+    } else if (type.includes("CONTRACT") || type.includes("ROOM")) {
+      target = group === "student" ? "/student/residence" : "/manager/contracts";
+    } else if (type.includes("APPLICATION")) {
+      target = group === "manager"
+        ? targetId == null
+          ? "/manager/students?tab=applications"
+          : `/manager/applications/${encodeURIComponent(targetId)}`
+        : targetId == null
+          ? "/student/applications"
+          : `/student/applications/${encodeURIComponent(targetId)}`;
+    }
+
+    target = item.targetUrl || target;
     if (target) navigate(target);
     else setSelectedNotification(item);
   }
@@ -437,7 +442,7 @@ export default function Workspace({ group, title, children }) {
                 )}
                 {selectedNotification && (
                   <div
-                    className="fixed inset-0 z-100 grid place-items-center bg-black/50 p-4"
+                    className="fixed inset-0 z-99999 grid place-items-center bg-black/50 p-4"
                     onMouseDown={(event) =>
                       event.target === event.currentTarget &&
                       setSelectedNotification(null)
@@ -447,12 +452,12 @@ export default function Workspace({ group, title, children }) {
                       role="dialog"
                       aria-modal="true"
                       aria-labelledby="general-notification-title"
-                      className="w-full max-w-lg rounded-sm border-3 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413]"
+                      className="box-border w-[500px] rounded-sm border-3 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413]"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <h2
                           id="general-notification-title"
-                          className="text-lg font-black"
+                          className="w-full block leading-normal text-lg font-black"
                         >
                           {selectedNotification.title || "Thông báo"}
                         </h2>
@@ -464,7 +469,7 @@ export default function Workspace({ group, title, children }) {
                           <X size={16} />
                         </button>
                       </div>
-                      <p className="mt-4 whitespace-pre-wrap text-sm font-semibold">
+                      <p className="w-full block leading-normal mt-4 whitespace-pre-wrap text-sm font-semibold">
                         {selectedNotification.body ||
                           selectedNotification.message ||
                           ""}

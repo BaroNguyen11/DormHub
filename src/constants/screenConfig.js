@@ -639,7 +639,7 @@ export const screens = {
         method: "PATCH",
         body: { status: "IN_PROGRESS" },
         confirm: true,
-        visibleWhen: (data) => data.status === "PENDING",
+        visibleWhen: (data) => ["PENDING", "WAITING"].includes(String(data?.status || "").toUpperCase()),
       },
       {
         label: "Hoàn thành",
@@ -647,7 +647,7 @@ export const screens = {
         method: "PATCH",
         body: { status: "COMPLETED" },
         confirm: true,
-        visibleWhen: (data) => data.status === "IN_PROGRESS",
+        visibleWhen: (data) => ["IN_PROGRESS", "PROCESSING"].includes(String(data?.status || "").toUpperCase()),
       },
       {
         label: "Từ chối",
@@ -661,7 +661,7 @@ export const screens = {
           status: "REJECTED", 
           rejectionReason: promptValue 
         }),
-        visibleWhen: (data) => data.status === "PENDING" || data.status === "IN_PROGRESS",
+        visibleWhen: (data) => ["PENDING", "WAITING", "IN_PROGRESS", "PROCESSING"].includes(String(data?.status || "").toUpperCase()),
       },
     ],
   },
@@ -679,7 +679,8 @@ export const screens = {
     group: "manager",
     type: "form",
     resource: "/auth/register",
-    fields: ["username", "email", "password", "fullName", "phone"],
+    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode"],
+    fixedFields: { role: "STUDENT" },
     successMessage: "Tài khoản đã được tạo. OTP đã gửi tới email sinh viên để xác thực.",
   },
 

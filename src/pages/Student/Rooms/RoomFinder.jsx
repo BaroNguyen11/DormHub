@@ -122,7 +122,7 @@ function RoomFinderContent() {
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-surface-3 text-text font-bold text-sm rounded-sm border-2 border-line-strong hover:shadow-[2px_2px_0_#141413] transition-all"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-surface-3 text-text font-bold! text-sm! rounded-sm border-2 border-line-strong hover:shadow-[2px_2px_0_#141413] transition-all"
           >
             <X size={16} strokeWidth={2.5} />
             Xóa bộ lọc
@@ -281,13 +281,13 @@ function StudentRoomCard({ room }) {
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={() => navigate(`/student/rooms/${room.id}`)}
-            className="px-4 py-2.5 bg-surface-3 text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+            className="px-4 py-2 bg-surface-3 text-text font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all"
           >
             Xem chi tiết
           </button>
           <button
             onClick={() => navigate(`/student/applications/new?roomId=${room.id}`)}
-            className="px-4 py-2.5 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all text-center"
+            className="px-4 py-2 bg-primary text-black font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all text-center"
           >
             Đăng ký
           </button>

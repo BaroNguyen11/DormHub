@@ -276,7 +276,7 @@ function ManagerAnalytics({ data, loading, error, reload }) {
     Promise.allSettled([
       resources.list("/manager/dorm-applications", { page: 0, size: 100 }),
       resources.list("/manager/maintenance", { page: 0, size: 100 }),
-      resources.list("/invoices", { page: 0, size: 500 }),
+      resources.list("/invoices", { page: 0, size: 100 }),
     ]).then(([appsResult, issuesResult, invoicesResult]) => {
       if (!active) return;
       const apps = appsResult.status === "fulfilled" ? appsResult.value : [];
@@ -459,9 +459,9 @@ function ManagerAnalytics({ data, loading, error, reload }) {
         <h1 className="text-2xl font-black">Tổng quan quản lý</h1>
         <button
           onClick={reload}
-          className="flex items-center gap-2 text-sm! px-4 font-medium  py-2 border-3 border-line-strong rounded-sm bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none outline-none! transition-all"
+          className="flex items-center gap-1 text-sm! px-4 font-medium!  py-2 border-3 border-line-strong rounded-sm bg-surface shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none outline-none! transition-all"
         >
-          <RefreshCw />
+          <RefreshCw size={16} strokeWidth={3}/>
           Tải lại
         </button>
       </div>

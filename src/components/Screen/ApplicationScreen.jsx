@@ -1,7 +1,7 @@
 // ====================================
 // APPLICATION SCREEN - Màn hình đăng ký nội trú (Neo-Brutalism)
 // ====================================
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -14,12 +14,40 @@ import {
 } from "lucide-react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
-import { errorMessage } from "../../utils/errorHandler";
 import { money } from "../../utils/format";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import usePermissions from "../../hooks/usePermissions";
-import { toast } from "sonner";
+import useAuth from "../../hooks/useAuth";
+
+const getCachedStudentProfile = (user) =>
+  user?.studentProfile ||
+  user?.student ||
+  user?.profile ||
+  (user?.studentCode || user?.gender || user?.dateOfBirth || user?.address
+    ? user
+    : null);
+
+const isProfileComplete = (profile) =>
+  Boolean(
+    profile?.studentCode &&
+      profile?.gender &&
+      profile?.dateOfBirth &&
+      profile?.address,
+  );
+
+const sameProfile = (left, right) => {
+  if (left === right) return true;
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") {
+    return false;
+  }
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every((key) => Object.is(left[key], right[key]))
+  );
+};
 
 /**
  * Component ApplicationScreen - Form đăng ký nội trú 3 bước
@@ -31,22 +59,43 @@ export default function ApplicationScreen({ config }) {
   const [values, setValues] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const { user } = useAuth();
 
   // Check if student already has a room
   const { hasActiveRoom, checkingRoom } = usePermissions();
 
-  // Fetch student profile
-  const {
-    data: profile,
-    loading: loadingProfile,
-    error: profileError,
-    reload: reloadProfile,
-  } = useLoad("/student/profile", {});
+  // Reuse profile details already present on the authenticated account.
+  const initialProfileRef = useRef(getCachedStudentProfile(user));
+  const [profile, setProfile] = useState(initialProfileRef.current);
+  const [loadingProfile, setLoadingProfile] = useState(
+    !initialProfileRef.current,
+  );
 
-  // Force reload profile when component mounts to avoid stale data
+  // Fetch the profile once only when AuthContext does not already contain it.
   useEffect(() => {
-    reloadProfile();
-  }, [reloadProfile]);
+    if (initialProfileRef.current) return undefined;
+
+    let active = true;
+    async function fetchProfile() {
+      try {
+        const result = await resources.list("/student/profile", {});
+        if (active) {
+          setProfile((current) =>
+            sameProfile(current, result) ? current : result,
+          );
+        }
+      } catch {
+        // API client reports request failures globally.
+      } finally {
+        if (active) setLoadingProfile(false);
+      }
+    }
+    void fetchProfile();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Load danh sách phòng còn trống theo giới tính của sinh viên đang đăng nhập
   const { data: rooms, loading } = useLoad("/student/rooms-available", {
@@ -60,12 +109,7 @@ export default function ApplicationScreen({ config }) {
   const selectedRoom = roomList.find((r) => r.id === values.roomId);
 
   // Check if profile is complete
-  const isProfileComplete =
-    profile &&
-    profile.studentCode &&
-    profile.gender &&
-    profile.dateOfBirth &&
-    profile.address;
+  const profileComplete = isProfileComplete(profile);
 
   const steps = [
     "Thông tin SV",
@@ -104,10 +148,9 @@ export default function ApplicationScreen({ config }) {
         "/student/dorm-applications",
         payload,
       );
-      toast.success("Đơn đăng ký đã được gửi.");
       navigate(`/student/applications/${result?.id}`, { replace: true });
-    } catch (e) {
-      toast.error(errorMessage(e));
+    } catch {
+      // API client reports request failures globally.
     } finally {
       setBusy(false);
     }
@@ -152,7 +195,7 @@ export default function ApplicationScreen({ config }) {
   }
 
   // Show warning if profile is incomplete
-  if (!isProfileComplete) {
+  if (!profileComplete) {
     return (
       <div className="space-y-6">
         <Heading config={config} />

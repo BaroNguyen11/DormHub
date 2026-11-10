@@ -156,7 +156,7 @@ function RoomList() {
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-3 text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-3 text-text font-extrabold! text-xs! rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] transition-all cursor-pointer"
           >
             <X size={14} strokeWidth={2.5} />
             Xóa bộ lọc
@@ -322,13 +322,13 @@ function RoomCard({ room, location }) {
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             onClick={() => navigate(`/rooms/${room.id}`)}
-            className="px-4 py-2.5 bg-surface-3 text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-surface-3 text-text font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
           >
             Xem chi tiết
           </button>
           <Link
             to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
-            className="px-4 py-2.5 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all text-center"
+            className="px-4 py-2.5 bg-primary text-black font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all text-center"
           >
             Đăng ký
           </Link>

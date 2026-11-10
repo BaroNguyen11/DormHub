@@ -139,16 +139,22 @@ export default function MyRoomDashboard() {
 
         const invoices = await resources.list("/student/invoices", {
           page: 0,
-          size: 1,
+          size: 50,
         });
-
-        const recentInvoice = invoices?.content?.find(
-          (inv) => inv.status === "UNPAID" || inv.status === "PENDING",
-        );
-
-        if (recentInvoice) {
-          setInvoiceData(recentInvoice);
-        }
+        const invoiceList = Array.isArray(invoices?.content) ? invoices.content : [];
+        const byNearestDueDate = (a, b) =>
+          new Date(a?.dueDate || a?.createdAt || 0).getTime() -
+          new Date(b?.dueDate || b?.createdAt || 0).getTime();
+        const unpaidInvoice = invoiceList
+          .filter((invoice) => String(invoice?.status || "").toUpperCase() === "UNPAID")
+          .sort(byNearestDueDate)[0];
+        const latestPaidInvoice = invoiceList
+          .filter((invoice) => String(invoice?.status || "").toUpperCase() === "PAID")
+          .sort((a, b) =>
+            new Date(b?.paidAt || b?.createdAt || 0).getTime() -
+            new Date(a?.paidAt || a?.createdAt || 0).getTime(),
+          )[0];
+        setInvoiceData(unpaidInvoice || latestPaidInvoice || null);
       } catch (err) {
         setError(errorMessage(err));
       } finally {
@@ -529,17 +535,19 @@ export default function MyRoomDashboard() {
                     <div className="pt-3 border-t-2 border-line-strong space-y-2">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border-2 border-line-strong font-extrabold text-xs ${
-                          invoiceData.status === "UNPAID"
+                          String(invoiceData.status || "").toUpperCase() === "UNPAID"
                             ? "bg-error-light text-text"
                             : "bg-warning-light text-text"
                         }`}
                       >
-                        {invoiceData.status === "UNPAID"
+                        {String(invoiceData.status || "").toUpperCase() === "UNPAID"
                           ? "Chưa thanh toán"
-                          : invoiceData.status}
+                          : String(invoiceData.status || "").toUpperCase() === "PAID"
+                            ? "Đã thanh toán"
+                            : invoiceData.status}
                       </span>
 
-                      {invoiceData.status === "UNPAID" && (
+                      {String(invoiceData.status || "").toUpperCase() === "UNPAID" && (
                         <Link
                           to={`/student/invoices/${invoiceData.invoiceId}`}
                           className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-primary border-3 border-line-strong rounded-sm font-extrabold text-xs text-text shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all"
@@ -558,7 +566,7 @@ export default function MyRoomDashboard() {
                       strokeWidth={2}
                     />
                     <p className="text-sm font-bold text-text-muted">
-                      Không có hóa đơn chưa thanh toán
+                      Chưa có hóa đơn
                     </p>
                   </div>
                 )}

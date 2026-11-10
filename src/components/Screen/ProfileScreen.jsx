@@ -1,27 +1,26 @@
 // ====================================
 // PROFILE SCREEN - Màn hình cập nhật hồ sơ (Neo-Brutalism)
 // ====================================
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Save, RefreshCw, Lock, ShieldCheck } from "lucide-react";
 import { api } from "../../api/apiClient";
-import { errorMessage } from "../../utils/errorHandler";
 import { FIELD_CONFIGS, FIELD_LABELS } from "./constants";
 import { Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { CustomSelect } from "../ui/CustomSelect";
-import { toast } from "sonner";
+import { CustomDatePicker } from "../ui/CustomDatePicker";
 
 /**
  * Component FormFields - Render các input fields chuẩn Neo-Brutalism
  */
-function FormFields({ names, values, onChange }) {
+function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {names.map((key) => {
         const meta = FIELD_CONFIGS[key] || {};
         // Mã SV chỉ khóa khi ĐÃ có mã; chưa có thì cho nhập một lần duy nhất
         const isDisabled =
-          key === "fullName" || (key === "studentCode" && !!values.studentCode);
+          key === "fullName" || (key === "studentCode" && isCodeAlreadySaved);
 
         return (
           <div
@@ -59,14 +58,31 @@ function FormFields({ names, values, onChange }) {
                 placeholder={`-- Chọn ${FIELD_LABELS[key]?.toLowerCase() || key} --`}
                 onChange={(val) => onChange(key, val)}
               />
+            ) : meta.type === "date" ? (
+              <CustomDatePicker
+                value={values[key] ?? ""}
+                max={meta.max}
+                required={!isDisabled}
+                onChange={(value) => onChange(key, value)}
+              />
             ) : (
               <input
                 required={!["description", "note"].includes(key)}
                 type={meta.type || "text"}
                 min={meta.min}
                 max={meta.max}
+                maxLength={key === "studentCode" ? 8 : undefined}
+                inputMode={key === "studentCode" ? "numeric" : undefined}
+                pattern={key === "studentCode" ? "[0-9]{8}" : undefined}
                 value={values[key] ?? ""}
-                onChange={(e) => onChange(key, e.target.value)}
+                onChange={(e) =>
+                  onChange(
+                    key,
+                    key === "studentCode"
+                      ? e.target.value.replace(/\D/g, "").slice(0, 8)
+                      : e.target.value,
+                  )
+                }
                 disabled={isDisabled}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
                 className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all placeholder:font-medium placeholder:text-text-muted/60 disabled:bg-surface-2 disabled:text-text-muted disabled:cursor-not-allowed disabled:shadow-none"
@@ -83,13 +99,13 @@ function FormFields({ names, values, onChange }) {
  * Component ProfileScreen - Màn hình cập nhật hồ sơ cá nhân
  */
 export default function ProfileScreen({ config }) {
-  const { data, error, loading, reload } = useLoad(config.resource, {});
-  useEffect(() => { if (error) toast.error(error); }, [error]);
+  const { data, loading, reload } = useLoad(config.resource, {});
 
   const [values, setValues] = useState({});
   const [busy, setBusy] = useState(false);
 
   const currentValues = { ...(data || {}), ...values };
+  const isCodeAlreadySaved = Boolean(data?.studentCode);
   const names = [
     "fullName",
     "studentCode",
@@ -129,11 +145,9 @@ export default function ProfileScreen({ config }) {
         body,
       });
 
-      toast.success("Hồ sơ cá nhân đã được cập nhật thành công.");
       reload();
-    } catch (e) {
-      console.error("Profile update error:", e);
-      toast.error(errorMessage(e));
+    } catch {
+      // API client reports request failures globally.
     } finally {
       setBusy(false);
     }
@@ -172,6 +186,7 @@ export default function ProfileScreen({ config }) {
               <FormFields
                 names={names}
                 values={currentValues}
+                isCodeAlreadySaved={isCodeAlreadySaved}
                 onChange={(key, value) =>
                   setValues((prev) => ({ ...prev, [key]: value }))
                 }
@@ -182,7 +197,7 @@ export default function ProfileScreen({ config }) {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2 bg-primary text-black font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
                 >
                   {busy ? (
                     <RefreshCw

@@ -117,6 +117,10 @@ const statusVariants = {
     className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Đang hoạt động",
   },
+  DRAFT: {
+    className: "bg-surface-3 text-text border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Bản nháp",
+  },
   APPROVED: {
     className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Đã duyệt",
@@ -141,6 +145,10 @@ const statusVariants = {
   AVAILABLE: {
     className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Còn trống",
+  },
+  OCCUPIED: {
+    className: "bg-info text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã đầy",
   },
   ASSIGNED: {
     className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
@@ -172,6 +180,58 @@ const statusVariants = {
   PENDING: {
     className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
     label: "Đợi xử lý",
+  },
+  COMPLETED: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã hoàn thành",
+  },
+  DONE: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã hoàn thành",
+  },
+  WAITING: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đang chờ xử lý",
+  },
+  PROCESSING: {
+    className: "bg-info text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đang xử lý",
+  },
+  PENDING_PAYMENT: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Chờ thanh toán",
+  },
+  CONFIRMED: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã xác nhận",
+  },
+  RESERVED: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã đặt trước",
+  },
+  PENDING_VERIFICATION: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Chờ xác minh",
+  },
+  INACTIVE: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Ngừng hoạt động",
+  },
+  ENABLED: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đang hoạt động",
+  },
+  DISABLED: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã khóa",
+  },
+  REFUNDED: {
+    className: "bg-info text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã hoàn tiền",
+  },
+  FORFEITED: {
+    className: "bg-error text-white border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã tịch thu",
   },
   MAINTENANCE: {
     className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
@@ -246,6 +306,39 @@ export function StatusBadge({ status, className }) {
       )}
     >
       {label}
+    </span>
+  );
+}
+
+const maintenanceStatusVariants = {
+  PENDING: { label: "ĐỢI XỬ LÝ", className: "bg-warning text-black" },
+  WAITING: { label: "ĐỢI XỬ LÝ", className: "bg-warning text-black" },
+  IN_PROGRESS: { label: "ĐANG XỬ LÝ", className: "bg-info text-black" },
+  PROCESSING: { label: "ĐANG XỬ LÝ", className: "bg-info text-black" },
+  COMPLETED: { label: "ĐÃ HOÀN THÀNH", className: "bg-success text-black" },
+  RESOLVED: { label: "ĐÃ HOÀN THÀNH", className: "bg-success text-black" },
+  DONE: { label: "ĐÃ HOÀN THÀNH", className: "bg-success text-black" },
+  REJECTED: { label: "TỪ CHỐI", className: "bg-error text-white" },
+  CANCELLED: { label: "TỪ CHỐI", className: "bg-error text-white" },
+};
+
+export function MaintenanceStatusBadge({ status, className }) {
+  const normalizedStatus =
+    typeof status === "string" ? status.toUpperCase() : "";
+  const variant = maintenanceStatusVariants[normalizedStatus] || {
+    label: normalizedStatus || "KHÔNG RÕ",
+    className: "bg-surface-3 text-text-muted",
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-3 py-1 border-2 border-line-strong rounded-xs shadow-[2px_2px_0_#141413] font-extrabold",
+        variant.className,
+        className,
+      )}
+    >
+      {variant.label}
     </span>
   );
 }

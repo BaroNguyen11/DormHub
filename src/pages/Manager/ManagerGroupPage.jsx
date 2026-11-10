@@ -83,7 +83,22 @@ function TabContent({ group, tab }) {
   }[group]?.[tab];
   if (!configKey) return null;
   const config = screens[configKey];
-  if (!config) return null;
+  if (!config) {
+    console.warn(`[ManagerGroupPage] Không tìm thấy screen config: ${configKey}`);
+    return null;
+  }
+  if (
+    typeof config.resource !== "string" ||
+    !config.resource.trim() ||
+    config.resource.toLowerCase().includes("null") ||
+    config.resource.toLowerCase().includes("undefined")
+  ) {
+    console.warn(
+      `[ManagerGroupPage] Endpoint không hợp lệ cho ${configKey}:`,
+      config.resource,
+    );
+    return null;
+  }
   return config.type === "form" ? (
     <FormScreen config={config} />
   ) : (

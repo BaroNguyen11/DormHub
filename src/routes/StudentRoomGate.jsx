@@ -22,39 +22,52 @@ export default function StudentRoomGate() {
   const [loading, setLoading] = useState(true);
   const [hasRoom, setHasRoom] = useState(false);
   const hasRoomRef = useRef(false);
+  const refreshRequestRef = useRef(null);
 
   const refresh = useCallback(async () => {
+    if (refreshRequestRef.current) return refreshRequestRef.current;
+
+    const request = (async () => {
+      try {
+        // Backend trả về Page<RoomAssignmentResponse> tại /student/room-assignments
+        // (endpoint cũ /room-assignments/me đã bị xoá → 404).
+        const data = await api('/student/room-assignments', {
+          method: 'GET',
+          // Backend default page=0, size=20 — đủ để biết SV có đang ở phòng nào không.
+        });
+        const items = Array.isArray(data)
+          ? data
+          : data?.content || data?.items || [];
+        const assigned = items.some((a) =>
+          ['ASSIGNED', 'CHECKED_IN'].includes(
+            String(a?.assignmentStatus || a?.status || '').toUpperCase(),
+          ),
+        );
+        hasRoomRef.current = assigned;
+        setHasRoom(assigned);
+      } catch {
+        // 404 / 403 / mạng: coi như chưa có phòng để SV vẫn vào được Tìm phòng.
+        hasRoomRef.current = false;
+        setHasRoom(false);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    refreshRequestRef.current = request;
     try {
-      // Backend trả về Page<RoomAssignmentResponse> tại /student/room-assignments
-      // (endpoint cũ /room-assignments/me đã bị xoá → 404).
-      const data = await api('/student/room-assignments', {
-        method: 'GET',
-        // Backend default page=0, size=20 — đủ để biết SV có đang ở phòng nào không.
-      });
-      const items = Array.isArray(data)
-        ? data
-        : data?.content || data?.items || [];
-      const assigned = items.some((a) =>
-        ['ASSIGNED', 'CHECKED_IN'].includes(
-          String(a?.assignmentStatus || a?.status || '').toUpperCase(),
-        ),
-      );
-      hasRoomRef.current = assigned;
-      setHasRoom(assigned);
-    } catch {
-      // 404 / 403 / mạng: coi như chưa có phòng để SV vẫn vào được Tìm phòng.
-      hasRoomRef.current = false;
-      setHasRoom(false);
+      await request;
     } finally {
-      setLoading(false);
+      if (refreshRequestRef.current === request) {
+        refreshRequestRef.current = null;
+      }
     }
   }, []);
 
   // Tải lần đầu; sinh viên chưa có phòng được kiểm tra lại mỗi khi chuyển trang
   // (để vừa được duyệt đơn là vào được trang chính ngay).
   useEffect(() => {
-    if (loading || !hasRoomRef.current) refresh();
-  }, [pathname, loading, refresh]);
+    if (!hasRoomRef.current) void refresh();
+  }, [pathname, refresh]);
 
   const value = useMemo(
     () => ({ loading, hasRoom, refresh }),

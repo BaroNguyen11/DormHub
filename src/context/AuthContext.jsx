@@ -7,12 +7,30 @@ const normalizeRole = (value) =>
     .replace(/^ROLE_/, '')
     .toUpperCase();
 
+const PUBLIC_AUTH_PATHS = new Set([
+  "/login",
+  "/verify-email",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-otp",
+]);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+
+    const pathname =
+      typeof window === "undefined" ? "" : window.location.pathname;
+    if (PUBLIC_AUTH_PATHS.has(pathname)) {
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
 
     authService
       .me()

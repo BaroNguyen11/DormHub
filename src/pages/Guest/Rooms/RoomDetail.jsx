@@ -29,19 +29,25 @@ function RoomDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
+    let active = true;
     async function fetchRoom() {
-      setLoading(true);
-      setError("");
+      if (active) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const data = await resources.get("/rooms", id);
-        setRoom(data);
+        if (active) setRoom(data);
       } catch (err) {
-        setError(errorMessage(err));
+        if (active) setError(errorMessage(err));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
-    fetchRoom();
+    void fetchRoom();
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   if (loading) {
@@ -103,7 +109,7 @@ function RoomDetail() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-surface text-text font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
         >
           <ArrowLeft size={18} strokeWidth={2.5} />
           Quay lại
@@ -141,7 +147,7 @@ function RoomDetail() {
                     <button
                       key={idx}
                       onClick={() => setSelectedImage(idx)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-sm border-3 overflow-hidden transition-all cursor-pointer ${
+                      className={`shrink-0 w-20 h-20 rounded-sm border-3 overflow-hidden transition-all cursor-pointer ${
                         selectedImage === idx
                           ? "border-primary shadow-[3px_3px_0_#141413] -translate-y-0.5"
                           : "border-line-strong opacity-60 hover:opacity-100"
@@ -251,7 +257,7 @@ function RoomDetail() {
                       key={idx}
                       className="flex items-center gap-3 p-3 bg-surface-2 border-2 border-line-strong rounded-sm shadow-[2px_2px_0_#141413]"
                     >
-                      <div className="size-9 rounded-sm bg-success/10 border-2 border-line-strong flex items-center justify-center flex-shrink-0">
+                      <div className="size-9 rounded-sm bg-success/10 border-2 border-line-strong flex items-center justify-center shrink-0">
                         <Icon
                           size={16}
                           className="text-success"
@@ -328,7 +334,7 @@ function RoomDetail() {
             <div className="space-y-3">
               <Link
                 to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all text-center"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-2 bg-primary text-black font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all text-center"
               >
                 <CheckCircle2 size={18} strokeWidth={2.5} />
                 Đăng ký phòng này
@@ -336,7 +342,7 @@ function RoomDetail() {
 
               <button
                 onClick={() => navigate(-1)}
-                className="w-full px-6 py-2.5 bg-surface-3 text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
+                className="w-full px-6 py-2 bg-surface-3 text-text font-extrabold! text-sm! rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
               >
                 Quay lại danh sách
               </button>
