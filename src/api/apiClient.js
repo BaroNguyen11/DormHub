@@ -177,8 +177,8 @@ async function parseResponse(response) {
 }
 
 async function ensureCsrfToken() {
-  const cookieToken = readCookie(CSRF_COOKIE_NAME);
-  if (cookieToken) return cookieToken;
+  // const cookieToken = readCookie(CSRF_COOKIE_NAME);
+  // if (cookieToken) return cookieToken;
 
   let response;
   try {
