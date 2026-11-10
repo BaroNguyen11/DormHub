@@ -535,7 +535,7 @@ export default function DetailScreen({ config }) {
                   setConfirmModal({ isOpen: false, action: null });
                   setPendingConfirmAction(null);
                 }}
-                className="px-4 h-10 border-2 border-line-strong rounded-sm font-bold! bg-surface hover:bg-surface-2 transition-all cursor-pointer outline-none! disabled:opacity-50"
+                className="px-4 py-2 border-2 text-sm! shadow-[2px_2px_0_#141413]  border-line-strong rounded-sm font-bold! bg-surface hover:bg-surface-2 transition-all cursor-pointer outline-none! disabled:opacity-50"
               >
                 Hủy bỏ
               </button>
@@ -549,7 +549,7 @@ export default function DetailScreen({ config }) {
                       ? handleUnlockStudent
                       : () => void doAction(pendingConfirmAction, { confirmed: true })
                 }
-                className={`px-4 h-10 border-2 border-line-strong rounded-sm font-black! text-white shadow-[2px_2px_0_#141413] transition-all cursor-pointer outline-none! disabled:opacity-50 ${
+                className={`px-4 py-2 border-2 text-sm! border-line-strong rounded-sm font-black! text-white shadow-[2px_2px_0_#141413] transition-all cursor-pointer outline-none! disabled:opacity-50 ${
                   confirmModal.action === "LOCK"
                     ? "bg-error"
                     : "bg-success text-black!"

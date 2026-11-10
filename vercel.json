@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/ai-proxy/:path*",
-      "destination": "https://api.9router.com/:path*"
+      "destination": "https://api.groq.com/openai/:path*"
     },
     {
       "source": "/((?!ai-proxy).*)",
