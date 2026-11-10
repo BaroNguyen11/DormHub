@@ -29,10 +29,8 @@ export async function sendChatMessage(messages, options = {}) {
 
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${AI_API_KEY}`, 
+      "Authorization": `Bearer ${AI_API_KEY}`,
     };
-
-
 
     const response = await fetch(AI_BASE_URL + "/chat/completions", {
       method: "POST",
