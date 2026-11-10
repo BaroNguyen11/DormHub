@@ -1,31 +1,27 @@
-import { defineConfig } from "vite";
+// vite.config.js
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from '@tailwindcss/vite'
-import path from 'path';
+import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "./src"),
+      },
     },
-  },
-  server: {
-    proxy: {
-      // Proxy cho 9Router AI API để bypass CORS trong development
-      '/ai-proxy': {
-        target: 'https://rendering-includes-fruits-new.trycloudflare.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ai-proxy/, ''),
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Thêm Authorization header vào request
-            const apiKey = process.env.VITE_AI_API_KEY || 'sk-c5a30fbce7ee2c04-8jv8c0-1ea4a431';
-            proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
-          });
-        }
-      }
-    }
-  }
+    server: {
+      proxy: {
+        "/ai-proxy": {
+          target: env.VITE_AI_TARGET_URL || "https://api.9router.com",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ai-proxy/, ""),
+        },
+      },
+    },
+  };
 });
