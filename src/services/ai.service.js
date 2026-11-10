@@ -1,32 +1,20 @@
-// ====================================
-// AI SERVICE - Kết nối 9Router OpenAI API
-// ====================================
-// Service này gọi API chat completion từ 9Router
-// Compatible với OpenAI format
-
-// Sử dụng Vite proxy trong development để bypass CORS
-// Trong production, cần setup backend proxy
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || '/ai-proxy/v1';
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || "/ai-proxy/v1";
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
-const AI_MODEL = import.meta.env.VITE_AI_MODEL || 'kr/claude-sonnet-4.5';
+const AI_MODEL = import.meta.env.VITE_AI_MODEL || "llama3-8b-8192";
 
 // Validate API key is configured
 if (!AI_API_KEY) {
-  console.error('❌ VITE_AI_API_KEY is not configured. Set it in .env file.');
-  throw new Error('AI_API_KEY is not configured. Set VITE_AI_API_KEY in .env file.');
+  console.error("❌ VITE_AI_API_KEY is not configured. Set it in .env file.");
+  throw new Error(
+    "AI_API_KEY is not configured. Set VITE_AI_API_KEY in .env file.",
+  );
 }
 
-/**
- * Gửi tin nhắn tới AI và nhận phản hồi
- * @param {Array} messages - Danh sách tin nhắn theo format OpenAI
- * @param {Object} options - Tùy chọn bổ sung
- * @returns {Promise<string>} - Câu trả lời từ AI
- */
 export async function sendChatMessage(messages, options = {}) {
   try {
     // Validate messages
     if (!Array.isArray(messages) || messages.length === 0) {
-      throw new Error('Messages phải là mảng không rỗng');
+      throw new Error("Messages phải là mảng không rỗng");
     }
 
     // Prepare request body
@@ -36,44 +24,42 @@ export async function sendChatMessage(messages, options = {}) {
       stream: false,
       temperature: options.temperature || 0.7,
       max_tokens: options.max_tokens || 2000,
-      ...options.extra
+      ...options.extra,
     };
 
-    console.log('🤖 Sending to AI:', {
-      url: AI_BASE_URL + '/chat/completions',
+    console.log("🤖 Sending to AI:", {
+      url: AI_BASE_URL + "/chat/completions",
       model: requestBody.model,
-      messageCount: messages.length
+      messageCount: messages.length,
     });
 
     // Call API
     // Nếu dùng proxy (/ai-proxy), Authorization đã được thêm bởi Vite proxy
     // Nếu gọi trực tiếp (production), cần Authorization header
     const headers = {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AI_API_KEY}`, 
     };
-    
-    // Chỉ thêm Authorization nếu không dùng proxy
-    if (!AI_BASE_URL.startsWith('/ai-proxy')) {
-      headers['Authorization'] = `Bearer ${AI_API_KEY}`;
-    }
-    
-    const response = await fetch(AI_BASE_URL + '/chat/completions', {
-      method: 'POST',
+
+
+
+    const response = await fetch(AI_BASE_URL + "/chat/completions", {
+      method: "POST",
       headers,
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     });
 
     // Check response status
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ AI API Error:', response.status, errorText);
-      
+      console.error("❌ AI API Error:", response.status, errorText);
+
       if (response.status === 401) {
-        throw new Error('API key không hợp lệ');
+        throw new Error("API key không hợp lệ");
       } else if (response.status === 429) {
-        throw new Error('Đã vượt quá giới hạn request. Vui lòng thử lại sau.');
+        throw new Error("Đã vượt quá giới hạn request. Vui lòng thử lại sau.");
       } else if (response.status >= 500) {
-        throw new Error('Server AI đang gặp sự cố. Vui lòng thử lại sau.');
+        throw new Error("Server AI đang gặp sự cố. Vui lòng thử lại sau.");
       } else {
         throw new Error(`Lỗi AI API: ${response.status}`);
       }
@@ -81,27 +67,29 @@ export async function sendChatMessage(messages, options = {}) {
 
     // Parse response
     const data = await response.json();
-    
+
     // Extract message content
     const content = data?.choices?.[0]?.message?.content;
-    
+
     if (!content) {
-      console.error('❌ Invalid response structure:', data);
-      throw new Error('Phản hồi từ AI không hợp lệ');
+      console.error("❌ Invalid response structure:", data);
+      throw new Error("Phản hồi từ AI không hợp lệ");
     }
 
-    console.log('✅ AI Response received:', content.substring(0, 100) + '...');
-    
+    console.log("✅ AI Response received:", content.substring(0, 100) + "...");
+
     return content;
-
   } catch (error) {
-    console.error('❌ AI Service Error:', error);
-    
+    console.error("❌ AI Service Error:", error);
+
     // Re-throw với message thân thiện
-    if (error.message.includes('fetch')) {
-      throw new Error('Không thể kết nối tới AI server. Kiểm tra mạng của bạn.', { cause: error });
+    if (error.message.includes("fetch")) {
+      throw new Error(
+        "Không thể kết nối tới AI server. Kiểm tra mạng của bạn.",
+        { cause: error },
+      );
     }
-    
+
     throw error;
   }
 }
@@ -134,29 +122,35 @@ Lưu ý:
 - Không có quyền thay đổi dữ liệu, chỉ hướng dẫn
 - Nếu không chắc chắn, khuyên người dùng liên hệ quản lý`;
 
-  if (role === 'STUDENT') {
-    return basePrompt + `
+  if (role === "STUDENT") {
+    return (
+      basePrompt +
+      `
 
 Người dùng hiện tại: Sinh viên
-Tên: ${user?.fullName || 'Sinh viên'}
+Tên: ${user?.fullName || "Sinh viên"}
 Bạn có thể hướng dẫn:
 - Xem và thanh toán hóa đơn
 - Gửi yêu cầu bảo trì
 - Xem thông tin phòng và hợp đồng
-- Đăng ký phòng mới`;
+- Đăng ký phòng mới`
+    );
   }
 
-  if (role === 'MANAGER') {
-    return basePrompt + `
+  if (role === "MANAGER") {
+    return (
+      basePrompt +
+      `
 
 Người dùng hiện tại: Quản lý
-Tên: ${user?.fullName || 'Quản lý'}
+Tên: ${user?.fullName || "Quản lý"}
 Bạn có thể hướng dẫn:
 - Quản lý phòng, tòa nhà
 - Duyệt đơn đăng ký
 - Tạo và quản lý hóa đơn
 - Xử lý yêu cầu bảo trì
-- Xem thống kê và báo cáo`;
+- Xem thống kê và báo cáo`
+    );
   }
 
   return basePrompt;
@@ -170,11 +164,11 @@ Bạn có thể hướng dẫn:
  */
 export function formatMessages(conversation, systemPrompt) {
   return [
-    { role: 'system', content: systemPrompt },
-    ...conversation.map(msg => ({
+    { role: "system", content: systemPrompt },
+    ...conversation.map((msg) => ({
       role: msg.role,
-      content: msg.content
-    }))
+      content: msg.content,
+    })),
   ];
 }
 
@@ -182,5 +176,5 @@ export function formatMessages(conversation, systemPrompt) {
 export const aiService = {
   sendChatMessage,
   createSystemPrompt,
-  formatMessages
+  formatMessages,
 };
