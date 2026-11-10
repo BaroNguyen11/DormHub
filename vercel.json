@@ -5,7 +5,7 @@
       "destination": "https://api.9router.com/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!ai-proxy).*)",
       "destination": "/index.html"
     }
   ]
