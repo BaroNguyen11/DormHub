@@ -177,9 +177,6 @@ async function parseResponse(response) {
 }
 
 async function ensureCsrfToken() {
-  // const cookieToken = readCookie(CSRF_COOKIE_NAME);
-  // if (cookieToken) return cookieToken;
-
   let response;
   try {
     response = await fetch(`${API_BASE_URL}/auth/csrf`, {
@@ -188,42 +185,30 @@ async function ensureCsrfToken() {
       headers: { Accept: "application/json" },
     });
   } catch (error) {
-    throw new ApiError(
-      "Không thể lấy CSRF token. Hãy kiểm tra backend và cấu hình CORS.",
-      0,
-      error,
-    );
+    throw new ApiError("Không thể lấy CSRF token.", 0, error);
   }
 
   const payload = await parseResponse(response);
   if (!response.ok) {
-    throw new ApiError(
-      payload?.message || `Không thể lấy CSRF token (HTTP ${response.status}).`,
-      response.status,
-      payload,
-    );
+    throw new ApiError(payload?.message || `Lỗi CSRF (HTTP ${response.status})`, response.status, payload);
   }
 
   const body = unwrapResponse(payload);
+  
   const token =
-    readCookie(CSRF_COOKIE_NAME) ||
     body?.token ||
     body?.csrfToken ||
     payload?.token ||
     payload?.csrfToken ||
+    readCookie(CSRF_COOKIE_NAME) ||
     (typeof body === "string" ? body : null);
 
   if (!token) {
-    throw new ApiError(
-      "Backend trả về thành công nhưng không tìm thấy CSRF token. Kiểm tra GET /api/v1/auth/csrf.",
-      response.status,
-      payload,
-    );
+    throw new ApiError("Không tìm thấy CSRF token trong response /auth/csrf", response.status, payload);
   }
 
   return token;
 }
-
 function canRefresh(path) {
   const normalizedPath = path.split("?")[0].replace(/\/$/, "");
   return !NO_REFRESH_PATHS.has(normalizedPath);
