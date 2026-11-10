@@ -78,7 +78,7 @@ function TabContent({ group, tab }) {
     },
     maintenance: {
       maintenance: "/manager/maintenance/list",
-      notifications: "/manager/notifications",
+      notifications: "/send-to-students",
     },
   }[group]?.[tab];
   if (!configKey) return null;

@@ -37,7 +37,7 @@ export const pageMap = {
   "/manager/sepay": "../pages/Manager/Sepay/SepayTransactionList.jsx",
   "/manager/sepay/:id": "../pages/Manager/Sepay/SepayTransactionDetail.jsx",
   "/manager/maintenance/new": "../pages/Manager/Maintenance/IssueCreate.jsx",
-  "/manager/notifications": "../pages/Manager/Notifications/NotifyCreate.jsx",
+  "/send-to-students": "../pages/Manager/Notifications/NotifyCreate.jsx",
   "/manager/applications": "../pages/Manager/Registrations/RegistrationList.jsx",
   "/manager/applications/:id": "../pages/Manager/Registrations/RegistrationDetail.jsx",
   "/manager/rooms/new": "../pages/Manager/Rooms/RoomCreate.jsx",

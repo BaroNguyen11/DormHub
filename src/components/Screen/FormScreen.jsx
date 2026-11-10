@@ -557,16 +557,21 @@ export default function FormScreen({ config }) {
         await resources.create(config.resource, payload);
       }
 
-      navigate(
-        config.edit
-          ? location.pathname.replace(/\/edit$/, "")
-          : config.resource === "/maintenance-requests"
-            ? "/student/maintenance"
-            : config.resource === "/notifications"
-              ? "/manager"
-              : location.pathname.replace(/\/new$/, ""),
-        {},
-      );
+      if (config.notificationForm) {
+        toast.success("Đã gửi thông báo thành công!");
+        setValues({ title: "", body: "", buildingId: "" });
+      } else {
+        navigate(
+          config.edit
+            ? location.pathname.replace(/\/edit$/, "")
+            : config.resource === "/maintenance-requests"
+              ? "/student/maintenance"
+              : config.resource === "/notifications"
+                ? "/manager"
+                : location.pathname.replace(/\/new$/, ""),
+          {},
+        );
+      }
     } catch {
       // API client reports request failures globally.
     } finally {

@@ -665,11 +665,11 @@ export const screens = {
       },
     ],
   },
-  "/manager/notifications": {
+  "/send-to-students": {
     title: "Gửi thông báo",
     group: "manager",
     type: "form",
-    resource: "/notifications/manager/notifications",
+    resource: "/notifications/send-to-students",
     fields: ["title", "body", "buildingId"],
     notificationForm: true,
     defaultValues: { buildingId: null },
