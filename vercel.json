@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/ai-proxy/:path*",
+      "destination": "https://api.9router.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
