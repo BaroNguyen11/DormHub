@@ -679,9 +679,10 @@ export const screens = {
     group: "manager",
     type: "form",
     resource: "/auth/register",
-    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode"],
+    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode", "gender"],
+    fieldConfig: { gender: { options: [{ label: "Nam", value: "MALE" }, { label: "Nữ", value: "FEMALE" }] } },
     fixedFields: { role: "STUDENT" },
-    successMessage: "Tài khoản đã được tạo. OTP đã gửi tới email sinh viên để xác thực.",
+    successMessage: "Tài khoản đã được tạo. Sinh viên có thể chủ động yêu cầu OTP để kích hoạt.",
   },
 
   // ===== MANAGER RENEWAL REQUESTS =====

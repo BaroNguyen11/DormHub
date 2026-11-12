@@ -20,7 +20,7 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
         const meta = FIELD_CONFIGS[key] || {};
         // Mã SV chỉ khóa khi ĐÃ có mã; chưa có thì cho nhập một lần duy nhất
         const isDisabled =
-          key === "fullName" || (key === "studentCode" && isCodeAlreadySaved);
+          key === "fullName" || key === "gender" || (key === "studentCode" && isCodeAlreadySaved);
 
         return (
           <div
@@ -50,6 +50,13 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
                 rows={4}
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
                 className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
+              />
+            ) : key === "gender" ? (
+              <input
+                type="text"
+                value={meta.options?.find((option) => option.value === values[key])?.label || ""}
+                disabled
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text-muted bg-surface-2 shadow-none cursor-not-allowed"
               />
             ) : meta.options ? (
               <CustomSelect
@@ -127,7 +134,6 @@ export default function ProfileScreen({ config }) {
       const allowedFields = [
         "studentCode",
         "phone",
-        "gender",
         "dateOfBirth",
         "address",
         "avatarUrl",

@@ -486,6 +486,10 @@ export default function FormScreen({ config }) {
 
   async function submit(e) {
     e.preventDefault();
+    if (config.resource === "/auth/register" && !currentValues.gender) {
+      toast.error("Vui lòng chọn giới tính");
+      return;
+    }
     setBusy(true);
 
     // Validate password match for change-password form
@@ -560,6 +564,9 @@ export default function FormScreen({ config }) {
       if (config.notificationForm) {
         toast.success("Đã gửi thông báo thành công!");
         setValues({ title: "", body: "", buildingId: "" });
+      } else if (config.resource === "/auth/register") {
+        toast.success(config.successMessage);
+        setValues(config.defaultValues || {});
       } else {
         navigate(
           config.edit
