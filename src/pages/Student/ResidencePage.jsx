@@ -12,6 +12,7 @@ import {
 import Workspace from "../../components/Workspace";
 import { resources } from "../../services/resource.service";
 import { api } from "../../api/apiClient";
+import { errorMessage } from "../../utils/errorHandler";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
 
@@ -21,7 +22,6 @@ const action =
   "px-4 py-2 bg-warning border-3 border-line-strong rounded-sm text-sm! font-extrabold! shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413]  hover:-translate-0.5 active:translate-0.5 active:shadow-none outline-none! transition-all";
 const control =
   "mt-2 w-full rounded-sm border-3 border-line-strong px-3 py-2.5 shadow-[3px_3px_0_#141413] outline-none! transition-all";
-const first = (r) => r?.content?.[0] || r?.items?.[0] || null;
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -39,6 +39,8 @@ const formatCurrency = (value) =>
 export default function ResidencePage() {
   const [assignment, setAssignment] = useState(null);
   const [contract, setContract] = useState(null);
+  const [roommates, setRoommates] = useState([]);
+  const [roommatesError, setRoommatesError] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState("");
   const [form, setForm] = useState({});
@@ -51,13 +53,22 @@ export default function ResidencePage() {
           resources.list("/student/room-assignments", { page: 0, size: 20 }),
           resources.list("/student/contracts", { page: 0, size: 20 }),
         ]);
-        setAssignment(
-          (assignments?.content || []).find((a) =>
-            ["ASSIGNED", "CHECKED_IN"].includes(
-              String(a.assignmentStatus || a.status).toUpperCase(),
-            ),
-          ) || first(assignments),
+        const currentAssignment = (assignments?.content || []).find((a) =>
+          ["ASSIGNED", "CHECKED_IN"].includes(
+            String(a.assignmentStatus || a.status).toUpperCase(),
+          ),
         );
+        setAssignment(currentAssignment || null);
+        setRoommates([]);
+        setRoommatesError("");
+        if (currentAssignment) {
+          try {
+            const members = await api("/student/room-assignments/roommates", { notify: false });
+            setRoommates(Array.isArray(members) ? members : []);
+          } catch (err) {
+            setRoommatesError(errorMessage(err));
+          }
+        }
         const contractList = contracts?.content || contracts?.items || [];
         setContract(
           contractList.find(
@@ -112,12 +123,6 @@ export default function ResidencePage() {
   }
 
   const room = assignment?.room || assignment;
-  const roommates =
-    assignment?.roommates ||
-    assignment?.roomAssignments ||
-    room?.roommates ||
-    room?.roomAssignments ||
-    [];
   const deposit =
     contract?.depositAmount ?? contract?.deposit ?? assignment?.depositAmount;
   const contractStatus = String(
@@ -173,28 +178,18 @@ export default function ResidencePage() {
               <h3 className="font-black flex items-center gap-2 mt-6 mb-3">
                 <Users size={18} /> Bạn cùng phòng
               </h3>
-              {roommates.length ? (
+              {roommatesError ? (
+                <p role="alert" className="text-sm font-semibold text-error">
+                  Không thể tải danh sách bạn cùng phòng: {roommatesError}
+                </p>
+              ) : roommates.length ? (
                 <ul className="grid sm:grid-cols-2 gap-3 list-none p-0 m-0">
-                  {roommates.map((entry, i) => {
-                    const member = entry?.student || entry;
-                    const fullName =
-                      member?.fullName ||
-                      member?.studentName ||
-                      member?.user?.fullName ||
-                      `Sinh viên ${i + 1}`;
-                    const contactPhone =
-                      member?.phoneNumber ||
-                      member?.phone ||
-                      member?.user?.phoneNumber;
-                    const contactEmail = member?.email || member?.user?.email;
+                  {roommates.map((member) => {
+                    const fullName = member.fullName || "Sinh viên";
+                    const gender = member.gender === "MALE" ? "Nam" : member.gender === "FEMALE" ? "Nữ" : "Chưa cập nhật";
                     return (
                       <li
-                        key={
-                          member?.studentId ||
-                          member?.id ||
-                          entry?.assignmentId ||
-                          i
-                        }
+                        key={member.studentCode}
                         className="flex min-w-0 items-center gap-3 border-2 border-line-strong bg-surface-2 rounded-sm p-3 shadow-[2px_2px_0_#141413]"
                       >
                         <span className="grid size-10 shrink-0 place-items-center border-2 border-line-strong bg-primary rounded-sm font-black uppercase shadow-[2px_2px_0_#141413]">
@@ -204,21 +199,12 @@ export default function ResidencePage() {
                           <strong className="block truncate text-sm font-black text-text">
                             {fullName}
                           </strong>
-                          {contactPhone && (
+                          {member.studentCode && (
                             <span className="block truncate text-xs font-semibold text-text-muted">
-                              {contactPhone}
+                              Mã sinh viên: {member.studentCode}
                             </span>
                           )}
-                          {!contactPhone && contactEmail && (
-                            <span className="block truncate text-xs font-semibold text-text-muted">
-                              {contactEmail}
-                            </span>
-                          )}
-                          {contactPhone && contactEmail && (
-                            <span className="block truncate text-xs font-semibold text-text-muted">
-                              {contactEmail}
-                            </span>
-                          )}
+                          <span className="block text-xs font-semibold text-text-muted">Giới tính: {gender}</span>
                         </span>
                       </li>
                     );
@@ -227,7 +213,7 @@ export default function ResidencePage() {
               ) : (
                 <div className="flex items-center gap-3 border-2 border-dashed border-line-strong bg-surface-2 rounded-sm p-4 text-sm font-semibold text-text-muted">
                   <Users size={20} className="shrink-0" />
-                  <span>Chưa có thông tin bạn cùng phòng.</span>
+                  <span>{assignment ? "Bạn đang ở một mình." : "Bạn chưa có phòng."}</span>
                 </div>
               )}
             </section>
