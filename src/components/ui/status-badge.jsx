@@ -216,6 +216,15 @@ const statusVariants = {
     label: "Không khớp",
   },
 
+  READ: {
+    className: "bg-success text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Đã đọc",
+  },
+  UNREAD: {
+    className: "bg-warning text-black border-2 border-line-strong shadow-[2px_2px_0_#141413]",
+    label: "Chưa đọc",
+  },
+
   // 4. Default state - Neutral Gray
   DEFAULT: {
     className:

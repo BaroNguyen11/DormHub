@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Search,
   Plus,
+  Search,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -43,7 +43,6 @@ export default function ListScreen({ config }) {
     ...(debouncedSearch ? { [config.searchParam || "search"]: debouncedSearch } : {}),
     ...(status ? { status } : {}),
   });
-
   const rows = asList(data);
 
   const createPath = config.create;
@@ -95,62 +94,25 @@ export default function ListScreen({ config }) {
       {/* Thông báo Lỗi / Thành công */}
       <Notice error={actionError || error} success={success} />
 
-      {/* Panel Bảng dữ liệu Neo-Brutalism */}
       <div className="bg-surface border-4 border-line-strong rounded-sm overflow-hidden shadow-[6px_6px_0_#141413]">
-        {/* Toolbar: Tìm kiếm, Lọc trạng thái, Tải lại */}
         <div className="flex flex-wrap items-center gap-3 p-4 border-b-4 border-line-strong bg-surface-2">
-          {/* Ô Tìm kiếm */}
           <div className="relative flex-1 min-w-60">
-            <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-              size={18}
-              strokeWidth={2.5}
-            />
-            <input
-              aria-label="Tìm kiếm"
-              placeholder="Tìm theo mã, tên hoặc nội dung..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                resetPage();
-              }}
-              className="w-full pl-10 pr-4 py-2.5 rounded-sm border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none! transition-all"
-            />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" size={18} strokeWidth={2.5} />
+            <input aria-label="Tìm kiếm" placeholder="Tìm theo mã, tên hoặc nội dung..." value={search}
+              onChange={(event) => { setSearch(event.target.value); resetPage(); }}
+              className="w-full pl-10 pr-4 py-2.5 rounded-sm border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all" />
           </div>
-
-          {/* Dropdown Filter trạng thái */}
           {config.statusOptions && (
             <div className="w-56 shrink-0">
-              <CustomSelect
-                value={status}
-                placeholder="-- Tất cả trạng thái --"
-                options={[
-                  { value: "", label: "-- Tất cả trạng thái --" },
-                  ...config.statusOptions.map((x) => ({
-                    value: x,
-                    label: STATUS_LABELS[x] || x,
-                  })),
-                ]}
-                onChange={(val) => {
-                  setStatus(val);
-                  resetPage();
-                }}
-              />
+              <CustomSelect value={status} placeholder="-- Tất cả trạng thái --"
+                options={[{ value: "", label: "-- Tất cả trạng thái --" },
+                  ...config.statusOptions.map((x) => ({ value: x, label: STATUS_LABELS[x] || x }))]}
+                onChange={(value) => { setStatus(value); resetPage(); }} />
             </div>
           )}
-
-          {/* Nút Reload */}
-          <button
-            className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none transition-all cursor-pointer"
-            onClick={reload}
-            aria-label="Tải lại"
-            title="Tải lại dữ liệu"
-          >
-            <RefreshCw
-              size={18}
-              strokeWidth={2.5}
-              className={loading ? "animate-spin" : ""}
-            />
+          <button type="button" onClick={reload} aria-label="Tải lại" title="Tải lại dữ liệu"
+            className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer">
+            <RefreshCw size={18} strokeWidth={2.5} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
 
@@ -161,29 +123,13 @@ export default function ListScreen({ config }) {
           <Empty />
         ) : (
           <div className="overflow-x-auto">
-            <motion.table
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="w-full border-collapse text-left"
-            >
-              {/* Table Header */}
+            <motion.table className="w-full border-collapse text-left">
               <thead className="bg-warning border-b-4 border-line-strong text-[#000000]">
                 <tr>
-                  {config.columns.map((key) => (
-                    <th
-                      key={key}
-                      className="px-4 py-3.5 text-xs font-black uppercase tracking-wider border-r-2 border-line-strong/20 last:border-r-0"
-                    >
-                      {FIELD_LABELS[key] || key}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3.5 text-xs font-black uppercase tracking-wider text-right">
-                    Thao tác
-                  </th>
+                  {config.columns.map((key) => <th key={key} className="px-4 py-3.5 text-xs font-black uppercase tracking-wider border-r-2 border-line-strong/20 last:border-r-0">{FIELD_LABELS[key] || key}</th>)}
+                  <th className="px-4 py-3.5 text-xs font-black uppercase tracking-wider border-r-2 border-line-strong/20 last:border-r-0 text-right">Thao tác</th>
                 </tr>
               </thead>
-
-              {/* Table Body */}
               <tbody className="divide-y-2 divide-line-strong">
                 {rows.map((row, index) => (
                   <motion.tr
@@ -191,7 +137,7 @@ export default function ListScreen({ config }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
-                    className="hover:bg-primary-light/50 transition-colors"
+                    className="bg-surface hover:bg-primary-light/50 transition-colors"
                   >
                     {/* Cột dữ liệu */}
                     {config.columns.map((key) => (
@@ -224,13 +170,7 @@ export default function ListScreen({ config }) {
                               row.contractId ||
                               row.assignmentId;
                           return (
-                            <Link
-                              to={`${config.detail}/${rowId}`}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
-                            >
-                              <Eye size={14} strokeWidth={2.5} />
-                              <span>Chi tiết</span>
-                            </Link>
+                            <Link to={`${config.detail}/${rowId}`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"><Eye size={14} strokeWidth={2.5} />Chi tiết</Link>
                           );
                         })()}
 
@@ -288,32 +228,16 @@ export default function ListScreen({ config }) {
           </div>
         )}
 
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between p-4 border-t-4 border-line-strong bg-surface-2 text-xs font-extrabold text-text">
-          <span>
-            Trang {page + 1}
-            {data?.totalElements != null
-              ? ` · Tổng ${data.totalElements} mục`
-              : ""}
-          </span>
-
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t-4 border-line-strong bg-surface-2 text-xs font-extrabold text-text">
+          <span>Trang {page + 1}{data?.totalElements != null ? ` · Tổng ${data.totalElements} mục` : ""}</span>
           <div className="flex items-center gap-2">
-            <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              disabled={page === 0}
-              onClick={previousPage}
-            >
-              <ChevronLeft size={16} strokeWidth={2.5} />
-              <span>Trang trước</span>
+            <button type="button" disabled={page === 0} onClick={previousPage}
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              <ChevronLeft size={16} strokeWidth={2.5} />Trang trước
             </button>
-
-            <button
-              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              disabled={data?.last === true || rows.length < pageSize}
-              onClick={nextPage}
-            >
-              <span>Trang sau</span>
-              <ChevronRight size={16} strokeWidth={2.5} />
+            <button type="button" disabled={data?.last === true || (data?.totalElements != null ? (page + 1) * pageSize >= data.totalElements : rows.length < pageSize)} onClick={nextPage}
+              className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+              Trang sau<ChevronRight size={16} strokeWidth={2.5} />
             </button>
           </div>
         </div>

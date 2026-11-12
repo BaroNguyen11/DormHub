@@ -280,6 +280,16 @@ export const screens = {
     group: "student",
     type: "payment-history-detail",
   },
+  "/manager/notifications/history": {
+    title: "Lịch sử thông báo",
+    group: "manager",
+    type: "manager-notification-history",
+  },
+  "/manager/notifications/history/:id": {
+    title: "Chi tiết thông báo đã gửi",
+    group: "manager",
+    type: "manager-notification-detail",
+  },
   "/student/maintenance": {
     title: "Báo hỏng",
     group: "student",
@@ -918,7 +928,7 @@ for (const [path, title] of [
   screens[path] = { ...(path.endsWith("/list") ? screens[path.replace(/\/list$/, "")] : {}), title, group: "manager", type: path.endsWith("/list") ? "list" : "custom" };
 }
 
-import { Home, Building2, Receipt, Wrench, User, LayoutDashboard, Users, FileCheck2 } from "lucide-react";
+import { Home, Building2, Receipt, Wrench, User, LayoutDashboard, Users, FileCheck2, Send, Bell } from "lucide-react";
 
 export const nav = {
   // Guest: có thể xem trang chủ và tìm phòng (không cần đăng nhập)
@@ -950,6 +960,8 @@ export const nav = {
     ["Hợp đồng & Thủ tục", "/manager/contracts", FileCheck2],
     ["Tài chính & SePay", "/manager/finance", Receipt],
     ["Vận hành & Hỗ trợ", "/manager/maintenance", Wrench],
+    ["Gửi thông báo", "/send-to-students", Send],
+    ["Lịch sử thông báo", "/manager/notifications/history", Bell],
   ],
 };
 
