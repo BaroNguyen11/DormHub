@@ -104,6 +104,7 @@ export default function PaymentResult() {
       if (data) {
         const resolved =
           String(data.paymentStatus || "").toUpperCase() !== "PENDING" ||
+          String(data.invoiceStatus || "").toUpperCase() === "PAID" ||
           Boolean(data.expired);
         if (resolved) return;
       }
@@ -118,9 +119,8 @@ export default function PaymentResult() {
   }, [load, runSync]);
 
   // Derived states from payment data
-  const paymentSuccess = payment && 
-    (String(payment.paymentStatus || "").toUpperCase() === "SUCCESS" || 
-     String(payment.invoiceStatus || "").toUpperCase() === "PAID");
+  const paymentSuccess = payment &&
+    String(payment.paymentStatus || "").toUpperCase() === "SUCCESS";
 
   useEffect(() => {
     if (payment) {
@@ -209,10 +209,10 @@ export default function PaymentResult() {
 
   const status = String(payment.paymentStatus || "").toUpperCase();
   const invoiceStatus = String(payment.invoiceStatus || "").toUpperCase();
-  const isPending = status === "PENDING" && !payment.expired;
+  const invoicePaidElsewhere = invoiceStatus === "PAID" && status !== "SUCCESS";
+  const isPending = status === "PENDING" && !payment.expired && invoiceStatus === "UNPAID";
   const isExpired = status === "EXPIRED" || payment.expired;
-  const isSuccess =
-    status === "SUCCESS" || invoiceStatus === "PAID";
+  const isSuccess = status === "SUCCESS";
   const isDeposit = String(payment.invoiceType || "") === "DEPOSIT";
 
   return (
@@ -221,12 +221,12 @@ export default function PaymentResult() {
       <div className="bg-surface border-4 border-line-strong rounded-sm p-6 sm:p-8 text-center space-y-4 shadow-[6px_6px_0_#141413]">
         <div
           className={`size-16 mx-auto rounded-sm border-3 border-line-strong flex items-center justify-center shadow-[3px_3px_0_#141413] ${
-            isSuccess ? "bg-success" : isExpired ? "bg-error" : "bg-warning"
+            isSuccess ? "bg-success" : invoicePaidElsewhere ? "bg-warning" : isExpired ? "bg-error" : "bg-warning"
           }`}
         >
           {isSuccess ? (
             <CheckCircle2 size={32} strokeWidth={2.5} />
-          ) : isExpired ? (
+          ) : invoicePaidElsewhere || isExpired ? (
             <AlertCircle size={32} strokeWidth={2.5} />
           ) : (
             <Clock size={32} strokeWidth={2.5} />
@@ -236,6 +236,8 @@ export default function PaymentResult() {
         <h1 className="text-xl font-black text-text">
           {isSuccess
             ? "Thanh toán thành công!"
+            : invoicePaidElsewhere
+              ? "Hóa đơn đã được thanh toán bằng lượt khác"
             : isExpired
               ? "Lượt thanh toán đã hết hạn"
               : "Chờ bạn chuyển khoản"}
@@ -243,6 +245,8 @@ export default function PaymentResult() {
         <p className="text-sm font-semibold text-text-muted">
           {isSuccess
             ? "Hệ thống đã ghi nhận tiền. Nếu đây là tiền cọc giữ chỗ, bạn đã được phân phòng tự động."
+            : invoicePaidElsewhere
+              ? "Lượt thanh toán này không được ghi nhận thành công. Hóa đơn đã PAID bằng một lượt khác; nếu bạn đã chuyển khoản theo mã của lượt này, hãy liên hệ quản lý để rà soát."
             : isExpired
               ? "Lượt thanh toán này đã hết hiệu lực. Hãy bấm 'Thanh toán' lại ở trang hóa đơn để tạo lượt mới."
               : "Trang sẽ tự cập nhật khi tiền vào tài khoản (không cần tải lại). Giữ nguyên mã tham chiếu khi chuyển khoản."}
@@ -255,7 +259,9 @@ export default function PaymentResult() {
         )}
 
         <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold">Lượt thanh toán:</span>
           <StatusBadge status={payment.paymentStatus} />
+          <span className="text-xs font-semibold">Hóa đơn:</span>
           <StatusBadge status={payment.invoiceStatus} />
           {isDeposit && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-[11px] font-extrabold uppercase tracking-wider bg-primary-light border-2 border-line-strong">

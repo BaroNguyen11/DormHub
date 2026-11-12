@@ -270,6 +270,16 @@ export const screens = {
     // trước đây ghi "paymentResult" nên rơi vào default (Unknown screen type).
     type: "payment-result",
   },
+  "/student/payments": {
+    title: "Lịch sử thanh toán",
+    group: "student",
+    type: "payment-history",
+  },
+  "/student/payments/:id": {
+    title: "Chi tiết lần thanh toán",
+    group: "student",
+    type: "payment-history-detail",
+  },
   "/student/maintenance": {
     title: "Báo hỏng",
     group: "student",
@@ -616,6 +626,17 @@ export const screens = {
         confirm: true,
         visibleWhen: { status: "UNMATCHED" },
       },
+      {
+        label: "Ghi chú rà soát",
+        suffix: "/review",
+        method: "POST",
+        promptField: "note",
+        promptLabel: "Kết quả kiểm tra và bằng chứng",
+        promptRequired: true,
+        promptMultiline: true,
+        promptMaxLength: 200,
+        visibleWhen: { status: "REVIEW_REQUIRED" },
+      },
     ],
   },
   "/manager/maintenance": {
@@ -910,6 +931,7 @@ export const nav = {
     ["Tổng quan", "/student", Home],
     ["Chỗ ở & Hợp đồng", "/student/residence", Building2],
     ["Hóa đơn", "/student/invoices", Receipt],
+    ["Lịch sử thanh toán", "/student/payments", Receipt],
     ["Báo hỏng", "/student/maintenance", Wrench],
     ["Tài khoản", "/student/profile", User],
   ],
@@ -918,6 +940,7 @@ export const nav = {
   studentNoRoom: [
     ["Tìm phòng", "/student/rooms", Home],
     ["Đơn đăng ký", "/student/applications", Receipt],
+    ["Lịch sử thanh toán", "/student/payments", Receipt],
     ["Tài khoản", "/student/profile", User],
   ],
   manager: [
@@ -940,6 +963,7 @@ export const STUDENT_NO_ROOM_ALLOWED = [
   "/student/applications",
   "/student/profile",
   "/student/invoices",
+  "/student/payments",
   "/student/contracts",
   "/student/notifications",
   "/change-password",

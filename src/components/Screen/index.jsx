@@ -17,6 +17,7 @@ import ProfileScreen from "./ProfileScreen";
 import ApplicationScreen from "./ApplicationScreen";
 import ChatScreen from "./ChatScreen";
 import PaymentResult from "./PaymentResult";
+import { PaymentHistory, PaymentHistoryDetail } from "./PaymentHistory";
 
 
 export default function Screen({ config }) {
@@ -60,6 +61,14 @@ export default function Screen({ config }) {
       
     case "payment-result":
       content = <PaymentResult />;
+      break;
+
+    case "payment-history":
+      content = <PaymentHistory config={config} />;
+      break;
+
+    case "payment-history-detail":
+      content = <PaymentHistoryDetail config={config} />;
       break;
       
     default:
