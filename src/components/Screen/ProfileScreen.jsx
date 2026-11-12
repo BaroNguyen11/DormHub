@@ -2,6 +2,7 @@
 // PROFILE SCREEN - Màn hình cập nhật hồ sơ (Neo-Brutalism)
 // ====================================
 import { useState } from "react";
+import { toast } from "sonner";
 import { Save, RefreshCw, Lock, ShieldCheck } from "lucide-react";
 import { api } from "../../api/apiClient";
 import { FIELD_CONFIGS, FIELD_LABELS } from "./constants";
@@ -74,19 +75,19 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
               />
             ) : (
               <input
-                required={!["description", "note"].includes(key)}
+                required={!["description", "note", "cic"].includes(key)}
                 type={meta.type || "text"}
                 min={meta.min}
                 max={meta.max}
-                maxLength={key === "studentCode" ? 8 : undefined}
-                inputMode={key === "studentCode" ? "numeric" : undefined}
-                pattern={key === "studentCode" ? "[0-9]{8}" : undefined}
+                maxLength={key === "studentCode" ? 8 : key === "cic" ? 12 : undefined}
+                inputMode={["studentCode", "cic"].includes(key) ? "numeric" : undefined}
+                pattern={key === "studentCode" ? "[0-9]{8}" : key === "cic" ? "[0-9]{12}" : undefined}
                 value={values[key] ?? ""}
                 onChange={(e) =>
                   onChange(
                     key,
-                    key === "studentCode"
-                      ? e.target.value.replace(/\D/g, "").slice(0, 8)
+                    ["studentCode", "cic"].includes(key)
+                      ? e.target.value.replace(/\D/g, "").slice(0, key === "cic" ? 12 : 8)
                       : e.target.value,
                   )
                 }
@@ -106,16 +107,18 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
  * Component ProfileScreen - Màn hình cập nhật hồ sơ cá nhân
  */
 export default function ProfileScreen({ config }) {
-  const { data, loading, reload } = useLoad(config.resource, {});
+  const { data, loading } = useLoad(config.resource, {});
 
   const [values, setValues] = useState({});
+  const [savedProfile, setSavedProfile] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const currentValues = { ...(data || {}), ...values };
-  const isCodeAlreadySaved = Boolean(data?.studentCode);
+  const currentValues = { ...(savedProfile || data || {}), ...values };
+  const isCodeAlreadySaved = Boolean((savedProfile || data)?.studentCode);
   const names = [
     "fullName",
     "studentCode",
+    "cic",
     "phone",
     "gender",
     "dateOfBirth",
@@ -133,6 +136,7 @@ export default function ProfileScreen({ config }) {
       // Chỉ gửi các fields backend chấp nhận
       const allowedFields = [
         "studentCode",
+        "cic",
         "phone",
         "dateOfBirth",
         "address",
@@ -146,12 +150,14 @@ export default function ProfileScreen({ config }) {
         body[key] = val;
       });
 
-      await api(config.resource, {
+      const updatedProfile = await api(config.resource, {
         method: "PATCH",
         body,
       });
 
-      reload();
+      setSavedProfile(updatedProfile);
+      setValues({});
+      toast.success("Lưu hồ sơ thành công!");
     } catch {
       // API client reports request failures globally.
     } finally {

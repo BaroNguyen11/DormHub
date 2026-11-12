@@ -1,7 +1,7 @@
 // ====================================
 // APPLICATION SCREEN - Màn hình đăng ký nội trú (Neo-Brutalism)
 // ====================================
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -33,7 +33,8 @@ const isProfileComplete = (profile) =>
     profile?.studentCode &&
       profile?.gender &&
       profile?.dateOfBirth &&
-      profile?.address,
+      profile?.address &&
+      /^[0-9]{12}$/.test(profile?.cic || ""),
   );
 
 const sameProfile = (left, right) => {
@@ -65,16 +66,11 @@ export default function ApplicationScreen({ config }) {
   const { hasActiveRoom, checkingRoom } = usePermissions();
 
   // Reuse profile details already present on the authenticated account.
-  const initialProfileRef = useRef(getCachedStudentProfile(user));
-  const [profile, setProfile] = useState(initialProfileRef.current);
-  const [loadingProfile, setLoadingProfile] = useState(
-    !initialProfileRef.current,
-  );
+  const [profile, setProfile] = useState(getCachedStudentProfile(user));
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // Fetch the profile once only when AuthContext does not already contain it.
+  // Fetch the current profile; cached auth data may predate the CCCD update.
   useEffect(() => {
-    if (initialProfileRef.current) return undefined;
-
     let active = true;
     async function fetchProfile() {
       try {
@@ -202,7 +198,7 @@ export default function ApplicationScreen({ config }) {
         <Notice
           type="warning"
           message="Hồ sơ cá nhân chưa đầy đủ"
-          description="Bạn cần hoàn thiện thông tin hồ sơ (mã sinh viên, giới tính, ngày sinh, địa chỉ) trước khi đăng ký nội trú."
+          description="Bạn cần hoàn thiện thông tin hồ sơ (mã sinh viên, giới tính, ngày sinh, địa chỉ và CCCD 12 chữ số) trước khi đăng ký nội trú."
         />
         <div className="flex gap-3">
           <button

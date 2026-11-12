@@ -16,6 +16,7 @@ export const FIELD_LABELS = {
   fullName: "Họ và tên",
   studentName: "Sinh viên",
   studentCode: "Mã sinh viên",
+  cic: "CCCD",
   email: "Email",
   phone: "Số điện thoại",
   phoneNumber: "Số điện thoại",
