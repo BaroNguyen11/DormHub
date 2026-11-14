@@ -17,6 +17,8 @@ import ProfileScreen from "./ProfileScreen";
 import ApplicationScreen from "./ApplicationScreen";
 import ChatScreen from "./ChatScreen";
 import PaymentResult from "./PaymentResult";
+import { PaymentHistory, PaymentHistoryDetail } from "../../pages/Student/Payments/PaymentHistory";
+import { ManagerNotificationHistory, ManagerNotificationDetail } from "../../pages/Manager/Notifications/ManagerNotificationHistory";
 
 
 export default function Screen({ config }) {
@@ -60,6 +62,22 @@ export default function Screen({ config }) {
       
     case "payment-result":
       content = <PaymentResult />;
+      break;
+
+    case "payment-history":
+      content = <PaymentHistory config={config} />;
+      break;
+
+    case "payment-history-detail":
+      content = <PaymentHistoryDetail config={config} />;
+      break;
+
+    case "manager-notification-history":
+      content = <ManagerNotificationHistory config={config} />;
+      break;
+
+    case "manager-notification-detail":
+      content = <ManagerNotificationDetail config={config} />;
       break;
       
     default:

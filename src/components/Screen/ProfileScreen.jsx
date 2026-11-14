@@ -2,6 +2,7 @@
 // PROFILE SCREEN - Màn hình cập nhật hồ sơ (Neo-Brutalism)
 // ====================================
 import { useState } from "react";
+import { toast } from "sonner";
 import { Save, RefreshCw, Lock, ShieldCheck } from "lucide-react";
 import { api } from "../../api/apiClient";
 import { FIELD_CONFIGS, FIELD_LABELS } from "./constants";
@@ -21,7 +22,7 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved, hasSavedGende
         const meta = FIELD_CONFIGS[key] || {};
         // Mã SV chỉ khóa khi ĐÃ có mã; chưa có thì cho nhập một lần duy nhất
         const isDisabled =
-          key === "fullName" || (key === "studentCode" && isCodeAlreadySaved);
+          key === "fullName" || key === "gender" || (key === "studentCode" && isCodeAlreadySaved);
 
         return (
           <div
@@ -52,6 +53,13 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved, hasSavedGende
                 placeholder={`Nhập ${FIELD_LABELS[key]?.toLowerCase() || key}...`}
                 className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! resize-none transition-all placeholder:font-medium placeholder:text-text-muted/60"
               />
+            ) : key === "gender" ? (
+              <input
+                type="text"
+                value={meta.options?.find((option) => option.value === values[key])?.label || ""}
+                disabled
+                className="w-full border-3 border-line-strong rounded-sm px-4 py-3 text-sm font-bold text-text-muted bg-surface-2 shadow-none cursor-not-allowed"
+              />
             ) : meta.options ? (
               <CustomSelect
                 value={values[key] ?? ""}
@@ -70,19 +78,19 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved, hasSavedGende
               />
             ) : (
               <input
-                required={!["description", "note"].includes(key)}
+                required={!["description", "note", "cic"].includes(key)}
                 type={meta.type || "text"}
                 min={meta.min}
                 max={meta.max}
-                maxLength={key === "studentCode" ? 8 : undefined}
-                inputMode={key === "studentCode" ? "numeric" : undefined}
-                pattern={key === "studentCode" ? "[0-9]{8}" : undefined}
+                maxLength={key === "studentCode" ? 8 : key === "cic" ? 12 : undefined}
+                inputMode={["studentCode", "cic"].includes(key) ? "numeric" : undefined}
+                pattern={key === "studentCode" ? "[0-9]{8}" : key === "cic" ? "[0-9]{12}" : undefined}
                 value={values[key] ?? ""}
                 onChange={(e) =>
                   onChange(
                     key,
-                    key === "studentCode"
-                      ? e.target.value.replace(/\D/g, "").slice(0, 8)
+                    ["studentCode", "cic"].includes(key)
+                      ? e.target.value.replace(/\D/g, "").slice(0, key === "cic" ? 12 : 8)
                       : e.target.value,
                   )
                 }
@@ -102,16 +110,18 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved, hasSavedGende
  * Component ProfileScreen - Màn hình cập nhật hồ sơ cá nhân
  */
 export default function ProfileScreen({ config }) {
-  const { data, loading, reload } = useLoad(config.resource, {});
+  const { data, loading } = useLoad(config.resource, {});
 
   const [values, setValues] = useState({});
+  const [savedProfile, setSavedProfile] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const currentValues = { ...(data || {}), ...values };
-  const isCodeAlreadySaved = Boolean(data?.studentCode);
+  const currentValues = { ...(savedProfile || data || {}), ...values };
+  const isCodeAlreadySaved = Boolean((savedProfile || data)?.studentCode);
   const names = [
     "fullName",
     "studentCode",
+    "cic",
     "phone",
     "gender",
     "dateOfBirth",
@@ -133,8 +143,8 @@ export default function ProfileScreen({ config }) {
       // Chỉ gửi các fields backend chấp nhận
       const allowedFields = [
         "studentCode",
+        "cic",
         "phone",
-        "gender",
         "dateOfBirth",
         "address",
         "avatarUrl",
@@ -147,12 +157,14 @@ export default function ProfileScreen({ config }) {
         body[key] = val;
       });
 
-      await api(config.resource, {
+      const updatedProfile = await api(config.resource, {
         method: "PATCH",
         body,
       });
 
-      reload();
+      setSavedProfile(updatedProfile);
+      setValues({});
+      toast.success("Lưu hồ sơ thành công!");
     } catch {
       // API client reports request failures globally.
     } finally {

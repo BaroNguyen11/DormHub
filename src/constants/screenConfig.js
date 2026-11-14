@@ -270,6 +270,26 @@ export const screens = {
     // trước đây ghi "paymentResult" nên rơi vào default (Unknown screen type).
     type: "payment-result",
   },
+  "/student/payments": {
+    title: "Lịch sử thanh toán",
+    group: "student",
+    type: "payment-history",
+  },
+  "/student/payments/:id": {
+    title: "Chi tiết lần thanh toán",
+    group: "student",
+    type: "payment-history-detail",
+  },
+  "/manager/notifications/history": {
+    title: "Lịch sử thông báo",
+    group: "manager",
+    type: "manager-notification-history",
+  },
+  "/manager/notifications/history/:id": {
+    title: "Chi tiết thông báo đã gửi",
+    group: "manager",
+    type: "manager-notification-detail",
+  },
   "/student/maintenance": {
     title: "Báo hỏng",
     group: "student",
@@ -617,6 +637,17 @@ export const screens = {
         confirm: true,
         visibleWhen: { status: "UNMATCHED" },
       },
+      {
+        label: "Ghi chú rà soát",
+        suffix: "/review",
+        method: "POST",
+        promptField: "note",
+        promptLabel: "Kết quả kiểm tra và bằng chứng",
+        promptRequired: true,
+        promptMultiline: true,
+        promptMaxLength: 200,
+        visibleWhen: { status: "REVIEW_REQUIRED" },
+      },
     ],
   },
   "/manager/maintenance": {
@@ -675,6 +706,17 @@ export const screens = {
     notificationForm: true,
     defaultValues: { buildingId: null },
   },
+  "/manager/students/new": {
+    title: "Tạo tài khoản sinh viên",
+    group: "manager",
+    type: "form",
+    resource: "/auth/register",
+    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode", "gender"],
+    fieldConfig: { gender: { options: [{ label: "Nam", value: "MALE" }, { label: "Nữ", value: "FEMALE" }] } },
+    fixedFields: { role: "STUDENT" },
+    successMessage: "Tài khoản đã được tạo. Sinh viên có thể chủ động yêu cầu OTP để kích hoạt.",
+  },
+
   // ===== MANAGER RENEWAL REQUESTS =====
   "/manager/renewal-requests": {
     title: "Quản lý gia hạn",
@@ -887,7 +929,7 @@ for (const [path, title] of [
   screens[path] = { ...(path.endsWith("/list") ? screens[path.replace(/\/list$/, "")] : {}), title, group: "manager", type: path.endsWith("/list") ? "list" : "custom" };
 }
 
-import { Home, Building2, Receipt, Wrench, User, LayoutDashboard, Users, FileCheck2 } from "lucide-react";
+import { Home, Building2, Receipt, Wrench, User, LayoutDashboard, Users, FileCheck2, Send, Bell } from "lucide-react";
 
 export const nav = {
   // Guest: có thể xem trang chủ và tìm phòng (không cần đăng nhập)
@@ -900,6 +942,7 @@ export const nav = {
     ["Tổng quan", "/student", Home],
     ["Chỗ ở & Hợp đồng", "/student/residence", Building2],
     ["Hóa đơn", "/student/invoices", Receipt],
+    ["Lịch sử thanh toán", "/student/payments", Receipt],
     ["Báo hỏng", "/student/maintenance", Wrench],
     ["Tài khoản", "/student/profile", User],
   ],
@@ -908,6 +951,7 @@ export const nav = {
   studentNoRoom: [
     ["Tìm phòng", "/student/rooms", Home],
     ["Đơn đăng ký", "/student/applications", Receipt],
+    ["Lịch sử thanh toán", "/student/payments", Receipt],
     ["Tài khoản", "/student/profile", User],
   ],
   manager: [
@@ -917,6 +961,8 @@ export const nav = {
     ["Hợp đồng & Thủ tục", "/manager/contracts", FileCheck2],
     ["Tài chính & SePay", "/manager/finance", Receipt],
     ["Vận hành & Hỗ trợ", "/manager/maintenance", Wrench],
+    ["Gửi thông báo", "/send-to-students", Send],
+    ["Lịch sử thông báo", "/manager/notifications/history", Bell],
   ],
 };
 
@@ -930,6 +976,7 @@ export const STUDENT_NO_ROOM_ALLOWED = [
   "/student/applications",
   "/student/profile",
   "/student/invoices",
+  "/student/payments",
   "/student/contracts",
   "/student/notifications",
   "/change-password",
