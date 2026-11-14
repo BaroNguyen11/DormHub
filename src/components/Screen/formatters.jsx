@@ -49,6 +49,17 @@ function isMoneyField(fieldName) {
  * 8. Default -> convert sang string
  */
 export function formatValue(fieldName, value) {
+  if (fieldName === "accountStatus") {
+    return value === "NO_ACCOUNT"
+      ? "Chưa có tài khoản"
+      : value === "ACTIVE"
+        ? "Đã có tài khoản (Đang hoạt động)"
+        : value === "LOCKED"
+          ? "Đã có tài khoản (Đã khóa)"
+          : value === "PENDING_VERIFICATION"
+            ? "Đã có tài khoản (Chờ xác thực)"
+            : "—";
+  }
   // 1. Xử lý null hoặc empty string
   if (value == null || value === "") {
     return "—";

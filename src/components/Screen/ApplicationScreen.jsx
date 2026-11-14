@@ -28,6 +28,9 @@ const getCachedStudentProfile = (user) =>
     ? user
     : null);
 
+const getRoomMonthlyPrice = (room) =>
+  room?.pricePerMonth ?? room?.monthlyPrice ?? room?.price;
+
 const isProfileComplete = (profile) =>
   Boolean(
     profile?.studentCode &&
@@ -332,7 +335,7 @@ export default function ApplicationScreen({ config }) {
                           selectedRoom.building?.name}
                       </div>
                       <div className="text-xs font-bold text-text-muted mt-1">
-                        {money(selectedRoom.monthlyPrice)} / tháng •{" "}
+                        {money(getRoomMonthlyPrice(selectedRoom))} / tháng •{" "}
                         {selectedRoom.availableSlots ?? 0} chỗ trống
                       </div>
                     </div>
@@ -395,7 +398,7 @@ export default function ApplicationScreen({ config }) {
                             Giá thuê tháng:
                           </span>
                           <span className="text-base font-black text-text">
-                            {money(room.monthlyPrice)} / tháng
+                            {money(getRoomMonthlyPrice(room))} / tháng
                           </span>
                         </div>
                       </label>
@@ -471,7 +474,7 @@ export default function ApplicationScreen({ config }) {
                       Giá thuê niêm yết:
                     </span>
                     <strong className="text-base font-black text-text">
-                      {selectedRoom ? money(selectedRoom.monthlyPrice) : "---"}
+                      {selectedRoom ? money(getRoomMonthlyPrice(selectedRoom)) : "---"}
                     </strong>
                   </div>
                 </div>

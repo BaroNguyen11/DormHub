@@ -95,7 +95,7 @@ export function Loading() {
  */
 export function AuthLoading({ text = "Đang xác thực phiên đăng nhập…" }) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-surface/50 p-4">
+    <div className="min-h-screen z-9999 w-full flex items-center justify-center bg-surface/50 p-4">
       <div className="rounded-sm p-6 sm:p-8 flex flex-col items-center justify-center gap-4  w-full text-center">
         {/* Badge Icon với Spinner */}
         <div className="relative">

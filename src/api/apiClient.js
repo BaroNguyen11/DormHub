@@ -33,24 +33,26 @@ export class ApiError extends Error {
 }
 
 function formatValidationErrors(payload) {
-  const value = payload?.errors ?? payload?.message;
-  if (Array.isArray(value)) {
-    return value
-      .map((item) =>
-        typeof item === "string"
-          ? item
-          : item?.message || item?.defaultMessage || item?.error,
-      )
-      .filter(Boolean)
-      .join(" · ");
-  }
-  if (value && typeof value === "object") {
-    return Object.values(value)
-      .flatMap((item) => (Array.isArray(item) ? item : [item]))
-      .filter((item) => typeof item === "string" && item.trim())
-      .join(" · ");
-  }
-  return typeof value === "string" ? value : "";
+  const dataErrors = payload?.data?.errors ?? payload?.data;
+  const value = payload?.errors ?? dataErrors ?? payload?.message;
+  const messages = [];
+  const collect = (item) => {
+    if (typeof item === "string" && item.trim()) {
+      messages.push(item.trim());
+      return;
+    }
+    if (Array.isArray(item)) {
+      item.forEach(collect);
+      return;
+    }
+    if (item && typeof item === "object") {
+      const message = item.message || item.defaultMessage || item.error;
+      if (message) collect(message);
+      else Object.values(item).forEach(collect);
+    }
+  };
+  collect(value);
+  return [...new Set(messages)].join(" · ");
 }
 
 function clearLocalAuthTokens() {
@@ -71,9 +73,71 @@ function clearLocalAuthTokens() {
   }
 }
 
-function notifyApiError(error, path) {
+function mutationDescription(path, method) {
+  const cleanPath = path.split("?")[0];
+  if (cleanPath.endsWith("/account")) return "cấp tài khoản cho sinh viên";
+  if (cleanPath.endsWith("/status") && cleanPath.includes("/students")) return "cập nhật trạng thái tài khoản sinh viên";
+  const objectName = cleanPath.includes("/students") ? "sinh viên" :
+    cleanPath.includes("/student/profile") ? "hồ sơ sinh viên" :
+    cleanPath.includes("/invoices") ? "hóa đơn" :
+    cleanPath.includes("/rooms") ? "phòng" :
+    cleanPath.includes("/contracts") ? "hợp đồng" :
+    cleanPath.includes("/dorm-applications") ? "đơn đăng ký nội trú" :
+    cleanPath.includes("/maintenance") ? "yêu cầu sửa chữa" :
+    cleanPath.includes("/notifications") ? "thông báo" :
+    cleanPath.includes("/renewal") ? "yêu cầu gia hạn" :
+    cleanPath.includes("/room-transfer") ? "yêu cầu chuyển phòng" :
+    cleanPath.includes("/checkout") ? "yêu cầu trả phòng" :
+    cleanPath.includes("/buildings") ? "tòa nhà" : "dữ liệu";
+  const verb = method === "DELETE" ? "xóa" : method === "PUT" ? "lưu thay đổi" : "cập nhật";
+  return `${verb} ${objectName}`;
+}
+
+function isGenericMutationMessage(message) {
+  const normalized = String(message || "").trim().replace(/[.!]+$/, "");
+  if (/^(thành công|đã xảy ra lỗi|thao tác thất bại)$/i.test(normalized)) return true;
+  const namesAnObject = /(sinh viên|hồ sơ|hóa đơn|phòng|hợp đồng|đơn|yêu cầu|thông báo|tòa nhà|email|tài khoản|mật khẩu|hóa đơn|#\d+)/i.test(normalized);
+  return !namesAnObject && /^(đã )?(cập nhật|lưu|đã lưu|xóa|đã xóa|thay đổi|thực hiện)( .*?)?( thành công)?$/i.test(normalized);
+}
+
+function notifyApiError(error, path, method = "GET") {
   const status = error?.status;
   const authPath = path.split("?")[0].replace(/\/$/, "");
+  const normalizedMethod = String(method).toUpperCase();
+  const isMutation = ["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
+    (normalizedMethod === "POST" && path.split("?")[0].endsWith("/account"));
+  const mutation = mutationDescription(path, normalizedMethod);
+  const validationReason = formatValidationErrors(error?.details);
+  const backendReason = validationReason && !isGenericMutationMessage(validationReason)
+    ? validationReason
+    : error?.details?.message || validationReason;
+  if (isMutation && backendReason && !isGenericMutationMessage(backendReason) && status !== 401 && status !== 403) {
+    const alreadyContextual = /không thể .* (sinh viên|hóa đơn|phòng|hợp đồng|đơn đăng ký|yêu cầu|thông báo|tòa nhà)/i.test(backendReason);
+    toast.error(backendReason.startsWith("Lỗi:") || alreadyContextual
+      ? backendReason
+      : `Lỗi: Không thể ${mutation}: ${backendReason}`);
+    return;
+  }
+  if (isMutation && status !== 401 && status !== 403) {
+    const validationReason = status === 400 ? ": dữ liệu gửi lên không hợp lệ" : "";
+    toast.error(`Lỗi: Không thể ${mutation}${validationReason}${status ? ` (HTTP ${status})` : ": không thể kết nối Backend"}.`);
+    return;
+  }
+  if (isMutation && status === 403) {
+    toast.error(`Lỗi: Không thể ${mutation}: bạn không có quyền thực hiện thao tác này.`);
+    return;
+  }
+  if (isMutation && status === 401) {
+    toast.error(`Lỗi: Không thể ${mutation}: phiên đăng nhập đã hết hạn.`);
+    if (typeof window !== "undefined") {
+      clearLocalAuthTokens();
+      if (!redirectingToLogin && window.location.pathname !== "/login") {
+        redirectingToLogin = true;
+        window.location.assign("/login");
+      }
+    }
+    return;
+  }
   if (status === 0 || !status) {
     toast.error(
       "Không thể kết nối với Backend. Vui lòng kiểm tra lại dịch vụ Server!",
@@ -236,6 +300,8 @@ export async function api(
     signal,
     retry = true,
     notify = true,
+    successNotify = true,
+    includeResponse = false,
     successMessage,
   } = {},
 ) {
@@ -279,7 +345,7 @@ export async function api(
       const csrfToken = await ensureCsrfToken();
       requestHeaders[CSRF_HEADER_NAME] = csrfToken;
     } catch (error) {
-      if (notify) notifyApiError(error, normalizedPath);
+      if (notify) notifyApiError(error, normalizedPath, normalizedMethod);
       throw error;
     }
   }
@@ -301,7 +367,7 @@ export async function api(
       0,
       error,
     );
-    if (notify) notifyApiError(apiError, normalizedPath);
+    if (notify) notifyApiError(apiError, normalizedPath, normalizedMethod);
     throw apiError;
   }
 
@@ -318,6 +384,8 @@ export async function api(
         signal,
         retry: false,
         notify,
+        successNotify,
+        includeResponse,
         successMessage,
       });
     } catch (refreshError) {
@@ -341,22 +409,29 @@ export async function api(
       response.status,
       data,
     );
-    if (notify) notifyApiError(apiError, normalizedPath);
+    if (notify) notifyApiError(apiError, normalizedPath, normalizedMethod);
     throw apiError;
   }
 
-  // if (
-  //   notify &&
-  //   response.ok &&
-  //   ((successMessage && [200, 201, 204].includes(response.status)) ||
-  //     ([200, 201].includes(response.status) && data?.message))
-  // ) {
-  //   toast.success(successMessage || data.message);
-  // }
+  if (notify && successNotify && (["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
+    (normalizedMethod === "POST" && normalizedPath.endsWith("/account")))) {
+    const message = data?.message;
+    const generic = !message || isGenericMutationMessage(message);
+    if ((successMessage && !isGenericMutationMessage(successMessage)) || !generic) {
+      toast.success(
+        successMessage && !isGenericMutationMessage(successMessage)
+          ? successMessage
+          : message,
+      );
+    } else {
+      toast.success(`Đã ${mutationDescription(normalizedPath, normalizedMethod)} thành công.`);
+    }
+  }
   if (normalizedPath === "/auth/login" && response.ok)
     redirectingToLogin = false;
 
-  return unwrapResponse(data);
+  const unwrapped = unwrapResponse(data);
+  return includeResponse ? { data: unwrapped, message: data?.message } : unwrapped;
 }
 
 export const queryString = (values) => {

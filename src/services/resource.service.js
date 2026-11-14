@@ -22,8 +22,8 @@ function getResource(path, id) {
 export const resources = {
   list: (path, params = {}) => getOnce(`${path}${queryString(params)}`),
   get: getResource,
-  create: (path, body) => api(path, { method: "POST", body }),
+  create: (path, body, options = {}) => api(path, { method: "POST", body, ...options }),
   update: (path, id, body, method = "PATCH") =>
     api(`${path}/${encodeURIComponent(id)}`, { method, body }),
-  action: (path, method = "POST", body) => api(path, { method, body }),
+  action: (path, method = "POST", body, options = {}) => api(path, { method, body, ...options }),
 };

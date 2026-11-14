@@ -21,7 +21,7 @@ import { STATUS_LABELS } from "../../constants/status";
 import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { CustomSelect } from "../ui/CustomSelect";
 
-export default function ListScreen({ config }) {
+export default function ListScreen({ config, onAccountAction }) {
   const location = useLocation();
 
   const [search, setSearch] = useState("");
@@ -40,7 +40,9 @@ export default function ListScreen({ config }) {
   const { data, error, loading, reload } = useLoad(config.resource, {
     page,
     size: pageSize,
-    ...(debouncedSearch ? { [config.searchParam || "search"]: debouncedSearch } : {}),
+    ...(debouncedSearch
+      ? { [config.searchParam || "search"]: debouncedSearch }
+      : {}),
     ...(status ? { status } : {}),
   });
   const rows = asList(data);
@@ -53,7 +55,9 @@ export default function ListScreen({ config }) {
       return;
     }
 
-    setBusy(String(row.id || row.invoiceId || row.contractId || row.assignmentId));
+    setBusy(
+      String(row.id || row.invoiceId || row.contractId || row.assignmentId),
+    );
     setActionError("");
     setSuccess("");
 
@@ -148,7 +152,9 @@ export default function ListScreen({ config }) {
                         {key === "status" &&
                         typeof getNestedValue(row, key) === "string" ? (
                           config.resource === "/manager/maintenance" ? (
-                            <MaintenanceStatusBadge status={getNestedValue(row, key)} />
+                            <MaintenanceStatusBadge
+                              status={getNestedValue(row, key)}
+                            />
                           ) : (
                             <StatusBadge status={getNestedValue(row, key)} />
                           )
@@ -162,57 +168,106 @@ export default function ListScreen({ config }) {
                     <td className="px-4 py-3.5 text-sm text-right whitespace-nowrap">
                       <div className="inline-flex items-center justify-end gap-2">
                         {/* Link Chi tiết */}
-                        {config.detail && (() => {
-                          const rowId = config.idField
-                            ? row[config.idField]
-                            : row.id ||
-                              row.invoiceId ||
-                              row.contractId ||
-                              row.assignmentId;
-                          return (
-                            <Link to={`${config.detail}/${rowId}`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"><Eye size={14} strokeWidth={2.5} />Chi tiết</Link>
-                          );
-                        })()}
+                        {config.detail &&
+                          (() => {
+                            const rowId = config.idField
+                              ? row[config.idField]
+                              : row.id ||
+                                row.invoiceId ||
+                                row.contractId ||
+                                row.assignmentId;
+                            return (
+                              <Link
+                                to={`${config.detail}/${rowId}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:bg-primary hover:-translate-0.5 active:translate-0 active:shadow-none transition-all"
+                              >
+                                <Eye size={14} strokeWidth={2.5} />
+                                <span>Chi tiết</span>
+                              </Link>
+                            );
+                          })()}
 
                         {/* Action Buttons */}
-                        {config.actions?.filter((action) => {
-                          const rowStatus = String(row?.status || "").toUpperCase();
-                          if (typeof action.visibleWhen === "function") {
-                            if (!action.visibleWhen(row)) return false;
-                          }
-                          if (action.visibleWhen && typeof action.visibleWhen === "object") {
-                            const matches = Object.entries(action.visibleWhen).every(
-                              ([field, value]) => String(row?.[field] ?? "") === String(value),
+                        {config.actions
+                          ?.filter((action) => {
+                            const rowStatus = String(
+                              row?.status || "",
+                            ).toUpperCase();
+                            if (typeof action.visibleWhen === "function") {
+                              if (!action.visibleWhen(row)) return false;
+                            }
+                            if (
+                              action.visibleWhen &&
+                              typeof action.visibleWhen === "object"
+                            ) {
+                              const matches = Object.entries(
+                                action.visibleWhen,
+                              ).every(
+                                ([field, value]) =>
+                                  String(row?.[field] ?? "") === String(value),
+                              );
+                              if (!matches) return false;
+                            }
+                            const terminal = [
+                              "APPROVED",
+                              "REJECTED",
+                              "CANCELLED",
+                              "COMPLETED",
+                              "RESOLVED",
+                              "DONE",
+                              "PAID",
+                              "LOCKED",
+                            ].includes(rowStatus);
+                            const changesState = Boolean(
+                              action.body?.status ||
+                              action.bodyBuilder ||
+                              action.promptField ||
+                              action.reason ||
+                              action.room,
                             );
-                            if (!matches) return false;
-                          }
-                          const terminal = [
-                            "APPROVED", "REJECTED", "CANCELLED", "COMPLETED",
-                            "RESOLVED", "DONE", "PAID", "LOCKED",
-                          ].includes(rowStatus);
-                          const changesState = Boolean(
-                            action.body?.status || action.bodyBuilder ||
-                            action.promptField || action.reason || action.room,
-                          );
-                          return !(terminal && changesState);
-                        }).map((action) => (
-                          <button
-                            key={action.label}
-                            disabled={busy === String(row.id || row.invoiceId || row.contractId || row.assignmentId)}
-                            onClick={() => doAction(row, action)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-                          >
-                            {action.label}
-                          </button>
-                        ))}
+                            return !(terminal && changesState);
+                          })
+                          .map((action) => (
+                            <button
+                              key={action.label}
+                              disabled={
+                                busy ===
+                                String(
+                                  row.id ||
+                                    row.invoiceId ||
+                                    row.contractId ||
+                                    row.assignmentId,
+                                )
+                              }
+                              onClick={() => doAction(row, action)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            >
+                              {action.label}
+                            </button>
+                          ))}
+
+                        {config.accountAction &&
+                          row.accountStatus === "NO_ACCOUNT" && (
+                            <button
+                              type="button"
+                              onClick={() => onAccountAction?.(row)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-black font-extrabold! text-xs! rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413]  hover:-translate-0.5 active:translate-0 active:shadow-none transition-all"
+                            >
+                              Cấp tài khoản
+                            </button>
+                          )}
 
                         {/* Public Actions for Guest (redirect to login) */}
                         {config.publicActions?.map((action) => {
-                          const rowId = row.id || row.invoiceId || row.contractId || row.assignmentId;
+                          const rowId =
+                            row.id ||
+                            row.invoiceId ||
+                            row.contractId ||
+                            row.assignmentId;
                           return (
                             <Link
                               key={action.label}
-                              to={`${action.redirect}?redirect=${encodeURIComponent(location.pathname + '/' + rowId)}`}
+                              to={`${action.redirect}?redirect=${encodeURIComponent(location.pathname + "/" + rowId)}`}
                               className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-[#000000] font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
                             >
                               {action.label}
@@ -246,13 +301,35 @@ export default function ListScreen({ config }) {
       {confirmAction && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="box-border w-[480px] max-w-[95vw] bg-surface border-3 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413]">
-            <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">Xác nhận thao tác?</h3>
+            <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">
+              Xác nhận thao tác?
+            </h3>
             <p className="w-full block leading-normal text-sm font-bold text-text-muted mb-6">
-              {confirmAction.action.label} cho mục #{confirmAction.row.id || confirmAction.row.title || confirmAction.row.invoiceId || confirmAction.row.contractId}?
+              {confirmAction.action.label} cho mục #
+              {confirmAction.row.id ||
+                confirmAction.row.title ||
+                confirmAction.row.invoiceId ||
+                confirmAction.row.contractId}
+              ?
             </p>
             <div className="flex items-center justify-end gap-3">
-              <button type="button" onClick={() => setConfirmAction(null)} className="px-4 h-10 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 transition-all cursor-pointer outline-none!">Hủy bỏ</button>
-              <button type="button" disabled={Boolean(busy)} onClick={() => void doAction(confirmAction.row, confirmAction.action, true)} className="px-4 h-10 border-3 border-line-strong rounded-sm font-black bg-primary text-black shadow-[3px_3px_0_#141413] transition-all cursor-pointer outline-none! disabled:opacity-50">Xác nhận</button>
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="px-4 h-10 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 transition-all cursor-pointer outline-none!"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(busy)}
+                onClick={() =>
+                  void doAction(confirmAction.row, confirmAction.action, true)
+                }
+                className="px-4 h-10 border-3 border-line-strong rounded-sm font-black bg-primary text-black shadow-[3px_3px_0_#141413] transition-all cursor-pointer outline-none! disabled:opacity-50"
+              >
+                Xác nhận
+              </button>
             </div>
           </div>
         </div>

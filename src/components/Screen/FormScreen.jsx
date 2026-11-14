@@ -558,7 +558,12 @@ export default function FormScreen({ config }) {
             config.updateMethod || "PATCH",
           );
       } else {
-        await resources.create(config.resource, payload);
+        const isStudentRegistration = config.resource === "/auth/register";
+        await resources.create(
+          config.resource,
+          payload,
+          isStudentRegistration ? { successNotify: false } : undefined,
+        );
       }
 
       if (config.notificationForm) {
@@ -568,6 +573,12 @@ export default function FormScreen({ config }) {
         toast.success(config.successMessage);
         setValues(config.defaultValues || {});
       } else {
+        if (!config.edit && config.resource === "/auth/register") {
+          toast.success(
+            config.successMessage ||
+              "Tạo tài khoản sinh viên thành công. Sinh viên cần yêu cầu OTP để xác minh email.",
+          );
+        }
         navigate(
           config.edit
             ? location.pathname.replace(/\/edit$/, "")

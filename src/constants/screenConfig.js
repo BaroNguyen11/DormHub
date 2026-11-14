@@ -474,11 +474,12 @@ export const screens = {
     group: "manager",
     type: "list",
     resource: "/manager/students",
-    columns: ["id", "fullName", "studentCode", "email", "phone", "status"],
+    columns: ["studentId", "fullName", "studentCode", "email", "phone", "accountStatus", "status"],
     detail: "/manager/residents",
     search: true,
     idField: "studentId",
     searchParam: "name",
+    accountAction: true,
   },
   "/manager/residents/:id": {
     title: "Chi tiết sinh viên",
