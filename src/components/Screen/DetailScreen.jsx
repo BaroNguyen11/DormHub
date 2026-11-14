@@ -36,7 +36,6 @@ export default function DetailScreen({ config }) {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null });
   const [pendingConfirmAction, setPendingConfirmAction] = useState(null);
   const [pendingInput, setPendingInput] = useState(null);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const path = config.single
     ? config.resource
@@ -394,21 +393,22 @@ export default function DetailScreen({ config }) {
                   <dd className="sm:col-span-8 text-sm font-black text-text wrap-break-word m-0">
                     {isMaintenanceDetail && key === "imageUrl" ? (
                       value ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsImageModalOpen(true)}
-                          aria-label="Xem ảnh đính kèm"
-                          className="relative group cursor-pointer inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none!"
+                        <a
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới"
+                          className="relative group inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none!"
                         >
                           <img
                             src={value}
                             alt="Ảnh đính kèm báo hỏng"
-                            className="w-48 h-32 object-cover block"
+                            className="size-[120px] object-cover block"
                           />
                           <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-black text-xs px-2 py-1 rounded-xs border border-white opacity-0 group-hover:opacity-100 transition-all">
                             <Eye size={15} className="mr-1" /> Xem ảnh gốc
                           </span>
-                        </button>
+                        </a>
                       ) : (
                         <span className="text-text-muted font-bold">
                           Không có ảnh đính kèm
@@ -615,31 +615,6 @@ export default function DetailScreen({ config }) {
         </div>
       )}
 
-      {isMaintenanceDetail && isImageModalOpen && data?.imageUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 cursor-zoom-out"
-          onClick={() => setIsImageModalOpen(false)}
-        >
-          <div
-            className="relative box-border w-[960px] max-w-[95vw] max-h-[90vh] bg-surface border-4 border-line-strong rounded-sm p-2 shadow-[8px_8px_0_#000] cursor-default"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              aria-label="Đóng ảnh"
-              onClick={() => setIsImageModalOpen(false)}
-              className="absolute -top-4 -right-4 size-10 bg-error text-white font-black rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center justify-center hover:scale-110 cursor-pointer z-10 outline-none! transition-all"
-            >
-              ✕
-            </button>
-            <img
-              src={data.imageUrl}
-              alt="Hình ảnh sự cố"
-              className="w-full max-h-[82vh] object-contain rounded-xs"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
