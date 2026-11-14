@@ -9,11 +9,12 @@ import { Loading, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { CustomSelect } from "../ui/CustomSelect";
 import { CustomDatePicker } from "../ui/CustomDatePicker";
+import { toast } from "sonner";
 
 /**
  * Component FormFields - Render các input fields chuẩn Neo-Brutalism
  */
-function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
+function FormFields({ names, values, onChange, isCodeAlreadySaved, hasSavedGender }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {names.map((key) => {
@@ -55,6 +56,8 @@ function FormFields({ names, values, onChange, isCodeAlreadySaved }) {
               <CustomSelect
                 value={values[key] ?? ""}
                 options={meta.options}
+                required={key === "gender"}
+                disabled={key === "gender" && hasSavedGender}
                 placeholder={`-- Chọn ${FIELD_LABELS[key]?.toLowerCase() || key} --`}
                 onChange={(val) => onChange(key, val)}
               />
@@ -120,6 +123,10 @@ export default function ProfileScreen({ config }) {
 
   async function submit(e) {
     e.preventDefault();
+    if (names.includes("gender") && !["MALE", "FEMALE"].includes(currentValues.gender)) {
+      toast.error("Vui lòng chọn giới tính Nam hoặc Nữ để tiếp tục.");
+      return;
+    }
     setBusy(true);
 
     try {
@@ -187,6 +194,7 @@ export default function ProfileScreen({ config }) {
                 names={names}
                 values={currentValues}
                 isCodeAlreadySaved={isCodeAlreadySaved}
+                hasSavedGender={Boolean(data?.gender)}
                 onChange={(key, value) =>
                   setValues((prev) => ({ ...prev, [key]: value }))
                 }

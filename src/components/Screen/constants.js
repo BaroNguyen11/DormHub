@@ -111,6 +111,7 @@ export const FIELD_LABELS = {
   note: "Ghi chú",
   reviewNote: "Ghi chú duyệt",
   studentId: "Mã sinh viên",
+  accountStatus: "Tài khoản",
   studentGender: "Giới tính SV",
 
   // Checkout requests (Trả phòng)
@@ -212,8 +213,7 @@ export const FIELD_CONFIGS = {
   gender: {
     options: [
       { label: "Nam", value: "MALE" },
-      { label: "Nữ", value: "FEMALE" }, 
-      { label: "Khác", value: "OTHER" }, 
+      { label: "Nữ", value: "FEMALE" },
     ],
   },
   role: { options: ["STUDENT", "MANAGER"] },

@@ -454,11 +454,12 @@ export const screens = {
     group: "manager",
     type: "list",
     resource: "/manager/students",
-    columns: ["id", "fullName", "studentCode", "email", "phone", "status"],
+    columns: ["studentId", "fullName", "studentCode", "email", "phone", "accountStatus", "status"],
     detail: "/manager/residents",
     search: true,
     idField: "studentId",
     searchParam: "name",
+    accountAction: true,
   },
   "/manager/residents/:id": {
     title: "Chi tiết sinh viên",
@@ -674,16 +675,6 @@ export const screens = {
     notificationForm: true,
     defaultValues: { buildingId: null },
   },
-  "/manager/students/new": {
-    title: "Tạo tài khoản sinh viên",
-    group: "manager",
-    type: "form",
-    resource: "/auth/register",
-    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode"],
-    fixedFields: { role: "STUDENT" },
-    successMessage: "Tài khoản đã được tạo. OTP đã gửi tới email sinh viên để xác thực.",
-  },
-
   // ===== MANAGER RENEWAL REQUESTS =====
   "/manager/renewal-requests": {
     title: "Quản lý gia hạn",

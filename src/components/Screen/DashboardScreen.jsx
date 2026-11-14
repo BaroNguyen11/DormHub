@@ -274,7 +274,11 @@ function ManagerAnalytics({ data, loading, error, reload }) {
   useEffect(() => {
     let active = true;
     Promise.allSettled([
-      resources.list("/manager/dorm-applications", { page: 0, size: 100 }),
+      resources.list("/manager/dorm-applications", {
+        status: "PENDING",
+        page: 0,
+        size: 100,
+      }),
       resources.list("/manager/maintenance", { page: 0, size: 100 }),
       resources.list("/invoices", { page: 0, size: 100 }),
     ]).then(([appsResult, issuesResult, invoicesResult]) => {
@@ -429,7 +433,7 @@ function ManagerAnalytics({ data, loading, error, reload }) {
   const quickActions = [
     [
       "+ Tạo tài khoản SV",
-      "/manager/students?tab=create",
+      "/manager/students",
       UserPlus,
       "bg-primary",
     ],
@@ -615,6 +619,12 @@ function ManagerAnalytics({ data, loading, error, reload }) {
                     {item.requestedRoomNumber || item.roomNumber || "Chưa chọn"}{" "}
                     · {item.status || "Mới"}
                   </span>
+                  <Link
+                    to={`/manager/applications/${item.id}`}
+                    className="mt-2 inline-flex text-xs font-black text-primary underline underline-offset-2"
+                  >
+                    Mở đơn để duyệt
+                  </Link>
                 </>
               )}
             />

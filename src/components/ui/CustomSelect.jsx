@@ -20,6 +20,7 @@ export function CustomSelect({
   options = [],
   placeholder = "Chọn...",
   required,
+  disabled = false,
   className,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,12 +61,13 @@ export function CustomSelect({
       {/* Nút bấm Kích hoạt Dropdown */}
       <button
         type="button"
+        disabled={disabled}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all cursor-pointer"
+        className="w-full flex items-center justify-between border-3 border-line-strong rounded-sm px-4 py-2.5 text-sm! font-extrabold text-text bg-surface shadow-[3px_3px_0_#141413] hover:shadow-[4px_4px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span
           className={
@@ -86,7 +88,7 @@ export function CustomSelect({
       </button>
 
       {/* Popover danh sách Lựa chọn */}
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 bg-surface border-3 border-line-strong rounded-sm shadow-[4px_4px_0_#141413] py-1 max-h-60 overflow-y-auto">
           {normalizedOptions.map((opt) => {
             const isSelected = value === opt.value;
