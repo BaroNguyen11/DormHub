@@ -21,6 +21,102 @@ import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { toast } from "sonner";
+import { asList } from "../../api/apiClient";
+
+function DetailTile({ field, value }) {
+  return (
+    <div className="min-w-0 rounded-sm border-2 border-line-strong/15 bg-surface-2 p-4">
+      <dt className="text-[11px] font-extrabold uppercase tracking-wider text-text-muted">
+        {FIELD_LABELS[field] || field}
+      </dt>
+      <dd className="mt-1.5 break-words text-sm font-black text-text">
+        {field === "imageUrl" && typeof value === "string" ? (
+          <a href={value} target="_blank" rel="noopener noreferrer" aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới" className="relative group inline-block overflow-hidden rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413]">
+            <img src={value} alt="Ảnh đính kèm" className="size-[120px] object-cover" />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-black text-white opacity-0 transition group-hover:opacity-100">Xem ảnh gốc</span>
+          </a>
+        ) : field === "status" && typeof value === "string" ? (
+          <StatusBadge status={value} />
+        ) : (
+          formatValue(field, value)
+        )}
+      </dd>
+    </div>
+  );
+}
+
+const MANAGER_DETAIL_SECTIONS = {
+  "/manager/students": [
+    { title: "Thông tin định danh", fields: ["fullName", "studentCode", "dateOfBirth", "gender", "cic"] },
+    { title: "Thông tin liên hệ", fields: ["email", "phone", "address"] },
+    { title: "Tài khoản", fields: ["username", "accountStatus"] },
+  ],
+  "/contracts": [
+    { title: "Người thuê và chỗ ở", fields: ["studentName", "studentCode", "roomNumber", "buildingName"] },
+    { title: "Thời hạn và chi phí", fields: ["startDate", "endDate", "monthlyRent", "depositAmount"] },
+    { title: "Trạng thái hợp đồng", fields: ["status", "depositStatus", "assignmentStatus"] },
+    { title: "Ghi chú", fields: ["description", "createdAt", "updatedAt"] },
+  ],
+  "/invoices": [
+    { title: "Đối tượng hóa đơn", fields: ["invoiceType", "studentName", "roomNumber", "buildingName", "billingMonth"] },
+    { title: "Thanh toán", fields: ["totalAmount", "status", "overdue", "issueDate", "dueDate"] },
+  ],
+  "/manager/sepay-transactions": [
+    { title: "Thông tin giao dịch", fields: ["status", "transferAmount", "gateway", "transferType", "transactionAt", "receivedAt"] },
+    { title: "Nội dung chuyển khoản", fields: ["paymentReference", "code", "bankReferenceCode", "accountNumber", "content"] },
+    { title: "Đối soát", fields: ["reviewReason"] },
+  ],
+  "/manager/maintenance": [
+    { title: "Yêu cầu sửa chữa", fields: ["title", "priority", "status", "description", "imageUrl"] },
+    { title: "Thời gian xử lý", fields: ["createdAt", "updatedAt", "processedAt"] },
+  ],
+  "/manager/dorm-applications": [
+    { title: "Sinh viên", fields: ["studentName", "studentCode", "studentGender"] },
+    { title: "Phòng đăng ký", fields: ["requestedRoomNumber", "requestedBuildingName", "requestDate", "status"] },
+    { title: "Kết quả xử lý", fields: ["note", "reviewNote", "processedAt", "contractStartDate", "contractEndDate", "depositAmount"] },
+  ],
+};
+
+function hasDetailValue(value) {
+  return value !== null && value !== undefined &&
+    !(typeof value === "string" && ["", "-", "—"].includes(value.trim()));
+}
+
+function DetailSection({ section, data }) {
+  const fields = section.fields.filter((field) => hasDetailValue(data[field]));
+  if (fields.length === 0) return null;
+  return (
+    <section className="rounded-sm border-2 border-line-strong/15 bg-surface p-5">
+      <h3 className="mb-4 border-b-2 border-line-strong/10 pb-3 text-sm font-black uppercase tracking-wide text-text">
+        {section.title}
+      </h3>
+      <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {fields.map((field) => (
+          <DetailTile key={field} field={field} value={data[field]} />
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function InvoiceItems({ details }) {
+  if (!Array.isArray(details) || details.length === 0) return null;
+  return (
+    <section className="rounded-sm border-2 border-line-strong/15 bg-surface p-5">
+      <h3 className="mb-4 border-b-2 border-line-strong/10 pb-3 text-sm font-black uppercase tracking-wide text-text">Các khoản thu</h3>
+      <div className="space-y-3">
+        {details.map((item, index) => (
+          <div key={item.detailId || index} className="grid grid-cols-2 gap-3 rounded-sm bg-surface-2 p-3 sm:grid-cols-4">
+            <div><p className="m-0 text-[11px] font-extrabold uppercase text-text-muted">Khoản thu</p><p className="mt-1 text-sm font-black">{formatValue("itemType", item.itemType)}</p></div>
+            <div className="col-span-2 sm:col-span-1"><p className="m-0 text-[11px] font-extrabold uppercase text-text-muted">Mô tả</p><p className="mt-1 text-sm font-bold">{formatValue("description", item.description)}</p></div>
+            <div><p className="m-0 text-[11px] font-extrabold uppercase text-text-muted">Số lượng × đơn giá</p><p className="mt-1 text-sm font-bold">{item.quantity ?? "—"} × {formatValue("unitPrice", item.unitPrice)}</p></div>
+            <div><p className="m-0 text-[11px] font-extrabold uppercase text-text-muted">Thành tiền</p><p className="mt-1 text-sm font-black">{formatValue("amount", item.amount)}</p></div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function DetailScreen({ config }) {
   const { id } = useParams();
@@ -57,6 +153,14 @@ export default function DetailScreen({ config }) {
 
   const isStudentDetail = config.resource === "/manager/students";
   const isMaintenanceDetail = config.resource === "/manager/maintenance";
+  const isRoomDetail = config.resource === "/manager/rooms";
+  const isBuildingDetail = config.resource === "/manager/buildings";
+  const detailSections = MANAGER_DETAIL_SECTIONS[config.resource];
+  const { data: buildingRoomsData, loading: buildingRoomsLoading, error: buildingRoomsError } = useLoad(
+    isBuildingDetail ? "/manager/rooms" : "",
+    { buildingId: id, page: 0, size: 100 },
+  );
+  const buildingRooms = asList(buildingRoomsData);
   const maintenanceStatus = String(data?.status || "").toUpperCase();
   const isMaintenanceTerminal = [
     "COMPLETED",
@@ -337,7 +441,7 @@ export default function DetailScreen({ config }) {
       </Heading>
 
       {/* Notice hiển thị Thông báo Lỗi / Thành công */}
-      <Notice error={actionError || error} success={success} />
+      <Notice error={actionError || error || buildingRoomsError} success={success} />
 
       {/* Hiển thị Loading, Empty hoặc Chi tiết */}
       {loading ? (
@@ -358,7 +462,11 @@ export default function DetailScreen({ config }) {
                   />
                 </div>
                 <h2 className="text-lg font-black text-text">
-                  Thông tin chi tiết {id ? `#${id}` : ""}
+                  {isRoomDetail
+                    ? `Phòng ${data.roomNumber || `#${id}`}`
+                    : isBuildingDetail
+                      ? data.name || `Tòa nhà #${id}`
+                      : `Thông tin chi tiết ${id ? `#${id}` : ""}`}
                 </h2>
               </div>
 
@@ -379,55 +487,102 @@ export default function DetailScreen({ config }) {
               ) : null}
             </div>
 
-            {/* Danh sách Key - Value dạng Grid */}
-            <dl className="divide-y-2 divide-line-strong/10 m-0">
-              {entries.map(([key, value]) => (
-                <div
-                  key={key}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 py-3.5 items-center first:pt-0 last:pb-0"
-                >
-                  <dt className="sm:col-span-4 text-xs sm:text-sm font-extrabold text-text-muted uppercase tracking-wider">
-                    {FIELD_LABELS[key] || key}
-                  </dt>
-
-                  <dd className="sm:col-span-8 text-sm font-black text-text wrap-break-word m-0">
-                    {isMaintenanceDetail && key === "imageUrl" ? (
-                      value ? (
-                        <a
-                          href={value}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới"
-                          className="relative group inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none!"
-                        >
-                          <img
-                            src={value}
-                            alt="Ảnh đính kèm báo hỏng"
-                            className="size-[120px] object-cover block"
-                          />
-                          <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-black text-xs px-2 py-1 rounded-xs border border-white opacity-0 group-hover:opacity-100 transition-all">
-                            <Eye size={15} className="mr-1" /> Xem ảnh gốc
-                          </span>
-                        </a>
-                      ) : (
-                        <span className="text-text-muted font-bold">
-                          Không có ảnh đính kèm
-                        </span>
-                      )
-                    ) : key === "status" && typeof value === "string" ? (
-                      isMaintenanceDetail ? (
-                        <MaintenanceStatusBadge status={value} />
-                      ) : (
-                        <StatusBadge status={value} />
-                      )
-                    ) : (
-                      formatValue(key, value)
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {isRoomDetail || isBuildingDetail ? (
+              <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {(isRoomDetail
+                  ? ["buildingName", "buildingCode", "floor", "roomType", "genderRestriction", "status", "capacity", "currentOccupancy", "availableSlots", "pricePerMonth", "electricMeterNumber", "waterMeterNumber", "description"]
+                  : ["buildingCode", "address", "totalFloors", "genderRestriction", "totalRooms", "availableRooms", "description"]
+                ).map((field) => (
+                  <DetailTile key={field} field={field} value={data[field]} />
+                ))}
+              </dl>
+            ) : detailSections ? (
+              <div className="space-y-4">
+                {detailSections.map((section) => (
+                  <DetailSection key={section.title} section={section} data={data} />
+                ))}
+                {config.resource === "/invoices" && <InvoiceItems details={data.details} />}
+              </div>
+            ) : (
+              <dl className="divide-y-2 divide-line-strong/10 m-0">
+                {entries.map(([key, value]) => (
+                  <div key={key} className="grid grid-cols-1 items-center gap-2 py-3.5 sm:grid-cols-12 sm:gap-4">
+                    <dt className="text-xs font-extrabold uppercase tracking-wider text-text-muted sm:col-span-4 sm:text-sm">
+                      {FIELD_LABELS[key] || key}
+                    </dt>
+                    <dd className="m-0 break-words text-sm font-black text-text sm:col-span-8">
+                      {isMaintenanceDetail && key === "imageUrl" ? (
+                        value ? (
+                          <a href={value} target="_blank" rel="noopener noreferrer" aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới" className="relative group inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none!">
+                            <img src={value} alt="Ảnh đính kèm báo hỏng" className="size-[120px] object-cover block" />
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-black text-xs px-2 py-1 rounded-xs border border-white opacity-0 group-hover:opacity-100 transition-all">
+                              <Eye size={15} className="mr-1" /> Xem ảnh gốc
+                            </span>
+                          </a>
+                        ) : <span className="text-text-muted font-bold">Không có ảnh đính kèm</span>
+                      ) : key === "status" && typeof value === "string" ? (
+                        isMaintenanceDetail ? <MaintenanceStatusBadge status={value} /> : <StatusBadge status={value} />
+                      ) : formatValue(key, value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
+
+          {isRoomDetail && (
+            <section className="lg:col-span-12 space-y-4 rounded-sm border-4 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413] sm:p-8">
+              <div className="flex items-center justify-between gap-3 border-b-3 border-line-strong pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-text">Sinh viên đang cư trú</h3>
+                  <p className="mt-1 text-sm font-semibold text-text-muted">Danh sách sinh viên đã nhận phòng và còn hợp đồng hiệu lực.</p>
+                </div>
+                <span className="rounded-sm border-2 border-line-strong bg-primary px-3 py-1 text-sm font-black">{data.residents?.length || 0}</span>
+              </div>
+              {data.residents?.length ? (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {data.residents.map((resident) => (
+                    <div key={resident.studentId} className="rounded-sm border-2 border-line-strong/15 bg-surface-2 p-4">
+                      <p className="font-black text-text">{resident.fullName || "Chưa cập nhật họ tên"}</p>
+                      <p className="mt-1 text-sm font-semibold text-text-muted">Mã sinh viên: {resident.studentCode || "Chưa cập nhật"}</p>
+                      <p className="mt-1 text-sm font-semibold text-text-muted">Giới tính: {formatValue("gender", resident.gender)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="m-0 text-sm font-semibold text-text-muted">Phòng hiện chưa có sinh viên cư trú.</p>}
+            </section>
+          )}
+
+          {isBuildingDetail && (
+            <section className="lg:col-span-12 space-y-4 rounded-sm border-4 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413] sm:p-8">
+              <div className="flex items-center justify-between gap-3 border-b-3 border-line-strong pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-text">Các phòng trong tòa</h3>
+                  <p className="mt-1 text-sm font-semibold text-text-muted">Chọn một phòng để xem thông tin chi tiết và sinh viên cư trú.</p>
+                </div>
+                <span className="rounded-sm border-2 border-line-strong bg-primary px-3 py-1 text-sm font-black">{buildingRooms.length}</span>
+              </div>
+              {buildingRoomsLoading ? (
+                <Loading />
+              ) : buildingRooms.length ? (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {buildingRooms.map((room) => (
+                    <Link key={room.id} to={`/manager/rooms/${room.id}`} className="rounded-sm border-2 border-line-strong bg-surface p-4 text-text shadow-[2px_2px_0_#141413] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#141413]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-black">Phòng {room.roomNumber || room.id}</p>
+                          <p className="mt-1 text-sm font-semibold text-text-muted">Tầng {formatValue("floor", room.floor)}</p>
+                        </div>
+                        <StatusBadge status={room.status} />
+                      </div>
+                      <p className="mt-3 text-sm font-bold">Sức chứa: {room.currentOccupancy ?? 0}/{room.capacity ?? "—"}</p>
+                      <p className="mt-1 text-sm font-bold">Giá tháng: {formatValue("pricePerMonth", room.pricePerMonth)}</p>
+                    </Link>
+                  ))}
+                </div>
+              ) : <p className="m-0 text-sm font-semibold text-text-muted">Tòa nhà chưa có phòng nào.</p>}
+            </section>
+          )}
 
           {/* Sidebar Thông tin hệ thống (Chiếm 4 cột ở màn hình rộng) */}
           {/* <div className="lg:col-span-4 space-y-6">

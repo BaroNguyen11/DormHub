@@ -36,10 +36,17 @@ export const FIELD_LABELS = {
   buildingCode: "Mã tòa",
   roomId: "Mã phòng",
   roomType: "Loại phòng",
+  genderRestriction: "Đối tượng",
+  electricMeterNumber: "Mã đồng hồ điện",
+  waterMeterNumber: "Mã đồng hồ nước",
   capacity: "Sức chứa",
   currentOccupancy: "Đang ở",
   availableSlots: "Chỗ trống",
   floor: "Tầng",
+  totalFloors: "Tổng số tầng",
+  totalRooms: "Tổng số phòng",
+  availableRooms: "Phòng còn trống",
+  residents: "Sinh viên đang cư trú",
 
   // Thông tin tài chính
   monthlyPrice: "Giá hàng tháng",
@@ -74,10 +81,15 @@ export const FIELD_LABELS = {
   status: "Trạng thái",
   assignmentStatus: "Trạng thái phân phòng",
   contractStatus: "Trạng thái hợp đồng",
+  depositStatus: "Trạng thái tiền cọc",
   type: "Loại",
   invoiceType: "Loại hóa đơn",
+  itemType: "Khoản thu",
   priority: "Mức ưu tiên",
   overdue: "Quá hạn",
+  quantity: "Số lượng",
+  unitPrice: "Đơn giá",
+  amount: "Thành tiền",
 
   // Thông tin hợp đồng và hóa đơn
   contractId: "Mã hợp đồng",
@@ -96,7 +108,7 @@ export const FIELD_LABELS = {
   sepayTransactionId: "Mã GD SePay",
   gateway: "Ngân hàng (SePay)",
   accountNumber: "Số TK nhận",
-  transferType: "Chiều GD",
+  transferType: "Loại giao dịch",
   code: "Mã trong nội dung CK",
   content: "Nội dung CK",
   bankReferenceCode: "Mã GD ngân hàng",
@@ -112,7 +124,7 @@ export const FIELD_LABELS = {
   note: "Ghi chú",
   reviewNote: "Ghi chú duyệt",
   studentId: "Mã sinh viên",
-  accountStatus: "Tài khoản",
+  accountStatus: "Trạng thái tài khoản",
   studentGender: "Giới tính SV",
 
   // Checkout requests (Trả phòng)

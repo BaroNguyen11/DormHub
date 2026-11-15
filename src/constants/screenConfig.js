@@ -585,24 +585,6 @@ export const screens = {
     ],
   },
 
-  "/manager/payments": {
-    title: "Theo dõi thanh toán",
-    group: "manager",
-    type: "list",
-    // FIX: trước đây resource là "/payments" nhưng backend không có endpoint GET
-    // /api/v1/payments → menu 404. Đã thêm GET /api/v1/manager/payments.
-    resource: "/manager/payments",
-    columns: [
-      "paymentId",
-      "invoiceId",
-      "invoiceType",
-      "paymentReference",
-      "expectedAmount",
-      "method",
-      "status",
-      "createdAt",
-    ],
-  },
   "/manager/sepay": {
     title: "Giao dịch SePay",
     group: "manager",
@@ -921,7 +903,7 @@ export const screens = {
 
 for (const [path, title] of [
   ["/manager/students", "Sinh viên & Đơn"],
-  ["/manager/finance", "Tài chính & SePay"],
+  ["/manager/finance", "Quản lý Tài chính"],
   ["/manager/rooms/list", "Danh sách phòng"],
   ["/manager/contracts/list", "Danh sách hợp đồng"],
   ["/manager/maintenance/list", "Danh sách báo hỏng"],
@@ -959,7 +941,7 @@ export const nav = {
     ["Phòng & Tòa nhà", "/manager/rooms", Building2],
     ["Sinh viên & Đơn", "/manager/students", Users],
     ["Hợp đồng & Thủ tục", "/manager/contracts", FileCheck2],
-    ["Tài chính & SePay", "/manager/finance", Receipt],
+    ["Quản lý Tài chính", "/manager/finance", Receipt],
     ["Vận hành & Hỗ trợ", "/manager/maintenance", Wrench],
     ["Lịch sử thông báo", "/manager/notifications/history", Bell],
   ],

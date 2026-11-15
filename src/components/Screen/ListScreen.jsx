@@ -144,25 +144,27 @@ export default function ListScreen({ config, onAccountAction }) {
                     className="bg-surface hover:bg-primary-light/50 transition-colors"
                   >
                     {/* Cột dữ liệu */}
-                    {config.columns.map((key) => (
-                      <td
-                        key={key}
-                        className="px-4 py-3.5 text-sm font-bold text-text whitespace-nowrap"
-                      >
-                        {key === "status" &&
-                        typeof getNestedValue(row, key) === "string" ? (
-                          config.resource === "/manager/maintenance" ? (
-                            <MaintenanceStatusBadge
-                              status={getNestedValue(row, key)}
-                            />
+                    {config.columns.map((key) => {
+                      const value = getNestedValue(row, key);
+                      const hasStatus = typeof value === "string" &&
+                        value.trim() !== "" && value.trim() !== "-" && value.trim() !== "—";
+                      return (
+                        <td
+                          key={key}
+                          className="px-4 py-3.5 text-sm font-bold text-text whitespace-nowrap"
+                        >
+                          {key === "status" && hasStatus ? (
+                            config.resource === "/manager/maintenance" ? (
+                              <MaintenanceStatusBadge status={value} />
+                            ) : (
+                              <StatusBadge status={value} />
+                            )
                           ) : (
-                            <StatusBadge status={getNestedValue(row, key)} />
-                          )
-                        ) : (
-                          formatValue(key, getNestedValue(row, key))
-                        )}
-                      </td>
-                    ))}
+                            formatValue(key, value)
+                          )}
+                        </td>
+                      );
+                    })}
 
                     {/* Cột Thao tác */}
                     <td className="px-4 py-3.5 text-sm text-right whitespace-nowrap">

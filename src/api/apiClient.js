@@ -76,55 +76,103 @@ function clearLocalAuthTokens() {
 function mutationDescription(path, method) {
   const cleanPath = path.split("?")[0];
   if (cleanPath.endsWith("/account")) return "cấp tài khoản cho sinh viên";
-  if (cleanPath.endsWith("/status") && cleanPath.includes("/students")) return "cập nhật trạng thái tài khoản sinh viên";
-  const objectName = cleanPath.includes("/students") ? "sinh viên" :
-    cleanPath.includes("/student/profile") ? "hồ sơ sinh viên" :
-    cleanPath.includes("/invoices") ? "hóa đơn" :
-    cleanPath.includes("/rooms") ? "phòng" :
-    cleanPath.includes("/contracts") ? "hợp đồng" :
-    cleanPath.includes("/dorm-applications") ? "đơn đăng ký nội trú" :
-    cleanPath.includes("/maintenance") ? "yêu cầu sửa chữa" :
-    cleanPath.includes("/notifications") ? "thông báo" :
-    cleanPath.includes("/renewal") ? "yêu cầu gia hạn" :
-    cleanPath.includes("/room-transfer") ? "yêu cầu chuyển phòng" :
-    cleanPath.includes("/checkout") ? "yêu cầu trả phòng" :
-    cleanPath.includes("/buildings") ? "tòa nhà" : "dữ liệu";
-  const verb = method === "DELETE" ? "xóa" : method === "PUT" ? "lưu thay đổi" : "cập nhật";
+  if (cleanPath.endsWith("/status") && cleanPath.includes("/students"))
+    return "cập nhật trạng thái tài khoản sinh viên";
+  const objectName = cleanPath.includes("/students")
+    ? "sinh viên"
+    : cleanPath.includes("/student/profile")
+      ? "hồ sơ sinh viên"
+      : cleanPath.includes("/invoices")
+        ? "hóa đơn"
+        : cleanPath.includes("/rooms")
+          ? "phòng"
+          : cleanPath.includes("/contracts")
+            ? "hợp đồng"
+            : cleanPath.includes("/dorm-applications")
+              ? "đơn đăng ký nội trú"
+              : cleanPath.includes("/maintenance")
+                ? "yêu cầu sửa chữa"
+                : cleanPath.includes("/notifications")
+                  ? "thông báo"
+                  : cleanPath.includes("/renewal")
+                    ? "yêu cầu gia hạn"
+                    : cleanPath.includes("/room-transfer")
+                      ? "yêu cầu chuyển phòng"
+                      : cleanPath.includes("/checkout")
+                        ? "yêu cầu trả phòng"
+                        : cleanPath.includes("/buildings")
+                          ? "tòa nhà"
+                          : "dữ liệu";
+  const verb =
+    method === "DELETE"
+      ? "xóa"
+      : method === "PUT"
+        ? "lưu thay đổi"
+        : "cập nhật";
   return `${verb} ${objectName}`;
 }
 
 function isGenericMutationMessage(message) {
-  const normalized = String(message || "").trim().replace(/[.!]+$/, "");
-  if (/^(thành công|đã xảy ra lỗi|thao tác thất bại)$/i.test(normalized)) return true;
-  const namesAnObject = /(sinh viên|hồ sơ|hóa đơn|phòng|hợp đồng|đơn|yêu cầu|thông báo|tòa nhà|email|tài khoản|mật khẩu|hóa đơn|#\d+)/i.test(normalized);
-  return !namesAnObject && /^(đã )?(cập nhật|lưu|đã lưu|xóa|đã xóa|thay đổi|thực hiện)( .*?)?( thành công)?$/i.test(normalized);
+  const normalized = String(message || "")
+    .trim()
+    .replace(/[.!]+$/, "");
+  if (/^(thành công|đã xảy ra lỗi|thao tác thất bại)$/i.test(normalized))
+    return true;
+  const namesAnObject =
+    /(sinh viên|hồ sơ|hóa đơn|phòng|hợp đồng|đơn|yêu cầu|thông báo|tòa nhà|email|tài khoản|mật khẩu|hóa đơn|#\d+)/i.test(
+      normalized,
+    );
+  return (
+    !namesAnObject &&
+    /^(đã )?(cập nhật|lưu|đã lưu|xóa|đã xóa|thay đổi|thực hiện)( .*?)?( thành công)?$/i.test(
+      normalized,
+    )
+  );
 }
 
 function notifyApiError(error, path, method = "GET") {
   const status = error?.status;
   const authPath = path.split("?")[0].replace(/\/$/, "");
   const normalizedMethod = String(method).toUpperCase();
-  const isMutation = ["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
+  const isMutation =
+    ["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
     (normalizedMethod === "POST" && path.split("?")[0].endsWith("/account"));
   const mutation = mutationDescription(path, normalizedMethod);
   const validationReason = formatValidationErrors(error?.details);
-  const backendReason = validationReason && !isGenericMutationMessage(validationReason)
-    ? validationReason
-    : error?.details?.message || validationReason;
-  if (isMutation && backendReason && !isGenericMutationMessage(backendReason) && status !== 401 && status !== 403) {
-    const alreadyContextual = /không thể .* (sinh viên|hóa đơn|phòng|hợp đồng|đơn đăng ký|yêu cầu|thông báo|tòa nhà)/i.test(backendReason);
-    toast.error(backendReason.startsWith("Lỗi:") || alreadyContextual
-      ? backendReason
-      : `Lỗi: Không thể ${mutation}: ${backendReason}`);
+  const backendReason =
+    validationReason && !isGenericMutationMessage(validationReason)
+      ? validationReason
+      : error?.details?.message || validationReason;
+  if (
+    isMutation &&
+    backendReason &&
+    !isGenericMutationMessage(backendReason) &&
+    status !== 401 &&
+    status !== 403
+  ) {
+    const alreadyContextual =
+      /không thể .* (sinh viên|hóa đơn|phòng|hợp đồng|đơn đăng ký|yêu cầu|thông báo|tòa nhà)/i.test(
+        backendReason,
+      );
+    toast.error(
+      backendReason.startsWith("Lỗi:") || alreadyContextual
+        ? backendReason
+        : `Lỗi: Không thể ${mutation}: ${backendReason}`,
+    );
     return;
   }
   if (isMutation && status !== 401 && status !== 403) {
-    const validationReason = status === 400 ? ": dữ liệu gửi lên không hợp lệ" : "";
-    toast.error(`Lỗi: Không thể ${mutation}${validationReason}${status ? ` (HTTP ${status})` : ": không thể kết nối Backend"}.`);
+    const validationReason =
+      status === 400 ? ": dữ liệu gửi lên không hợp lệ" : "";
+    toast.error(
+      `Lỗi: Không thể ${mutation}${validationReason}${status ? ` (HTTP ${status})` : ": không thể kết nối Backend"}.`,
+    );
     return;
   }
   if (isMutation && status === 403) {
-    toast.error(`Lỗi: Không thể ${mutation}: bạn không có quyền thực hiện thao tác này.`);
+    toast.error(
+      `Lỗi: Không thể ${mutation}: bạn không có quyền thực hiện thao tác này.`,
+    );
     return;
   }
   if (isMutation && status === 401) {
@@ -254,11 +302,15 @@ async function ensureCsrfToken() {
 
   const payload = await parseResponse(response);
   if (!response.ok) {
-    throw new ApiError(payload?.message || `Lỗi CSRF (HTTP ${response.status})`, response.status, payload);
+    throw new ApiError(
+      payload?.message || `Lỗi CSRF (HTTP ${response.status})`,
+      response.status,
+      payload,
+    );
   }
 
   const body = unwrapResponse(payload);
-  
+
   const token =
     body?.token ||
     body?.csrfToken ||
@@ -268,7 +320,11 @@ async function ensureCsrfToken() {
     (typeof body === "string" ? body : null);
 
   if (!token) {
-    throw new ApiError("Không tìm thấy CSRF token trong response /auth/csrf", response.status, payload);
+    throw new ApiError(
+      "Không tìm thấy CSRF token trong response /auth/csrf",
+      response.status,
+      payload,
+    );
   }
 
   return token;
@@ -413,25 +469,36 @@ export async function api(
     throw apiError;
   }
 
-  if (notify && successNotify && (["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
-    (normalizedMethod === "POST" && normalizedPath.endsWith("/account")))) {
+  if (
+    notify &&
+    successNotify &&
+    (["PUT", "PATCH", "DELETE"].includes(normalizedMethod) ||
+      (normalizedMethod === "POST" && normalizedPath.endsWith("/account")))
+  ) {
     const message = data?.message;
     const generic = !message || isGenericMutationMessage(message);
-    if ((successMessage && !isGenericMutationMessage(successMessage)) || !generic) {
+    if (
+      (successMessage && !isGenericMutationMessage(successMessage)) ||
+      !generic
+    ) {
       toast.success(
         successMessage && !isGenericMutationMessage(successMessage)
           ? successMessage
           : message,
       );
     } else {
-      toast.success(`Đã ${mutationDescription(normalizedPath, normalizedMethod)} thành công.`);
+      toast.success(
+        `Đã ${mutationDescription(normalizedPath, normalizedMethod)} thành công.`,
+      );
     }
   }
   if (normalizedPath === "/auth/login" && response.ok)
     redirectingToLogin = false;
 
   const unwrapped = unwrapResponse(data);
-  return includeResponse ? { data: unwrapped, message: data?.message } : unwrapped;
+  return includeResponse
+    ? { data: unwrapped, message: data?.message }
+    : unwrapped;
 }
 
 export const queryString = (values) => {

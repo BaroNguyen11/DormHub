@@ -33,7 +33,6 @@ export const pageMap = {
   "/manager/invoices": "../pages/shared/InvoiceList.jsx",
   "/manager/invoices/:id": "../pages/shared/InvoiceDetail.jsx",
   "/manager/invoices/new": "../pages/Manager/Invoices/InvoiceCreate.jsx",
-  "/manager/payments": "../pages/Manager/Payments/PaymentList.jsx",
   "/manager/sepay": "../pages/Manager/Sepay/SepayTransactionList.jsx",
   "/manager/sepay/:id": "../pages/Manager/Sepay/SepayTransactionDetail.jsx",
   "/manager/maintenance/new": "../pages/Manager/Maintenance/IssueCreate.jsx",

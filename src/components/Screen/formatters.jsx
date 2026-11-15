@@ -29,7 +29,7 @@ function isDateField(fieldName) {
  * Ví dụ: totalAmount, monthlyPrice, pricePerMonth, monthlyRent, depositAmount
  */
 function isMoneyField(fieldName) {
-  return /(Amount|Price|Fee|PerMonth|Rent|Deposit)$/.test(fieldName);
+  return /(amount|price|fee|perMonth|rent|deposit)$/i.test(fieldName);
 }
 
 /**
@@ -49,6 +49,9 @@ function isMoneyField(fieldName) {
  * 8. Default -> convert sang string
  */
 export function formatValue(fieldName, value) {
+  if (value == null || (typeof value === "string" && (!value.trim() || value.trim() === "-" || value.trim() === "—"))) {
+    return <span className="font-semibold text-text-muted">Chưa cập nhật</span>;
+  }
   if (fieldName === "accountStatus") {
     return value === "NO_ACCOUNT"
       ? "Chưa có tài khoản"
@@ -58,11 +61,20 @@ export function formatValue(fieldName, value) {
           ? "Đã có tài khoản (Đã khóa)"
           : value === "PENDING_VERIFICATION"
             ? "Đã có tài khoản (Chờ xác thực)"
-            : "—";
+          : <span className="font-semibold text-text-muted">Chưa cập nhật</span>;
   }
-  // 1. Xử lý null hoặc empty string
-  if (value == null || value === "") {
-    return "—";
+
+  if (fieldName === "gender" || fieldName === "genderRestriction") {
+    return value === "MALE" ? "Nam" : value === "FEMALE" ? "Nữ" : String(value);
+  }
+
+  if (fieldName === "roomType") {
+    return ({ SINGLE: "Phòng đơn", DOUBLE: "Phòng đôi", QUAD: "Phòng 4 người", SIX_BED: "Phòng 6 người", EIGHT_BED: "Phòng 8 người" })[value] || value;
+  }
+
+  if (["invoiceType", "itemType", "depositStatus", "assignmentStatus", "contractStatus", "transferType", "method", "priority"].includes(fieldName)) {
+    const normalizedValue = typeof value === "string" ? value.toUpperCase() : value;
+    return STATUS_LABELS[normalizedValue] || value;
   }
 
   // 2. Xử lý status -> hiển thị badge với màu tương ứng

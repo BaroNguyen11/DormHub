@@ -12,7 +12,6 @@ const GROUPS = {
     tabs: [
       ["Danh sách phòng", "room"],
       ["Tòa nhà", "building"],
-      ["Thêm phòng", "create"],
     ],
     defaultTab: "room",
   },
@@ -36,10 +35,9 @@ const GROUPS = {
     defaultTab: "contracts",
   },
   "/manager/finance": {
-    title: "Tài chính & SePay",
+    title: "Quản lý Tài chính",
     tabs: [
       ["Hóa đơn", "invoices"],
-      ["Thanh toán", "payments"],
       ["Giao dịch SePay", "sepay"],
     ],
     defaultTab: "invoices",
@@ -83,7 +81,6 @@ function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuc
     rooms: {
       room: "/manager/rooms/list",
       building: "/manager/buildings",
-      create: "/manager/rooms/new",
     },
     students: {
       residents: "/manager/residents",
@@ -97,7 +94,6 @@ function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuc
     },
     finance: {
       invoices: "/manager/invoices",
-      payments: "/manager/payments",
       sepay: "/manager/sepay",
     },
     maintenance: {
