@@ -3,7 +3,6 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import Workspace from "../../components/Workspace";
 import ListScreen from "../../components/Screen/ListScreen";
 import FormScreen from "../../components/Screen/FormScreen";
-import StudentAccountForm from "../../components/Screen/StudentAccountForm";
 import { screens } from "../../constants/screenConfig";
 
 const GROUPS = {
@@ -20,7 +19,6 @@ const GROUPS = {
     tabs: [
       ["Sinh viên cư trú", "residents"],
       ["Đơn đăng ký", "applications"],
-      ["+ Tạo tài khoản", "account"],
     ],
     defaultTab: "residents",
   },
@@ -52,31 +50,7 @@ const GROUPS = {
   },
 };
 
-function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuccess, onAccountCancel }) {
-  if (group === "students" && tab === "account") {
-    return selectedStudent ? (
-      <StudentAccountForm
-        student={selectedStudent}
-        onSuccess={onAccountSuccess}
-        onCancel={onAccountCancel}
-      />
-    ) : (
-      <div className="space-y-4">
-        <h2 className="text-xl font-black">Cấp tài khoản cho hồ sơ sinh viên</h2>
-        <p className="max-w-2xl text-sm font-semibold text-text-muted">
-          Chọn một sinh viên đang ở trạng thái “Chưa có tài khoản” trong danh sách để tạo tài khoản và liên kết đúng hồ sơ.
-        </p>
-        <button
-          type="button"
-          onClick={onAccountCancel}
-          className="border-2 border-line-strong bg-primary px-4 py-2 font-black text-black shadow-[2px_2px_0_#141413]"
-        >
-          Chọn sinh viên từ danh sách
-        </button>
-      </div>
-    );
-  }
-
+function TabContent({ group, tab }) {
   const configKey = {
     rooms: {
       room: "/manager/rooms/list",
@@ -121,12 +95,7 @@ function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuc
   }
   return config.type === "form" ? (
     <FormScreen config={config} />
-  ) : (
-    <ListScreen
-      config={config}
-      onAccountAction={group === "students" ? onSelectStudent : undefined}
-    />
-  );
+  ) : <ListScreen config={config} />;
 }
 
 export default function ManagerGroupPage() {
@@ -134,23 +103,14 @@ export default function ManagerGroupPage() {
   const [searchParams] = useSearchParams();
   const group = GROUPS[pathname];
   const [selectedTabs, setSelectedTabs] = useState({});
-  const [selectedStudent, setSelectedStudent] = useState(null);
   if (!group) return null;
   const groupKey = pathname.replace("/manager/", "");
   const queryTabs = {
-    students: { create: "account", applications: "applications" },
+    students: { applications: "applications" },
     finance: { invoices: "invoices" },
     maintenance: { tickets: "maintenance", announcements: "notifications" },
   };
   const activeTab = selectedTabs[groupKey] || queryTabs[groupKey]?.[searchParams.get("tab")] || group.defaultTab;
-  const openStudentAccountForm = (student) => {
-    setSelectedStudent(student);
-    setSelectedTabs((current) => ({ ...current, students: "account" }));
-  };
-  const returnToStudentList = () => {
-    setSelectedStudent(null);
-    setSelectedTabs((current) => ({ ...current, students: "residents" }));
-  };
   return (
     <Workspace group="manager" title={group.title}>
       <div className="space-y-5">
@@ -179,14 +139,7 @@ export default function ManagerGroupPage() {
             );
           })}
         </nav>
-        <TabContent
-          group={groupKey}
-          tab={activeTab}
-          selectedStudent={selectedStudent}
-          onSelectStudent={openStudentAccountForm}
-          onAccountSuccess={returnToStudentList}
-          onAccountCancel={returnToStudentList}
-        />
+        <TabContent group={groupKey} tab={activeTab} />
       </div>
     </Workspace>
   );

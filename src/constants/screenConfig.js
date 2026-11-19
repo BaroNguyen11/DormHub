@@ -479,7 +479,7 @@ export const screens = {
     search: true,
     idField: "studentId",
     searchParam: "name",
-    accountAction: true,
+    accountFilter: true,
   },
   "/manager/residents/:id": {
     title: "Chi tiết sinh viên",
@@ -688,17 +688,6 @@ export const screens = {
     notificationForm: true,
     defaultValues: { buildingId: null },
   },
-  "/manager/students/new": {
-    title: "Tạo tài khoản sinh viên",
-    group: "manager",
-    type: "form",
-    resource: "/auth/register",
-    fields: ["username", "email", "password", "fullName", "phoneNumber", "studentCode", "gender"],
-    fieldConfig: { gender: { options: [{ label: "Nam", value: "MALE" }, { label: "Nữ", value: "FEMALE" }] } },
-    fixedFields: { role: "STUDENT" },
-    successMessage: "Tài khoản đã được tạo. Sinh viên có thể chủ động yêu cầu OTP để kích hoạt.",
-  },
-
   // ===== MANAGER RENEWAL REQUESTS =====
   "/manager/renewal-requests": {
     title: "Quản lý gia hạn",

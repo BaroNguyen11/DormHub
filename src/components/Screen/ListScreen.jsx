@@ -21,11 +21,12 @@ import { STATUS_LABELS } from "../../constants/status";
 import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { CustomSelect } from "../ui/CustomSelect";
 
-export default function ListScreen({ config, onAccountAction }) {
+export default function ListScreen({ config }) {
   const location = useLocation();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [hasAccount, setHasAccount] = useState("");
   const [busy, setBusy] = useState("");
   const [success, setSuccess] = useState("");
   const [actionError, setActionError] = useState("");
@@ -44,6 +45,7 @@ export default function ListScreen({ config, onAccountAction }) {
       ? { [config.searchParam || "search"]: debouncedSearch }
       : {}),
     ...(status ? { status } : {}),
+    ...(config.accountFilter && hasAccount !== "" ? { hasAccount } : {}),
   });
   const rows = asList(data);
 
@@ -112,6 +114,17 @@ export default function ListScreen({ config, onAccountAction }) {
                 options={[{ value: "", label: "-- Tất cả trạng thái --" },
                   ...config.statusOptions.map((x) => ({ value: x, label: STATUS_LABELS[x] || x }))]}
                 onChange={(value) => { setStatus(value); resetPage(); }} />
+            </div>
+          )}
+          {config.accountFilter && (
+            <div className="w-56 shrink-0">
+              <CustomSelect value={hasAccount}
+                options={[
+                  { value: "", label: "Tất cả trạng thái" },
+                  { value: "true", label: "Đã có tài khoản" },
+                  { value: "false", label: "Chưa có tài khoản" },
+                ]}
+                onChange={(value) => { setHasAccount(value); resetPage(); }} />
             </div>
           )}
           <button type="button" onClick={reload} aria-label="Tải lại" title="Tải lại dữ liệu"
@@ -247,17 +260,6 @@ export default function ListScreen({ config, onAccountAction }) {
                               {action.label}
                             </button>
                           ))}
-
-                        {config.accountAction &&
-                          row.accountStatus === "NO_ACCOUNT" && (
-                            <button
-                              type="button"
-                              onClick={() => onAccountAction?.(row)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-black font-extrabold! text-xs! rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413]  hover:-translate-0.5 active:translate-0 active:shadow-none transition-all"
-                            >
-                              Cấp tài khoản
-                            </button>
-                          )}
 
                         {/* Public Actions for Guest (redirect to login) */}
                         {config.publicActions?.map((action) => {

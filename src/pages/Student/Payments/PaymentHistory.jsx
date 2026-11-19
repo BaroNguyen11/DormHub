@@ -57,7 +57,7 @@ export function PaymentHistory({ config }) {
           <Empty text="Không tìm thấy lần thanh toán nào." />
         ) : (
           <div className="overflow-x-auto"><table className="w-full border-collapse text-left">
-            <thead className="bg-warning border-b-4 border-line-strong text-[#000000]"><tr>
+            <thead className="bg-warning border-b-4 border-line-strong text-[#00000]"><tr>
               {["Mã giao dịch", "Hóa đơn", "Số tiền", "Thời gian tạo", "Trạng thái Payment", "Thao tác"].map((label) =>
                 <th key={label} className="px-4 py-3.5 text-xs font-black uppercase tracking-wider border-r-2 border-line-strong/20 last:border-r-0">{label}</th>)}
             </tr></thead><tbody className="divide-y-2 divide-line-strong">

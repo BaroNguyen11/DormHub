@@ -432,12 +432,6 @@ function ManagerAnalytics({ data, loading, error, reload }) {
   }));
   const quickActions = [
     [
-      "+ Tạo tài khoản SV",
-      "/manager/students",
-      UserPlus,
-      "bg-primary",
-    ],
-    [
       "Duyệt đơn đăng ký",
       "/manager/students?tab=applications",
       FileText,
