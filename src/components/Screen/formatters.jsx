@@ -6,7 +6,17 @@
 
 import { date, money } from "../../utils/format";
 import { STATUS_LABELS } from "../../constants/status";
-import { getStatusColor } from "./constants";
+import { FIELD_CONFIGS, getStatusColor } from "./constants";
+
+/**
+ * Nhãn hiển thị cho loại thiết bị/hư hỏng (mã enum từ FIELD_CONFIGS.type).
+ * Trước đây formatValue("type", "AIR_CONDITIONER") trả về mã thô.
+ */
+export const TYPE_LABELS = Object.freeze(
+  Object.fromEntries(
+    (FIELD_CONFIGS.type?.options || []).map((option) => [option.value, option.label]),
+  ),
+);
 
 /**
  * Kiểm tra xem field có phải là ngày tháng không
@@ -56,7 +66,7 @@ export function formatValue(fieldName, value) {
     return value === "NO_ACCOUNT"
       ? "Chưa có tài khoản"
       : value === "ACTIVE"
-        ? "Đã có tài khoản (Đang hoạt động)"
+        ? "Đã có tài khoản"
         : value === "LOCKED"
           ? "Đã có tài khoản (Đã khóa)"
           : value === "PENDING_VERIFICATION"
@@ -72,9 +82,20 @@ export function formatValue(fieldName, value) {
     return ({ SINGLE: "Phòng đơn", DOUBLE: "Phòng đôi", QUAD: "Phòng 4 người", SIX_BED: "Phòng 6 người", EIGHT_BED: "Phòng 8 người" })[value] || value;
   }
 
+  // Loại hư hỏng trong báo hỏng (FAN, AIR_CONDITIONER, PLUMBING...) -> nhãn tiếng Việt
+  if (fieldName === "type") {
+    return TYPE_LABELS[String(value).toUpperCase()] || value;
+  }
+
   if (["invoiceType", "itemType", "depositStatus", "assignmentStatus", "contractStatus", "transferType", "method", "priority"].includes(fieldName)) {
     const normalizedValue = typeof value === "string" ? value.toUpperCase() : value;
     return STATUS_LABELS[normalizedValue] || value;
+  }
+
+  // Kỳ hóa đơn "YYYY-MM" -> "Tháng MM/YYYY" cho dễ đọc
+  if (fieldName === "billingMonth" && /^\d{4}-\d{2}$/.test(String(value))) {
+    const [year, month] = String(value).split("-");
+    return `Tháng ${month}/${year}`;
   }
 
   // 2. Xử lý status -> hiển thị badge với màu tương ứng

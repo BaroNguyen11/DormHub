@@ -173,6 +173,13 @@ export const screens = {
     // Backend trả về Page<RoomAssignmentResponse>; DetailScreen sẽ tự lấy phần tử đầu.
     single: true,
   },
+  "/student/room-contract": {
+    title: "Hợp đồng & Chỗ ở",
+    group: "student",
+    type: "detail",
+    resource: "/student/room-assignments",
+    single: true,
+  },
   "/student/contracts": {
     title: "Hợp đồng",
     group: "student",
@@ -260,6 +267,7 @@ export const screens = {
         suffix: "/payments",
         method: "POST",
         payment: true,
+        visibleWhen: { status: "UNPAID" },
       },
     ],
   },
@@ -755,6 +763,7 @@ export const screens = {
     columns: ["checkoutRequestId", "checkoutDate", "status", "requestDate"],
     detail: "/student/checkout-requests",
     create: "/student/checkout-requests/new",
+    createLabel: "Tạo yêu cầu trả phòng",
     statusOptions: ["PENDING", "APPROVED", "REJECTED", "COMPLETED", "CANCELLED"],
   },
   "/student/checkout-requests/new": {
@@ -762,7 +771,9 @@ export const screens = {
     group: "student",
     type: "form",
     resource: "/student/checkout-requests",
-    fields: ["reason"],
+    // FIX: thêm checkoutDate — backend yêu cầu ngày trả phòng dự kiến
+    // (ResidencePage cũng gửi checkoutDate khi tạo từ modal).
+    fields: ["checkoutDate", "reason"],
   },
   "/student/checkout-requests/:id": {
     title: "Chi tiết yêu cầu trả phòng",
@@ -840,6 +851,7 @@ export const screens = {
     columns: ["transferId", "currentRoomId", "preferredRoomId", "status", "requestedAt"],
     detail: "/student/room-transfer-requests",
     create: "/student/room-transfer-requests/new",
+    createLabel: "Tạo yêu cầu chuyển phòng",
     statusOptions: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
   },
   "/student/room-transfer-requests/new": {
@@ -926,6 +938,7 @@ export const nav = {
     ["Hóa đơn", "/student/invoices", Receipt],
     ["Lịch sử thanh toán", "/student/payments", Receipt],
     ["Báo hỏng", "/student/maintenance", Wrench],
+    ["Thông báo", "/student/notifications", Bell],
     ["Tài khoản", "/student/profile", User],
   ],
   // Sinh viên CHƯA có phòng: vẫn cần thấy Hóa đơn (trả cọc) & Hợp đồng (PENDING)
@@ -934,6 +947,7 @@ export const nav = {
     ["Tìm phòng", "/student/rooms", Home],
     ["Đơn đăng ký", "/student/applications", Receipt],
     ["Lịch sử thanh toán", "/student/payments", Receipt],
+    ["Thông báo", "/student/notifications", Bell],
     ["Tài khoản", "/student/profile", User],
   ],
   manager: [
@@ -959,7 +973,11 @@ export const STUDENT_NO_ROOM_ALLOWED = [
   "/student/invoices",
   "/student/payments",
   "/student/contracts",
+  "/student/room-contract",
   "/student/notifications",
+  // FIX: cho phép xem lịch sử báo hỏng cũ khi phòng đã bị thu hồi (trả phòng xong),
+  // tránh mất dấu vết các yêu cầu đã tạo khi còn ở KTX.
+  "/student/maintenance",
   "/change-password",
   // FIX: trang kết quả thanh toán (QR VietQR) phải vào được khi SV chưa có phòng,
   // nếu không gate sẽ đá SV về /student/rooms ngay sau khi bấm "Thanh toán"

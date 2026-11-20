@@ -276,7 +276,7 @@ export function MaintenanceStatusBadge({ status, className }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-3 py-1 border-2 border-line-strong rounded-sm text-xs shadow-[2px_2px_0_#141413] font-extrabold",
+        "inline-flex items-center px-3 py-1 border-2 border-line-strong rounded-sm text-xs! shadow-[2px_2px_0_#141413] font-extrabold",
         variant.className,
         className,
       )}

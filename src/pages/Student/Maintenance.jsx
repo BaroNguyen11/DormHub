@@ -18,6 +18,8 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { StatusBadge } from "../../components/ui";
 import { Empty, Loading, Notice } from "../../components/Screen/UIComponents";
 import { useLoad } from "../../components/Screen/useLoad";
+import { STATUS_LABELS } from "../../constants/status";
+import useStudentRoom from "../../hooks/useStudentRoom";
 
 const MAX_FILE_SIZE_MB = 10;
 
@@ -28,6 +30,12 @@ const statusLabels = {
   IN_PROGRESS: "Đang xử lý",
   COMPLETED: "Đã hoàn thành",
   REJECTED: "Đã từ chối",
+};
+const priorityLabels = {
+  LOW: STATUS_LABELS.LOW,
+  MEDIUM: STATUS_LABELS.MEDIUM,
+  HIGH: STATUS_LABELS.HIGH,
+  URGENT: STATUS_LABELS.URGENT,
 };
 
 function inferType(assetName) {
@@ -64,6 +72,7 @@ function formatFileSize(bytes) {
 
 export default function StudentMaintenancePage() {
   const [search, setSearch] = useState("");
+  const { hasRoom } = useStudentRoom();
   const { data, error, loading, reload } = useLoad("/student/maintenance", {
     page: 0, size: 50,
   });
@@ -191,10 +200,12 @@ export default function StudentMaintenancePage() {
                 onChange={(event) => setSearch(event.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-sm border-3 border-line-strong bg-surface text-sm font-semibold text-text shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413] outline-none! transition-all" />
             </div>
-            <button type="button" onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-primary text-black font-black border-3 border-line-strong rounded-sm px-4 py-2 shadow-[3px_3px_0_#141413]">
-              <Plus size={18} strokeWidth={3} /> Tạo báo hỏng mới
-            </button>
+            {hasRoom && (
+              <button type="button" onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-primary text-black font-black border-3 border-line-strong rounded-sm px-4 py-2 shadow-[3px_3px_0_#141413]">
+                <Plus size={18} strokeWidth={3} /> Tạo báo hỏng mới
+              </button>
+            )}
             <button type="button" onClick={reload} aria-label="Tải lại" title="Tải lại dữ liệu"
               className="inline-flex items-center justify-center size-11 bg-surface border-3 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all cursor-pointer">
               <RefreshCw size={18} strokeWidth={2.5} className={loading ? "animate-spin" : ""} />
@@ -213,7 +224,7 @@ export default function StudentMaintenancePage() {
                   </div>
                   <p className="text-sm font-semibold text-text-muted whitespace-pre-wrap break-words">{request.description}</p>
                   <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-text-muted">
-                    <span>{statusLabels[request.status] || request.status} · {request.priority} · {getDateLabel(request.createdAt)}</span>
+                    <span>{statusLabels[request.status] || request.status} · {priorityLabels[request.priority] || request.priority} · {getDateLabel(request.createdAt)}</span>
                     <Link to={`/student/maintenance/${request.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-surface text-text font-extrabold text-xs rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:bg-primary hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"><Eye size={14} strokeWidth={2.5} />Chi tiết</Link>
                   </div>
                 </article>

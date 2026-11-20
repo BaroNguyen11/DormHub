@@ -1,84 +1,49 @@
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || "/ai-proxy/v1";
-const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
-const AI_MODEL = import.meta.env.VITE_AI_MODEL || "llama-3.3-70b-versatile";
+// src/services/ai.service.js
+import { api } from "../lib/api";
 
-// Validate API key is configured
-if (!AI_API_KEY) {
-  console.error("❌ VITE_AI_API_KEY is not configured. Set it in .env file.");
-  throw new Error(
-    "AI_API_KEY is not configured. Set VITE_AI_API_KEY in .env file.",
-  );
-}
-
+/**
+ * Gửi tin nhắn chat tới AI thông qua Backend Spring Boot (/api/v1/ai/chat)
+ * Tự động đính kèm cookie xác thực JWT và CSRF token.
+ * 
+ * @param {Array<{role: string, content: string}>} messages - Lịch sử hội thoại
+ * @param {Object} [options={}] - Các cấu hình mở rộng (model, temperature, max_tokens, ...)
+ * @returns {Promise<string>} Nội dung phản hồi từ AI
+ */
 export async function sendChatMessage(messages, options = {}) {
   try {
-    // Validate messages
     if (!Array.isArray(messages) || messages.length === 0) {
       throw new Error("Messages phải là mảng không rỗng");
     }
 
-    // Prepare request body
-    const requestBody = {
-      model: options.model || AI_MODEL,
-      messages: messages,
-      stream: false,
+    const payload = {
+      messages,
+      model: options.model,
       temperature: options.temperature || 0.7,
-      max_tokens: options.max_tokens || 2000,
+      maxTokens: options.max_tokens || options.maxTokens || 2000,
       ...options.extra,
     };
 
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${AI_API_KEY}`,
-    };
-
-    const response = await fetch(AI_BASE_URL + "/chat/completions", {
+    // Gọi backend Spring Boot endpoint /api/v1/ai/chat
+    const response = await api("/ai/chat", {
       method: "POST",
-      headers,
-      body: JSON.stringify(requestBody),
+      body: payload,
+      successNotify: false,
     });
 
-    // Check response status
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ AI API Error:", response.status, errorText);
-
-      if (response.status === 401) {
-        throw new Error("API key không hợp lệ");
-      } else if (response.status === 429) {
-        throw new Error("Đã vượt quá giới hạn request. Vui lòng thử lại sau.");
-      } else if (response.status >= 500) {
-        throw new Error("Server AI đang gặp sự cố. Vui lòng thử lại sau.");
-      } else {
-        throw new Error(`Lỗi AI API: ${response.status}`);
-      }
+    if (!response) {
+      throw new Error("Không nhận được phản hồi từ AI");
     }
 
-    // Parse response
-    const data = await response.json();
-
-    // Extract message content
-    const content = data?.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error("❌ Invalid response structure:", data);
-      throw new Error("Phản hồi từ AI không hợp lệ");
-    }
-
-    console.log("✅ AI Response received:", content.substring(0, 100) + "...");
+    const content = typeof response === "string"
+      ? response
+      : response.content || response.reply || response.data || JSON.stringify(response);
 
     return content;
   } catch (error) {
     console.error("❌ AI Service Error:", error);
-
-    // Re-throw với message thân thiện
-    if (error.message.includes("fetch")) {
-      throw new Error(
-        "Không thể kết nối tới AI server. Kiểm tra mạng của bạn.",
-        { cause: error },
-      );
+    if (error?.message?.includes("fetch") || error?.status === 0) {
+      throw new Error("Không thể kết nối tới máy chủ DormHub. Vui lòng kiểm tra lại dịch vụ Server!");
     }
-
     throw error;
   }
 }
@@ -93,7 +58,7 @@ export function createSystemPrompt(role, user) {
   const basePrompt = `Bạn là trợ lý AI thông minh của DormHub - hệ thống quản lý ký túc xá.
 
 Vai trò của bạn:
-- Hỗ trợ người dùng về các chức năng của hệ thống
+- Hỗ trợ người dùng về các chức năng của hệ thống KTX DormHub
 - Giải đáp thắc mắc về hóa đơn, hợp đồng, phòng, bảo trì
 - Hướng dẫn sử dụng các tính năng
 - Trả lời bằng tiếng Việt, thân thiện và chuyên nghiệp

@@ -5,7 +5,6 @@ import {
   DoorOpen,
   FileText,
   Users,
-  CalendarDays,
   Download,
   RefreshCw,
 } from "lucide-react";
@@ -13,15 +12,14 @@ import Workspace from "../../components/Workspace";
 import { resources } from "../../services/resource.service";
 import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
-import { CustomSelect } from "../../components/ui/CustomSelect";
-import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
+import {
+  CheckoutDialog,
+  RenewDialog,
+  TransferDialog,
+} from "../../components/RequestDialogs";
 
 const card =
   "bg-surface border-4 border-line-strong rounded-sm p-6 shadow-[5px_5px_0_#141413]";
-const action =
-  "px-4 py-2 bg-warning border-3 border-line-strong rounded-sm text-sm! font-extrabold! shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413]  hover:-translate-0.5 active:translate-0.5 active:shadow-none outline-none! transition-all";
-const control =
-  "mt-2 w-full rounded-sm border-3 border-line-strong px-3 py-2.5 shadow-[3px_3px_0_#141413] outline-none! transition-all";
 const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);
@@ -43,8 +41,6 @@ export default function ResidencePage() {
   const [roommatesError, setRoommatesError] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState("");
-  const [form, setForm] = useState({});
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -63,7 +59,9 @@ export default function ResidencePage() {
         setRoommatesError("");
         if (currentAssignment) {
           try {
-            const members = await api("/student/room-assignments/roommates", { notify: false });
+            const members = await api("/student/room-assignments/roommates", {
+              notify: false,
+            });
             setRoommates(Array.isArray(members) ? members : []);
           } catch (err) {
             setRoommatesError(errorMessage(err));
@@ -84,43 +82,6 @@ export default function ResidencePage() {
       }
     })();
   }, []);
-
-  const open = (kind) => {
-    setForm({});
-    setModal(kind);
-  };
-  async function submit(e) {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      let endpoint, body;
-      if (modal === "renew") {
-        const date = new Date(contract?.endDate || Date.now());
-        date.setMonth(date.getMonth() + Number(form.months));
-        endpoint = `/student/contracts/${contract.contractId}/renewal-requests`;
-        body = {
-          requestedEndDate: date.toISOString().slice(0, 10),
-          reason: form.reason || "",
-        };
-      } else if (modal === "transfer") {
-        endpoint = "/student/room-transfer-requests";
-        body = {
-          preferredBuilding: form.building,
-          preferredRoomId: form.room || undefined,
-          reason: form.reason,
-        };
-      } else {
-        endpoint = "/student/checkout-requests";
-        body = { checkoutDate: form.date, reason: form.reason || "" };
-      }
-      await api(endpoint, { method: "POST", body });
-      setModal("");
-    } catch {
-      // API client reports request failures globally.
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const room = assignment?.room || assignment;
   const deposit =
@@ -186,7 +147,12 @@ export default function ResidencePage() {
                 <ul className="grid sm:grid-cols-2 gap-3 list-none p-0 m-0">
                   {roommates.map((member) => {
                     const fullName = member.fullName || "Sinh viên";
-                    const gender = member.gender === "MALE" ? "Nam" : member.gender === "FEMALE" ? "Nữ" : "Chưa cập nhật";
+                    const gender =
+                      member.gender === "MALE"
+                        ? "Nam"
+                        : member.gender === "FEMALE"
+                          ? "Nữ"
+                          : "Chưa cập nhật";
                     return (
                       <li
                         key={member.studentCode}
@@ -204,7 +170,9 @@ export default function ResidencePage() {
                               Mã sinh viên: {member.studentCode}
                             </span>
                           )}
-                          <span className="block text-xs font-semibold text-text-muted">Giới tính: {gender}</span>
+                          <span className="block text-xs font-semibold text-text-muted">
+                            Giới tính: {gender}
+                          </span>
                         </span>
                       </li>
                     );
@@ -213,7 +181,9 @@ export default function ResidencePage() {
               ) : (
                 <div className="flex items-center gap-3 border-2 border-dashed border-line-strong bg-surface-2 rounded-sm p-4 text-sm font-semibold text-text-muted">
                   <Users size={20} className="shrink-0" />
-                  <span>{assignment ? "Bạn đang ở một mình." : "Bạn chưa có phòng."}</span>
+                  <span>
+                    {assignment ? "Bạn đang ở một mình." : "Bạn chưa có phòng."}
+                  </span>
                 </div>
               )}
             </section>
@@ -241,7 +211,7 @@ export default function ResidencePage() {
                       <dt className="text-sm opacity-70">Trạng thái</dt>
                       <dd>
                         <span
-                          className={`inline-flex items-center px-3 py-1 border-2 border-line-strong rounded-xs shadow-[2px_2px_0_#141413] font-extrabold text-xs ${statusBadge.style}`}
+                          className={`inline-flex items-center px-3 py-1 border-2 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] font-extrabold text-xs ${statusBadge.style}`}
                         >
                           {statusBadge.label}
                         </span>
@@ -276,22 +246,22 @@ export default function ResidencePage() {
                       <div className="flex flex-wrap gap-2.5">
                         <button
                           type="button"
-                          onClick={() => open("renew")}
-                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-primary px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:translate-y-0.5 hover:shadow-none transition-all outline-none!"
+                          onClick={() => setModal("renew")}
+                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-primary px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
                           <RefreshCw size={16} /> Gia hạn hợp đồng
                         </button>
                         <button
                           type="button"
-                          onClick={() => open("transfer")}
-                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-info px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:translate-y-0.5 hover:shadow-none transition-all outline-none!"
+                          onClick={() => setModal("transfer")}
+                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-info px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
                           <ArrowLeftRight size={16} /> Chuyển phòng
                         </button>
                         <button
                           type="button"
-                          onClick={() => open("checkout")}
-                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-surface px-3 py-2 text-sm! font-bold! text-text shadow-[2px_2px_0_#141413] hover:bg-error hover:text-white hover:translate-y-0.5 hover:shadow-none transition-all outline-none!"
+                          onClick={() => setModal("checkout")}
+                          className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-surface px-3 py-2 text-sm! font-bold! text-text shadow-[2px_2px_0_#141413] hover:bg-error hover:text-white hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
                           <DoorOpen size={16} /> Trả phòng
                         </button>
@@ -306,101 +276,26 @@ export default function ResidencePage() {
           </div>
         )}
       </div>
-      {modal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 grid place-items-center p-4"
-          onMouseDown={(e) => e.target === e.currentTarget && setModal("")}
-        >
-          <form
-            onSubmit={submit}
-            className={`${card} box-border w-125 max-w-[95vw] space-y-4`}
-          >
-            <h2 className="w-full block leading-normal text-xl font-black">
-              {modal === "renew"
-                ? "Gia hạn hợp đồng"
-                : modal === "transfer"
-                  ? "Yêu cầu chuyển phòng"
-                  : "Yêu cầu trả phòng"}
-            </h2>
-            {modal === "renew" && (
-              <label className="block font-bold">
-                Số tháng muốn gia hạn
-                <CustomSelect
-                  required
-                  value={form.months || ""}
-                  onChange={(value) => setForm({ ...form, months: value })}
-                  options={[1, 2, 3, 6, 12].map((n) => ({
-                    value: String(n),
-                    label: `${n} tháng`,
-                  }))}
-                  placeholder="Chọn số tháng"
-                  className="mt-2"
-                />
-              </label>
-            )}
-            {modal === "transfer" && (
-              <>
-                <label className="block font-bold">
-                  Tòa nhà mong muốn
-                  <input
-                    required
-                    className={control}
-                    value={form.building || ""}
-                    onChange={(e) =>
-                      setForm({ ...form, building: e.target.value })
-                    }
-                  />
-                </label>
-                <label className="block font-bold">
-                  Phòng mong muốn (nếu có)
-                  <input
-                    className={control}
-                    value={form.room || ""}
-                    onChange={(e) => setForm({ ...form, room: e.target.value })}
-                  />
-                </label>
-              </>
-            )}
-            {modal === "checkout" && (
-              <label className="block font-bold">
-                Ngày dự kiến trả phòng
-                <CustomDatePicker
-                  required
-                  min={new Date().toISOString().slice(0, 10)}
-                  value={form.date || ""}
-                  onChange={(value) => setForm({ ...form, date: value })}
-                  className="mt-2"
-                />
-              </label>
-            )}
-            <label className="block font-bold">
-              {modal === "transfer" ? "Lý do" : "Ghi chú"}
-              <textarea
-                className={control}
-                required={modal === "transfer"}
-                value={form.reason || ""}
-                onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              />
-            </label>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setModal("")}
-                className="px-4 py-2 border-3 border-line-strong rounded-sm text-sm! shadow-[2px_2px_0_#141413] font-bold! outline-none! transition-all hover:shadow-[3px_3px_0_#141413]  hover:-translate-0.5 active:translate-0.5 active:shadow-none"
-              >
-                Đóng
-              </button>
-              <button disabled={busy} className={action}>
-                {busy ? (
-                  <RefreshCw className="animate-spin" />
-                ) : (
-                  <CalendarDays className="inline mr-2" />
-                )}
-                Gửi yêu cầu
-              </button>
-            </div>
-          </form>
-        </div>
+      {modal === "renew" && (
+        <RenewDialog
+          contract={contract}
+          room={room}
+          onClose={() => setModal("")}
+        />
+      )}
+      {modal === "transfer" && (
+        <TransferDialog
+          room={room}
+          contract={contract}
+          onClose={() => setModal("")}
+        />
+      )}
+      {modal === "checkout" && (
+        <CheckoutDialog
+          room={room}
+          contract={contract}
+          onClose={() => setModal("")}
+        />
       )}
     </Workspace>
   );

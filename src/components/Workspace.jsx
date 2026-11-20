@@ -26,7 +26,6 @@ export default function Workspace({ group, title, children }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -99,39 +98,85 @@ export default function Workspace({ group, title, children }) {
       setUnreadCount((count) => Math.max(0, count - 1));
       api(`/notifications/${encodeURIComponent(id)}/read`, {
         method: "PATCH",
+        successNotify: false,
       }).catch(() => {
         // API client reports request failures globally.
       });
     }
+
+    if (group === "student") {
+      const type = String(item.type || item.targetType || "").toUpperCase();
+      const text = `${type} ${item.title || ""} ${item.body || item.message || ""}`.toLowerCase();
+
+      // 1. Hóa đơn
+      if (
+        type.includes("INVOICE") ||
+        type.includes("PAYMENT") ||
+        text.includes("hóa đơn") ||
+        text.includes("thanh toán") ||
+        text.includes("tiền phòng") ||
+        text.includes("tiền điện") ||
+        text.includes("tiền nước")
+      ) {
+        navigate("/student/invoices");
+        return;
+      }
+
+      // 2. Hợp đồng / đăng ký phòng
+      if (
+        type.includes("CONTRACT") ||
+        type.includes("ROOM") ||
+        type.includes("APPLICATION") ||
+        type.includes("CHECKIN") ||
+        type.includes("CHECKOUT") ||
+        type.includes("RENEWAL") ||
+        type.includes("TRANSFER") ||
+        text.includes("hợp đồng") ||
+        text.includes("đăng ký phòng") ||
+        text.includes("chuyển phòng") ||
+        text.includes("gia hạn")
+      ) {
+        navigate("/student/room-contract");
+        return;
+      }
+
+      // 3. Sửa chữa / bảo trì
+      if (
+        type.includes("MAINTENANCE") ||
+        text.includes("bảo trì") ||
+        text.includes("sửa chữa") ||
+        text.includes("báo hỏng")
+      ) {
+        navigate("/student/maintenance");
+        return;
+      }
+
+      // 4. Mặc định (thông báo chung từ Manager)
+      navigate(`/student/notifications?id=${encodeURIComponent(id)}`);
+      return;
+    }
+
+    // Luồng Manager
     const type = String(item.type || item.targetType || "GENERAL").toUpperCase();
     const targetId = item.targetId ?? item.entityId ?? item.referenceId;
     let target;
 
     if (type.includes("MAINTENANCE")) {
-      target = group === "student"
-        ? `/student/maintenance${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`
-        : targetId == null
-          ? "/manager/maintenance"
-          : `/manager/maintenance/${encodeURIComponent(targetId)}`;
+      target = targetId == null
+        ? "/manager/maintenance"
+        : `/manager/maintenance/${encodeURIComponent(targetId)}`;
     } else if (type.includes("INVOICE") || type.includes("PAYMENT")) {
-      target = group === "student"
-        ? `/student/invoices${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`
-        : `/manager/finance${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`;
+      target = `/manager/finance${targetId == null ? "" : `?id=${encodeURIComponent(targetId)}`}`;
     } else if (type.includes("CONTRACT") || type.includes("ROOM")) {
-      target = group === "student" ? "/student/residence" : "/manager/contracts";
+      target = "/manager/contracts";
     } else if (type.includes("APPLICATION")) {
-      target = group === "manager"
-        ? targetId == null
-          ? "/manager/students?tab=applications"
-          : `/manager/applications/${encodeURIComponent(targetId)}`
-        : targetId == null
-          ? "/student/applications"
-          : `/student/applications/${encodeURIComponent(targetId)}`;
+      target = targetId == null
+        ? "/manager/students?tab=applications"
+        : `/manager/applications/${encodeURIComponent(targetId)}`;
     }
 
     target = item.targetUrl || target;
     if (target) navigate(target);
-    else setSelectedNotification(item);
   }
   // Sinh viên chưa có phòng chỉ thấy các chức năng tìm phòng / đăng ký
   const noRoom = group === "student" && !hasRoom;
@@ -438,43 +483,6 @@ export default function Workspace({ group, title, children }) {
                         Chưa có thông báo.
                       </p>
                     )}
-                  </div>
-                )}
-                {selectedNotification && (
-                  <div
-                    className="fixed inset-0 z-99999 grid place-items-center bg-black/50 p-4"
-                    onMouseDown={(event) =>
-                      event.target === event.currentTarget &&
-                      setSelectedNotification(null)
-                    }
-                  >
-                    <section
-                      role="dialog"
-                      aria-modal="true"
-                      aria-labelledby="general-notification-title"
-                      className="box-border w-[500px] rounded-sm border-3 border-line-strong bg-surface p-6 shadow-[6px_6px_0_#141413]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <h2
-                          id="general-notification-title"
-                          className="w-full block leading-normal text-lg font-black"
-                        >
-                          {selectedNotification.title || "Thông báo"}
-                        </h2>
-                        <button
-                          onClick={() => setSelectedNotification(null)}
-                          aria-label="Đóng"
-                          className="grid size-8 place-items-center rounded-sm border-3 border-line-strong shadow-[2px_2px_0_#141413] outline-none! transition-all"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      <p className="w-full block leading-normal mt-4 whitespace-pre-wrap text-sm font-semibold">
-                        {selectedNotification.body ||
-                          selectedNotification.message ||
-                          ""}
-                      </p>
-                    </section>
                   </div>
                 )}
               </div>

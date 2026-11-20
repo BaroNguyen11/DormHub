@@ -63,7 +63,7 @@ function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuc
     ) : (
       <div className="space-y-4">
         <h2 className="text-xl font-black">Cấp tài khoản cho hồ sơ sinh viên</h2>
-        <p className="max-w-2xl text-sm font-semibold text-text-muted">
+        <p className="text-sm font-semibold text-text-muted">
           Chọn một sinh viên đang ở trạng thái “Chưa có tài khoản” trong danh sách để tạo tài khoản và liên kết đúng hồ sơ.
         </p>
         <button

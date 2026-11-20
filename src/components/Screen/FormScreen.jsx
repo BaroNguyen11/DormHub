@@ -20,6 +20,7 @@ import { useLoad } from "./useLoad";
 import { CustomSelect } from "../ui/CustomSelect";
 import { CustomDatePicker } from "../ui/CustomDatePicker";
 import { toast } from "sonner";
+import useAuth from "../../hooks/useAuth";
 
 /**
  * Component Upload Ảnh - Phong cách Neo-Brutalism tích hợp Modal Phóng To & Xóa ảnh độc lập
@@ -374,6 +375,7 @@ export default function FormScreen({ config }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
 
   const [values, setValues] = useState(config.defaultValues || {});
   const [optionsByField, setOptionsByField] = useState({});
@@ -387,11 +389,14 @@ export default function FormScreen({ config }) {
   useEffect(() => {
     let cancelled = false;
     const fields = config.fields || [];
+    // FIX: sinh viên không có quyền gọi /manager/rooms (403) —
+    // form chuyển phòng của SV phải lấy danh sách phòng từ /student/rooms-available.
     const endpoints = {
       buildingId: "/manager/buildings",
       buildingCode: "/manager/buildings",
-      roomId: "/manager/rooms",
-      preferredRoomId: "/manager/rooms",
+      roomId: role === "STUDENT" ? "/student/rooms-available" : "/manager/rooms",
+      preferredRoomId:
+        role === "STUDENT" ? "/student/rooms-available" : "/manager/rooms",
       contractId: "/manager/contracts",
       studentId: "/manager/students",
     };
@@ -582,7 +587,7 @@ export default function FormScreen({ config }) {
         navigate(
           config.edit
             ? location.pathname.replace(/\/edit$/, "")
-            : config.resource === "/maintenance-requests"
+            : config.resource === "/student/maintenance"
               ? "/student/maintenance"
               : config.resource === "/notifications"
                 ? "/manager"

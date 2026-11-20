@@ -2,7 +2,7 @@
 // DETAIL SCREEN - Màn hình chi tiết (Neo-Brutalism)
 // ====================================
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   FileEdit,
@@ -13,8 +13,11 @@ import {
   FileText,
   Eye,
   X,
+  Image as ImageIcon,
+  Wrench,
 } from "lucide-react";
 import { resources } from "../../services/resource.service";
+import { API_BASE_URL } from "../../api/apiClient";
 import { FIELD_LABELS } from "./constants";
 import { formatValue } from "./formatters";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
@@ -23,20 +26,146 @@ import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { toast } from "sonner";
 import { asList } from "../../api/apiClient";
 
-function DetailTile({ field, value }) {
+// Các field chứa ảnh đính kèm (báo hỏng: imageUrl; phòng: images/imageUrls)
+const IMAGE_FIELDS = new Set(["imageUrl", "images", "imageUrls"]);
+
+// Field nội dung dài -> render full-width (chiếm cả hàng grid) cho dễ đọc
+const FULL_WIDTH_FIELDS = new Set([
+  "description",
+  "note",
+  "reviewNote",
+  "rejectionReason",
+  "reason",
+  "body",
+  "content",
+  "reviewReason",
+]);
+
+/**
+ * Ảnh từ backend có thể là URL tuyệt đối hoặc đường dẫn tương đối (/uploads/...).
+ * Đường dẫn tương đối được ghép với origin của API (bỏ đuôi /api/v1).
+ */
+function resolveImageUrl(value) {
+  if (typeof value !== "string") return "";
+  const url = value.trim();
+  if (!url) return "";
+  if (/^(https?:|blob:|data:)/i.test(url)) return url;
+  if (url.startsWith("/")) {
+    const origin = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
+    return `${origin}${url}`;
+  }
+  return url;
+}
+
+function ImageLightbox({ src, alt, onClose }) {
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div className="min-w-0 rounded-sm border-2 border-line-strong/15 bg-surface-2 p-4">
+    <div
+      className="fixed inset-0 z-110 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="relative box-border w-240 max-w-[95vw] border-3 border-line-strong bg-surface rounded-sm p-4 shadow-[6px_6px_0_#141413] flex flex-col items-center justify-center gap-3">
+        <button
+          type="button"
+          aria-label="Đóng xem ảnh"
+          onClick={onClose}
+          className="absolute -right-3 -top-3 z-10 bg-surface border-3 border-line-strong rounded-full p-1.5 shadow-[2px_2px_0_#141413] hover:bg-error transition-all outline-none! cursor-pointer"
+        >
+          <X size={18} />
+        </button>
+        <img
+          src={src}
+          alt={alt}
+          className="max-h-[78vh] max-w-full object-contain mx-auto block rounded-xs"
+        />
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 border-2 border-line-strong bg-primary text-black rounded-sm px-3 py-1.5 text-xs! font-black shadow-[2px_2px_0_#141413] hover:-translate-y-0.5 transition-all"
+        >
+          <Eye size={14} /> Mở ảnh gốc trong tab mới
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Khối ảnh đính kèm dùng chung cho mọi trang chi tiết (student & manager):
+ * thumbnail bấm được -> lightbox xem ảnh đầy đủ; hỗ trợ 1 ảnh hoặc mảng ảnh.
+ */
+function AttachmentImages({ value, alt = "Ảnh đính kèm" }) {
+  const [lightbox, setLightbox] = useState(null);
+  const images = (Array.isArray(value) ? value : [value])
+    .map(resolveImageUrl)
+    .filter(Boolean);
+
+  if (images.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-2 text-sm font-bold text-text-muted">
+        <ImageIcon size={16} /> Không có ảnh đính kèm
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-3">
+        {images.map((src, index) => (
+          <button
+            key={`${src}-${index}`}
+            type="button"
+            onClick={() => setLightbox(src)}
+            title="Nhấp để xem ảnh đầy đủ"
+            className="relative group inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none! cursor-zoom-in"
+          >
+            <img
+              src={src}
+              alt={`${alt} ${images.length > 1 ? index + 1 : ""}`.trim()}
+              className="size-[120px] object-cover block"
+            />
+            <span className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 text-white font-black text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-all">
+              <Eye size={15} /> Xem ảnh
+            </span>
+          </button>
+        ))}
+      </div>
+      {lightbox && (
+        <ImageLightbox src={lightbox} alt={alt} onClose={() => setLightbox(null)} />
+      )}
+    </>
+  );
+}
+
+function DetailTile({ field, value, fullWidth, maintenanceBadge }) {
+  return (
+    <div
+      className={`min-w-0 rounded-sm border-2 border-line-strong/15 bg-surface-2 p-4 ${
+        fullWidth ? "sm:col-span-2 xl:col-span-3" : ""
+      }`}
+    >
       <dt className="text-[11px] font-extrabold uppercase tracking-wider text-text-muted">
         {FIELD_LABELS[field] || field}
       </dt>
       <dd className="mt-1.5 break-words text-sm font-black text-text">
-        {field === "imageUrl" && typeof value === "string" ? (
-          <a href={value} target="_blank" rel="noopener noreferrer" aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới" className="relative group inline-block overflow-hidden rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413]">
-            <img src={value} alt="Ảnh đính kèm" className="size-[120px] object-cover" />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-black text-white opacity-0 transition group-hover:opacity-100">Xem ảnh gốc</span>
-          </a>
+        {IMAGE_FIELDS.has(field) ? (
+          <AttachmentImages value={value} alt={FIELD_LABELS[field] || "Ảnh đính kèm"} />
         ) : field === "status" && typeof value === "string" ? (
-          <StatusBadge status={value} />
+          maintenanceBadge ? (
+            <MaintenanceStatusBadge status={value} />
+          ) : (
+            <StatusBadge status={value} />
+          )
         ) : (
           formatValue(field, value)
         )}
@@ -45,7 +174,13 @@ function DetailTile({ field, value }) {
   );
 }
 
-const MANAGER_DETAIL_SECTIONS = {
+const ROOM_DETAIL_SECTIONS = [
+  { title: "Vị trí phòng", fields: ["roomNumber", "buildingName", "buildingCode", "floor", "roomType", "genderRestriction"] },
+  { title: "Sức chứa và giá", fields: ["capacity", "currentOccupancy", "availableSlots", "pricePerMonth", "status"] },
+  { title: "Mô tả", fields: ["description"] },
+];
+
+const DETAIL_SECTIONS = {
   "/manager/students": [
     { title: "Thông tin định danh", fields: ["fullName", "studentCode", "dateOfBirth", "gender", "cic"] },
     { title: "Thông tin liên hệ", fields: ["email", "phone", "address"] },
@@ -67,14 +202,80 @@ const MANAGER_DETAIL_SECTIONS = {
     { title: "Đối soát", fields: ["reviewReason"] },
   ],
   "/manager/maintenance": [
-    { title: "Yêu cầu sửa chữa", fields: ["title", "priority", "status", "description", "imageUrl"] },
+    { title: "Người báo hỏng", fields: ["studentName", "studentCode", "roomNumber", "buildingName"] },
+    { title: "Yêu cầu sửa chữa", fields: ["title", "type", "priority", "status"] },
+    { title: "Mô tả và hình ảnh", fields: ["description", "imageUrl"] },
     { title: "Thời gian xử lý", fields: ["createdAt", "updatedAt", "processedAt"] },
+    { title: "Phản hồi", fields: ["rejectionReason"] },
   ],
   "/manager/dorm-applications": [
     { title: "Sinh viên", fields: ["studentName", "studentCode", "studentGender"] },
     { title: "Phòng đăng ký", fields: ["requestedRoomNumber", "requestedBuildingName", "requestDate", "status"] },
     { title: "Kết quả xử lý", fields: ["note", "reviewNote", "processedAt", "contractStartDate", "contractEndDate", "depositAmount"] },
   ],
+
+  // ===== STUDENT =====
+  "/student/maintenance": [
+    { title: "Thông tin yêu cầu", fields: ["title", "type", "priority", "status"] },
+    { title: "Mô tả và hình ảnh", fields: ["description", "imageUrl"] },
+    { title: "Tiến độ xử lý", fields: ["createdAt", "updatedAt", "processedAt"] },
+    { title: "Phản hồi từ ban quản lý", fields: ["rejectionReason"] },
+  ],
+  "/student/contracts": [
+    { title: "Chỗ ở thuê", fields: ["studentName", "studentCode", "roomNumber", "buildingName"] },
+    { title: "Thời hạn và chi phí", fields: ["startDate", "endDate", "monthlyRent", "depositAmount"] },
+    { title: "Trạng thái hợp đồng", fields: ["status", "depositStatus"] },
+    { title: "Ghi chú", fields: ["description", "createdAt", "updatedAt"] },
+  ],
+  "/student/invoices": [
+    { title: "Thông tin hóa đơn", fields: ["invoiceType", "billingMonth", "issueDate"] },
+    { title: "Thanh toán", fields: ["totalAmount", "status", "overdue", "dueDate", "paidAt"] },
+  ],
+  "/student/dorm-applications": [
+    { title: "Sinh viên", fields: ["studentName", "studentCode", "studentGender"] },
+    { title: "Phòng đăng ký", fields: ["requestedRoomNumber", "requestedBuildingName", "requestDate", "status"] },
+    { title: "Kết quả xử lý", fields: ["note", "reviewNote", "processedAt", "depositAmount", "depositInvoiceId", "contractStartDate", "contractEndDate"] },
+  ],
+  "/student/room-assignments": [
+    { title: "Chỗ ở hiện tại", fields: ["roomNumber", "buildingName", "floor", "roomType"] },
+    { title: "Phân phòng", fields: ["assignmentStatus", "status", "assignedAt", "checkInAt", "checkOutAt"] },
+    { title: "Chi phí", fields: ["pricePerMonth", "depositAmount"] },
+  ],
+  "/student/renewal-requests": [
+    { title: "Thông tin yêu cầu", fields: ["renewalRequestId", "contractId", "requestedEndDate", "status", "requestedAt"] },
+    { title: "Nội dung", fields: ["reason"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "reviewedById"] },
+  ],
+  "/manager/renewal-requests": [
+    { title: "Sinh viên và hợp đồng", fields: ["studentName", "roomNumber", "contractId", "renewalRequestId"] },
+    { title: "Nội dung yêu cầu", fields: ["requestedEndDate", "reason", "status", "requestedAt"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "reviewedById"] },
+  ],
+  "/student/checkout-requests": [
+    { title: "Thông tin yêu cầu", fields: ["checkoutRequestId", "checkoutDate", "status", "requestDate"] },
+    { title: "Nội dung", fields: ["reason"] },
+    { title: "Kết quả xử lý", fields: ["note", "depositDisposition", "processedAt"] },
+  ],
+  "/manager/checkout-requests": [
+    { title: "Sinh viên và phòng", fields: ["studentName", "studentCode", "roomNumber", "buildingName"] },
+    { title: "Nội dung yêu cầu", fields: ["checkoutRequestId", "checkoutDate", "reason", "status", "requestDate"] },
+    { title: "Kết quả xử lý", fields: ["note", "depositDisposition", "processedAt"] },
+  ],
+  "/student/room-transfer-requests": [
+    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomId", "preferredRoomId", "approvedRoomId", "status", "requestedAt"] },
+    { title: "Nội dung", fields: ["reason"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "processedAt"] },
+  ],
+  "/manager/room-transfer-requests": [
+    { title: "Sinh viên", fields: ["studentName", "studentId", "studentCode"] },
+    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomId", "preferredRoomId", "approvedRoomId", "status", "requestedAt"] },
+    { title: "Nội dung", fields: ["reason"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "processedAt"] },
+  ],
+
+  // Phòng trống (student tìm phòng & guest xem công khai)
+  "/student/rooms-available": ROOM_DETAIL_SECTIONS,
+  "/rooms": ROOM_DETAIL_SECTIONS,
 };
 
 function hasDetailValue(value) {
@@ -82,7 +283,7 @@ function hasDetailValue(value) {
     !(typeof value === "string" && ["", "-", "—"].includes(value.trim()));
 }
 
-function DetailSection({ section, data }) {
+function DetailSection({ section, data, maintenanceBadge }) {
   const fields = section.fields.filter((field) => hasDetailValue(data[field]));
   if (fields.length === 0) return null;
   return (
@@ -92,7 +293,13 @@ function DetailSection({ section, data }) {
       </h3>
       <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {fields.map((field) => (
-          <DetailTile key={field} field={field} value={data[field]} />
+          <DetailTile
+            key={field}
+            field={field}
+            value={data[field]}
+            fullWidth={FULL_WIDTH_FIELDS.has(field) || IMAGE_FIELDS.has(field)}
+            maintenanceBadge={maintenanceBadge}
+          />
         ))}
       </dl>
     </section>
@@ -113,6 +320,136 @@ function InvoiceItems({ details }) {
             <div><p className="m-0 text-[11px] font-extrabold uppercase text-text-muted">Thành tiền</p><p className="mt-1 text-sm font-black">{formatValue("amount", item.amount)}</p></div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/** Thanh tiến độ chiếm dụng phòng (dùng cho trang chi tiết phòng). */
+function OccupancyBar({ capacity, current }) {
+  const cap = Number(capacity) || 0;
+  const cur = Number(current) || 0;
+  if (cap <= 0) return null;
+  const percent = Math.min(100, Math.round((cur / cap) * 100));
+  return (
+    <div className="rounded-sm border-2 border-line-strong/15 bg-surface-2 p-4">
+      <div className="mb-2 flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-text-muted">
+        <span>Tỉ lệ lấp đầy</span>
+        <span className="text-text">{cur}/{cap} người · {percent}%</span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-sm border-2 border-line-strong bg-surface" role="img" aria-label={`Đang ở ${cur} trên ${cap} người`}>
+        <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+}
+
+const MAINTENANCE_STATUS_ALIASES = {
+  WAITING: "PENDING",
+  PROCESSING: "IN_PROGRESS",
+  RESOLVED: "COMPLETED",
+  DONE: "COMPLETED",
+};
+
+/** Timeline tiến độ xử lý báo hỏng: Tiếp nhận -> Đang xử lý -> Hoàn thành / Từ chối. */
+function MaintenanceTimeline({ data }) {
+  const rawStatus = String(data?.status || "").toUpperCase();
+  const status = MAINTENANCE_STATUS_ALIASES[rawStatus] || rawStatus;
+  if (!["PENDING", "IN_PROGRESS", "COMPLETED", "REJECTED"].includes(status)) return null;
+
+  const rejected = status === "REJECTED";
+  const steps = [
+    { label: "Đã tiếp nhận", date: data?.createdAt },
+    { label: "Đang xử lý", date: status === "IN_PROGRESS" ? data?.updatedAt || data?.processedAt : null },
+    rejected
+      ? { label: "Bị từ chối", date: data?.processedAt || data?.updatedAt, danger: true }
+      : { label: "Hoàn thành", date: data?.processedAt },
+  ];
+  const activeIndex = rejected
+    ? steps.length - 1
+    : steps.findIndex((step) => step.label === (status === "PENDING" ? "Đã tiếp nhận" : status === "IN_PROGRESS" ? "Đang xử lý" : "Hoàn thành"));
+
+  return (
+    <section className="rounded-sm border-2 border-line-strong/15 bg-surface p-5">
+      <h3 className="mb-4 border-b-2 border-line-strong/10 pb-3 text-sm font-black uppercase tracking-wide text-text">
+        Tiến độ xử lý
+      </h3>
+      <ol className="m-0 flex list-none items-start gap-0 p-0">
+        {steps.map((step, index) => {
+          // Khi bị từ chối, chỉ bước "Đã tiếp nhận" và bước "Bị từ chối" đạt được
+          // (yêu cầu chưa nhất thiết đi qua trạng thái Đang xử lý).
+          const reached = rejected
+            ? index === 0 || index === steps.length - 1
+            : index <= activeIndex;
+          const isCurrent = !rejected && index === activeIndex;
+          const stepDate = step.date && !Number.isNaN(new Date(step.date).getTime())
+            ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(step.date))
+            : null;
+          return (
+            <li key={step.label} className={`flex ${index < steps.length - 1 ? "flex-1" : "shrink-0"} min-w-0 flex-col items-center gap-1.5 text-center`}>
+              <div className="flex w-full items-center">
+                <span
+                  className={`grid size-6 shrink-0 place-items-center rounded-full border-2 border-line-strong shadow-[2px_2px_0_#141413] ${
+                    reached
+                      ? step.danger
+                        ? "bg-error text-white"
+                        : "bg-success text-black"
+                      : "bg-surface-3 text-text-muted"
+                  }`}
+                >
+                  {reached ? <CheckCircle2 size={14} strokeWidth={3} /> : index + 1}
+                </span>
+                {index < steps.length - 1 && (
+                  <span className={`mx-1 h-1 flex-1 rounded-full ${reached ? "bg-success" : "bg-line-strong/20"}`} />
+                )}
+              </div>
+              <span className={`text-[11px] font-extrabold uppercase tracking-wide ${isCurrent ? "text-text" : reached ? "text-text-muted" : "text-text-muted/70"}`}>
+                {step.label}
+              </span>
+              <span className="text-[11px] font-bold text-text-muted">{stepDate || "—"}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** Thanh tiến độ thời hạn hợp đồng: đã trôi bao nhiêu ngày, còn bao nhiêu ngày. */
+function ContractProgress({ data }) {
+  const start = data?.startDate ? new Date(data.startDate) : null;
+  const end = data?.endDate ? new Date(data.endDate) : null;
+  if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+
+  const status = String(data?.status || "").toUpperCase();
+  const now = new Date();
+  const totalDays = Math.max(1, Math.ceil((end - start) / 86400000));
+  const remainingDays = Math.ceil((end - now) / 86400000);
+  const elapsedDays = Math.min(totalDays, Math.max(0, totalDays - Math.max(0, remainingDays)));
+  const percent = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+  const inactive = ["EXPIRED", "TERMINATED", "CANCELLED"].includes(status);
+  const nearlyExpired = !inactive && remainingDays <= 30;
+
+  const summary = inactive
+    ? "Hợp đồng không còn hiệu lực"
+    : remainingDays >= 0
+      ? `Còn ${remainingDays}/${totalDays} ngày hiệu lực`
+      : `Đã quá hạn ${Math.abs(remainingDays)} ngày`;
+
+  return (
+    <section className="rounded-sm border-2 border-line-strong/15 bg-surface p-5">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="m-0 text-sm font-black uppercase tracking-wide text-text">Thời hạn hợp đồng</h3>
+        <span className={`rounded-sm border-2 border-line-strong px-2.5 py-1 text-xs font-extrabold shadow-[2px_2px_0_#141413] ${inactive ? "bg-surface-3 text-text-muted" : nearlyExpired ? "bg-warning text-black" : "bg-success text-black"}`}>
+          {summary}
+        </span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-sm border-2 border-line-strong bg-surface" role="img" aria-label={`Đã trôi ${elapsedDays} trên ${totalDays} ngày`}>
+        <div className={`h-full ${inactive ? "bg-surface-3" : nearlyExpired ? "bg-warning" : "bg-success"}`} style={{ width: `${percent}%` }} />
+      </div>
+      <div className="mt-2 flex justify-between text-xs font-bold text-text-muted">
+        <span>Bắt đầu: {new Intl.DateTimeFormat("vi-VN").format(start)}</span>
+        <span>Kết thúc: {new Intl.DateTimeFormat("vi-VN").format(end)}</span>
       </div>
     </section>
   );
@@ -152,10 +489,14 @@ export default function DetailScreen({ config }) {
       : raw;
 
   const isStudentDetail = config.resource === "/manager/students";
-  const isMaintenanceDetail = config.resource === "/manager/maintenance";
+  // Báo hỏng: cả manager (xử lý) và student (theo dõi) đều là chi tiết "báo hỏng"
+  // -> dùng chung badge trạng thái, timeline tiến độ và khối ảnh đính kèm.
+  const isMaintenanceDetail = ["/manager/maintenance", "/student/maintenance"].includes(config.resource);
   const isRoomDetail = config.resource === "/manager/rooms";
   const isBuildingDetail = config.resource === "/manager/buildings";
-  const detailSections = MANAGER_DETAIL_SECTIONS[config.resource];
+  const isContractDetail = ["/contracts", "/student/contracts"].includes(config.resource);
+  const isInvoiceDetail = ["/invoices", "/student/invoices"].includes(config.resource);
+  const detailSections = DETAIL_SECTIONS[config.resource];
   const { data: buildingRoomsData, loading: buildingRoomsLoading, error: buildingRoomsError } = useLoad(
     isBuildingDetail ? "/manager/rooms" : "",
     { buildingId: id, page: 0, size: 100 },
@@ -455,18 +796,24 @@ export default function DetailScreen({ config }) {
             <div className="flex items-center justify-between pb-4 border-b-3 border-line-strong">
               <div className="flex items-center gap-2.5">
                 <div className="size-9 rounded-sm bg-primary border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
-                  <FileText
-                    size={18}
-                    className="text-text"
-                    strokeWidth={2.5}
-                  />
+                  {isMaintenanceDetail ? (
+                    <Wrench size={18} className="text-text" strokeWidth={2.5} />
+                  ) : (
+                    <FileText size={18} className="text-text" strokeWidth={2.5} />
+                  )}
                 </div>
                 <h2 className="text-lg font-black text-text">
                   {isRoomDetail
                     ? `Phòng ${data.roomNumber || `#${id}`}`
                     : isBuildingDetail
                       ? data.name || `Tòa nhà #${id}`
-                      : `Thông tin chi tiết ${id ? `#${id}` : ""}`}
+                      : isMaintenanceDetail
+                        ? `Báo hỏng${data.title ? `: ${data.title}` : id ? ` #${id}` : ""}`
+                        : isContractDetail
+                          ? `Hợp đồng ${data.contractId ? `#${data.contractId}` : id ? `#${id}` : ""}`
+                          : isInvoiceDetail
+                            ? `Hóa đơn ${data.invoiceId ? `#${data.invoiceId}` : id ? `#${id}` : ""}`
+                            : `Thông tin chi tiết ${id ? `#${id}` : ""}`}
                 </h2>
               </div>
 
@@ -488,20 +835,32 @@ export default function DetailScreen({ config }) {
             </div>
 
             {isRoomDetail || isBuildingDetail ? (
-              <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {(isRoomDetail
-                  ? ["buildingName", "buildingCode", "floor", "roomType", "genderRestriction", "status", "capacity", "currentOccupancy", "availableSlots", "pricePerMonth", "electricMeterNumber", "waterMeterNumber", "description"]
-                  : ["buildingCode", "address", "totalFloors", "genderRestriction", "totalRooms", "availableRooms", "description"]
-                ).map((field) => (
-                  <DetailTile key={field} field={field} value={data[field]} />
-                ))}
-              </dl>
+              <div className="space-y-4">
+                <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {(isRoomDetail
+                    ? ["buildingName", "buildingCode", "floor", "roomType", "genderRestriction", "status", "capacity", "currentOccupancy", "availableSlots", "pricePerMonth", "electricMeterNumber", "waterMeterNumber", "description"]
+                    : ["buildingCode", "address", "totalFloors", "genderRestriction", "totalRooms", "availableRooms", "description"]
+                  ).map((field) => (
+                    <DetailTile key={field} field={field} value={data[field]} />
+                  ))}
+                </dl>
+                {isRoomDetail && (
+                  <OccupancyBar capacity={data.capacity} current={data.currentOccupancy} />
+                )}
+              </div>
             ) : detailSections ? (
               <div className="space-y-4">
                 {detailSections.map((section) => (
-                  <DetailSection key={section.title} section={section} data={data} />
+                  <DetailSection
+                    key={section.title}
+                    section={section}
+                    data={data}
+                    maintenanceBadge={isMaintenanceDetail}
+                  />
                 ))}
-                {config.resource === "/invoices" && <InvoiceItems details={data.details} />}
+                {isInvoiceDetail && <InvoiceItems details={data.details} />}
+                {isMaintenanceDetail && <MaintenanceTimeline data={data} />}
+                {isContractDetail && <ContractProgress data={data} />}
               </div>
             ) : (
               <dl className="divide-y-2 divide-line-strong/10 m-0">
@@ -511,15 +870,14 @@ export default function DetailScreen({ config }) {
                       {FIELD_LABELS[key] || key}
                     </dt>
                     <dd className="m-0 break-words text-sm font-black text-text sm:col-span-8">
-                      {isMaintenanceDetail && key === "imageUrl" ? (
-                        value ? (
-                          <a href={value} target="_blank" rel="noopener noreferrer" aria-label="Mở ảnh đính kèm ở kích thước gốc trong tab mới" className="relative group inline-block overflow-hidden rounded-sm border-3 border-line-strong bg-surface shadow-[4px_4px_0_#141413] hover:shadow-[6px_6px_0_#141413] hover:-translate-y-0.5 transition-all outline-none!">
-                            <img src={value} alt="Ảnh đính kèm báo hỏng" className="size-[120px] object-cover block" />
-                            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white font-black text-xs px-2 py-1 rounded-xs border border-white opacity-0 group-hover:opacity-100 transition-all">
-                              <Eye size={15} className="mr-1" /> Xem ảnh gốc
-                            </span>
-                          </a>
-                        ) : <span className="text-text-muted font-bold">Không có ảnh đính kèm</span>
+                      {IMAGE_FIELDS.has(key) ? (
+                        hasDetailValue(value) ? (
+                          <AttachmentImages value={value} alt={FIELD_LABELS[key] || "Ảnh đính kèm"} />
+                        ) : (
+                          <span className="inline-flex items-center gap-2 text-sm font-bold text-text-muted">
+                            <ImageIcon size={16} /> Không có ảnh đính kèm
+                          </span>
+                        )
                       ) : key === "status" && typeof value === "string" ? (
                         isMaintenanceDetail ? <MaintenanceStatusBadge status={value} /> : <StatusBadge status={value} />
                       ) : formatValue(key, value)}

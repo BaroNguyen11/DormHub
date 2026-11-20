@@ -1,6 +1,3 @@
-import Screen from "../../../components/Screen";
-import { screens } from "../../../constants/screenConfig";
+import StudentNotificationsPage from "./StudentNotificationsPage";
 
-export default function Page() {
-  return <Screen config={screens["/student/notifications"]} />;
-}
+export default StudentNotificationsPage;

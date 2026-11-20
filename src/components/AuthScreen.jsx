@@ -194,7 +194,7 @@ export default function AuthScreen({ type }) {
         <h2 className="text-3xl font-black tracking-tight text-text mb-2">
           {config.title}
         </h2>
-        <p className="text-text-muted text-sm leading-relaxed mb-6 font-bold">
+        <p className="text-text-muted text-sm! leading-relaxed mb-6 font-bold">
           {config.intro}
         </p>
 
@@ -202,7 +202,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm! font-black! bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {location.state.success}
@@ -212,7 +212,7 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-error/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm! font-black! bg-error/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="alert"
           >
             {error}
@@ -222,48 +222,12 @@ export default function AuthScreen({ type }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 rounded-sm mb-4 text-sm font-black bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
+            className="px-4 py-3 rounded-sm mb-4 text-sm! font-black! bg-success/20 text-text border-3 border-line-strong shadow-[3px_3px_0_#141413]"
             role="status"
           >
             {success}
           </motion.div>
         )}
-
-        {/* {type === "login" && DEMO_ENABLED && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-surface-2 border-3 border-line-strong rounded-sm p-4 mb-6 shadow-[4px_4px_0_#141413]"
-          >
-            <strong className="block mb-1.5 text-sm font-black text-text">
-              Xem thử giao diện không cần backend
-            </strong>
-            <p className="text-text-muted text-xs leading-normal mb-3 font-extrabold">
-              Chọn vai trò để điền tài khoản mẫu. Mật khẩu chung:{" "}
-              <code className="px-1.5 py-0.5 rounded-sm bg-surface text-text text-xs font-mono border-2 border-line-strong shadow-[1px_1px_0_#141413]">
-                {DEMO_PASSWORD}
-              </code>
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  type="button"
-                  key={account.role}
-                  onClick={() =>
-                    setValues({
-                      email: account.email,
-                      password: DEMO_PASSWORD,
-                    })
-                  }
-                  className="border-3 border-line-strong bg-surface text-text rounded-sm px-3 py-1.5 inline-flex gap-1.5 items-center justify-center font-extrabold text-xs whitespace-nowrap hover:bg-warning shadow-[2px_2px_0_#141413] hover:shadow-[3px_3px_0_#141413] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
-                >
-                  {account.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )} */}
 
         <form onSubmit={submit} className="space-y-4">
           {config.fields.map(([key, label, inputType]) => {

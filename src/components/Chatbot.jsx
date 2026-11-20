@@ -5,9 +5,11 @@ import { Send, X, Bot, User, RefreshCw, Trash2 } from "lucide-react";
 import { aiService } from "../services/ai.service";
 import useAuth from "../hooks/useAuth";
 import { marked } from "marked";
+import { useNavigate } from "react-router-dom";
 
 export default function Chatbot({ isOpen, onClose }) {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -112,7 +114,17 @@ Bạn cần hỗ trợ gì hôm nay?`,
   const clearChat = () => {
     setConfirmClear(true);
   };
-
+  // Chặn click link nội bộ trong bubble chat → navigate SPA (không reload cả trang)
+  function handleLinkClick(event) {
+    const anchor = event.target.closest("a");
+    if (!anchor) return;
+    const href = anchor.getAttribute("href");
+    if (anchor.dataset.spa && href?.startsWith("/")) {
+      event.preventDefault();
+      onClose();
+      navigate(href);
+    }
+  }
   const applyClearChat = () => {
     setMessages([
       {
@@ -148,7 +160,17 @@ Bạn cần hỗ trợ gì hôm nay?`,
       .replace(
         /<pre>/g,
         '<pre class="bg-surface-2 border-2 border-line-strong rounded-sm p-3 my-2 overflow-x-auto text-xs font-mono shadow-[2px_2px_0_#141413]">',
-      );
+      )
+      .replace(/<a\s+href="([^"]+)"/g, (match, href) => {
+        const classes =
+          'class="inline-flex items-center font-black text-text underline decoration-primary decoration-2 underline-offset-2 hover:bg-primary/30 transition-colors"';
+        if (href.startsWith("/")) {
+          // Route nội bộ SPA → điều hướng bằng react-router (xem handleLinkClick)
+          return `<a data-spa="1" href="${href}" ${classes}`;
+        }
+        // Link ngoài → mở tab mới
+        return `<a href="${href}" target="_blank" rel="noreferrer" ${classes}`;
+      });
     return html;
   }
 
@@ -156,136 +178,141 @@ Bạn cần hỗ trợ gì hôm nay?`,
     <AnimatePresence>
       {isOpen && (
         <>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-6 right-6 z-9999 box-border w-[420px] max-w-[95vw] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-sm shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
-        >
-          {/* HEADER CHATBOT */}
-          <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
-                <Bot size={22} className="text-text" strokeWidth={2.5} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-6 right-6 z-9999 box-border w-105 max-w-[95vw] h-155 max-h-[calc(100vh-100px)] bg-surface border-4 border-line-strong rounded-sm shadow-[8px_8px_0_#141413] flex flex-col overflow-hidden text-text"
+          >
+            {/* HEADER CHATBOT */}
+            <div className="bg-primary border-b-4 border-line-strong px-5 py-4 flex items-center justify-between shadow-[0_2px_0_#141413] shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]">
+                  <Bot size={22} className="text-text" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <strong className="block text-base font-black text-text tracking-tight leading-none">
+                    Trợ lý DormHub AI
+                  </strong>
+                  <span className="text-[11px] font-extrabold text-text/70 uppercase tracking-wider block mt-1">
+                    Trực tuyến 24/7
+                  </span>
+                </div>
               </div>
-              <div>
-                <strong className="block text-base font-black text-text tracking-tight leading-none">
-                  Trợ lý DormHub AI
-                </strong>
-                <span className="text-[11px] font-extrabold text-text/70 uppercase tracking-wider block mt-1">
-                  Trực tuyến 24/7
-                </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="size-8 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center text-text shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
+                  title="Xóa lịch sử chat"
+                >
+                  <Trash2 size={16} strokeWidth={2.5} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="size-8 rounded-sm bg-error text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
+                  title="Đóng cửa sổ"
+                >
+                  <X size={18} strokeWidth={2.5} />
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={clearChat}
-                className="size-8 rounded-sm bg-surface border-2 border-line-strong flex items-center justify-center text-text shadow-[2px_2px_0_#141413] hover:bg-warning hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
-                title="Xóa lịch sử chat"
-              >
-                <Trash2 size={16} strokeWidth={2.5} />
-              </button>
+            {/* DANH SÁCH TIN NHẮN */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 bg-surface/50">
+              {messages.map((msg, idx) => {
+                const isAssistant = msg.role === "assistant";
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="size-8 rounded-sm bg-error text-white border-2 border-line-strong flex items-center justify-center shadow-[2px_2px_0_#141413]  hover:-translate-px active:translate-px active:shadow-none transition-all cursor-pointer"
-                title="Đóng cửa sổ"
-              >
-                <X size={18} strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className={`flex gap-2.5 max-w-[88%] ${
+                      isAssistant
+                        ? "mr-auto flex-row"
+                        : "ml-auto flex-row-reverse"
+                    }`}
+                  >
+                    {/* Badge Avatar */}
+                    <div
+                      className={`size-8 rounded-sm border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413] mt-0.5 ${
+                        isAssistant ? "bg-warning" : "bg-primary"
+                      }`}
+                    >
+                      {isAssistant ? (
+                        <Bot
+                          size={18}
+                          className="text-text"
+                          strokeWidth={2.5}
+                        />
+                      ) : (
+                        <User
+                          size={18}
+                          className="text-text"
+                          strokeWidth={2.5}
+                        />
+                      )}
+                    </div>
 
-          {/* DANH SÁCH TIN NHẮN */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 bg-surface/50">
-            {messages.map((msg, idx) => {
-              const isAssistant = msg.role === "assistant";
+                    {/* Bong bóng tin nhắn Neo-Brutalism */}
+                    <div
+                      className={`p-3.5 rounded-sm border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
+                        isAssistant
+                          ? "bg-surface text-text rounded-tl-xs"
+                          : "bg-primary text-text rounded-tr-xs"
+                      }`}
+                    >
+                      {isAssistant ? (
+                        <div
+                          className="space-y-1"
+                          onClick={handleLinkClick}
+                          dangerouslySetInnerHTML={{
+                            __html: parseMessage(msg.content),
+                          }}
+                        />
+                      ) : (
+                        <p className="whitespace-pre-wrap font-bold m-0">
+                          {msg.content}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
 
-              return (
+              {/* Trạng thái AI đang phản hồi */}
+              {loading && (
                 <motion.div
-                  key={idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className={`flex gap-2.5 max-w-[88%] ${
-                    isAssistant
-                      ? "mr-auto flex-row"
-                      : "ml-auto flex-row-reverse"
-                  }`}
+                  className="flex gap-2.5 mr-auto max-w-[85%]"
                 >
-                  {/* Badge Avatar */}
-                  <div
-                    className={`size-8 rounded-sm border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413] mt-0.5 ${
-                      isAssistant ? "bg-warning" : "bg-primary"
-                    }`}
-                  >
-                     {isAssistant ? (
-                      <Bot size={18} className="text-text" strokeWidth={2.5} />
-                    ) : (
-                      <User
-                        size={18}
-                        className="text-text"
-                        strokeWidth={2.5}
-                      />
-                    )}
+                  <div className="size-8 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
+                    <Bot size={18} className="text-text" strokeWidth={2.5} />
                   </div>
-
-                  {/* Bong bóng tin nhắn Neo-Brutalism */}
-                   <div
-                    className={`p-3.5 rounded-sm border-3 border-line-strong text-xs sm:text-sm font-bold shadow-[3px_3px_0_#141413] wrap-break-word ${
-                      isAssistant
-                        ? "bg-surface text-text rounded-tl-xs"
-                        : "bg-primary text-text rounded-tr-xs"
-                    }`}
-                  >
-                    {isAssistant ? (
-                      <div
-                        className="space-y-1"
-                        dangerouslySetInnerHTML={{
-                          __html: parseMessage(msg.content),
-                        }}
-                      />
-                    ) : (
-                      <p className="whitespace-pre-wrap font-bold m-0">
-                        {msg.content}
-                      </p>
-                    )}
+                  <div className="px-4 py-3 rounded-sm rounded-tl-xs bg-surface border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
+                    <RefreshCw
+                      size={16}
+                      strokeWidth={2.5}
+                      className="animate-spin text-primary"
+                    />
+                    <span>DormHub AI đang suy nghĩ...</span>
                   </div>
                 </motion.div>
-              );
-            })}
+              )}
 
-            {/* Trạng thái AI đang phản hồi */}
-            {loading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex gap-2.5 mr-auto max-w-[85%]"
-              >
-                <div className="size-8 rounded-sm bg-warning border-2 border-line-strong flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0_#141413]">
-                  <Bot size={18} className="text-text" strokeWidth={2.5} />
-                </div>
-                <div className="px-4 py-3 rounded-sm rounded-tl-xs bg-surface border-3 border-line-strong shadow-[3px_3px_0_#141413] flex items-center gap-2 text-xs font-extrabold text-text">
-                  <RefreshCw
-                    size={16}
-                    strokeWidth={2.5}
-                    className="animate-spin text-primary"
-                  />
-                  <span>DormHub AI đang suy nghĩ...</span>
-                </div>
-              </motion.div>
-            )}
+              <div ref={messagesEndRef} />
+            </div>
 
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Ô NHẬP TIN NHẮN */}
-          <div className="p-3.5 bg-surface border-t-4 border-line-strong flex gap-2.5 items-end shrink-0">
-            {/* <textarea
+            {/* Ô NHẬP TIN NHẮN */}
+            <div className="p-3.5 bg-surface border-t-4 border-line-strong flex gap-2.5 items-end shrink-0">
+              {/* <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -295,15 +322,15 @@ Bạn cần hỗ trợ gì hôm nay?`,
               rows={1}
               className="flex-1 border-3 border-line-strong rounded-sm px-3.5 py-2.5 text-xs! sm:text-sm     font-bold text-text bg-surface shadow-[2px_2px_0_#141413] focus:shadow-[4px_4px_0_#141413]  outline-none!  resize-none max-h-28 placeholder:font-semibold placeholder:text-text-muted/60 disabled:opacity-50 transition-all"
             /> */}
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyPress}
-              placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
-              disabled={loading}
-              rows={1}
-              className={`
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyPress}
+                placeholder="Hỏi AI về hợp đồng, hóa đơn, quy định..."
+                disabled={loading}
+                rows={1}
+                className={`
     chat-textarea
     flex-1 min-w-0
       min-h-11 max-h-30
@@ -321,30 +348,46 @@ Bạn cần hỗ trợ gì hôm nay?`,
     disabled:opacity-50
     transition-all duration-200
   `}
-              style={{ overflowY: "hidden" }}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-              className="size-10 rounded-sm bg-primary text-text border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
-            >
-              <Send size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-        </motion.div>
-        {confirmClear && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-            <div className="box-border w-[480px] max-w-[95vw] bg-surface border-3 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413]">
-              <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">Xóa lịch sử trò chuyện?</h3>
-              <p className="w-full block leading-normal text-sm font-bold text-text-muted mb-6">Toàn bộ tin nhắn trong phiên trò chuyện này sẽ bị xóa.</p>
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setConfirmClear(false)} className="px-4 py-2 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 outline-none! transition-all">Hủy</button>
-                <button type="button" onClick={applyClearChat} className="px-4 py-2 border-3 border-line-strong rounded-sm font-black bg-error text-white shadow-[3px_3px_0_#141413] outline-none! transition-all">Xóa lịch sử</button>
+                style={{ overflowY: "hidden" }}
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!input.trim() || loading}
+                className="size-10 rounded-sm bg-primary text-text border-3 border-line-strong flex items-center justify-center shrink-0 shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
+              >
+                <Send size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          </motion.div>
+          {confirmClear && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+              <div className="box-border w-[480px] max-w-[95vw] bg-surface border-3 border-line-strong rounded-sm p-6 shadow-[6px_6px_0_#141413]">
+                <h3 className="w-full block leading-normal text-xl font-black text-text mb-2">
+                  Xóa lịch sử trò chuyện?
+                </h3>
+                <p className="w-full block leading-normal text-sm font-bold text-text-muted mb-6">
+                  Toàn bộ tin nhắn trong phiên trò chuyện này sẽ bị xóa.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(false)}
+                    className="px-4 py-2 border-2 border-line-strong rounded-sm font-bold bg-surface hover:bg-surface-2 outline-none! transition-all"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyClearChat}
+                    className="px-4 py-2 border-3 border-line-strong rounded-sm font-black bg-error text-white shadow-[3px_3px_0_#141413] outline-none! transition-all"
+                  >
+                    Xóa lịch sử
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
         </>
       )}
     </AnimatePresence>

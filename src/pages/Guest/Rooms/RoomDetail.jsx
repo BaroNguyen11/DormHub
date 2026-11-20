@@ -11,6 +11,7 @@ import {
   Droplet,
   MapPin,
   CheckCircle2,
+  ImageOff,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { resources } from "../../../services/resource.service";
@@ -87,14 +88,19 @@ function RoomDetail() {
     );
   }
 
+  // Chỉ hiển thị ảnh thật từ backend; không còn thay thế bằng ảnh mạng
+  // (trước đây gán ảnh Unsplash làm "ảnh phòng" gây hiểu nhầm cho khách).
   const images =
     room.images?.length > 0
       ? room.images
-      : [
-          "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200&h=800&fit=crop",
-          "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&h=800&fit=crop",
-          "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=1200&h=800&fit=crop",
-        ];
+      : [];
+  const freeSlots = Math.max(
+    0,
+    (room.capacity || 0) - (room.currentOccupancy || 0),
+  );
+  const occupancyPercent = room.capacity > 0
+    ? Math.min(100, Math.round(((room.currentOccupancy || 0) / room.capacity) * 100))
+    : 0;
 
   const amenities = [
     { icon: Wind, label: "Điều hòa", available: room.hasAC },
@@ -124,15 +130,18 @@ function RoomDetail() {
           <div className="bg-surface border-4 border-line-strong rounded-md overflow-hidden shadow-[6px_6px_0_#141413]">
             {/* Main Image */}
             <div className="relative h-96 bg-surface-3">
-              <img
-                src={images[selectedImage]}
-                alt={`Phòng ${room.roomNumber}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src =
-                    "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200&h=800&fit=crop";
-                }}
-              />
+              {images.length > 0 ? (
+                <img
+                  src={images[selectedImage]}
+                  alt={`Phòng ${room.roomNumber}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-text-muted">
+                  <ImageOff size={44} strokeWidth={1.5} />
+                  <p className="text-sm font-bold">Phòng chưa có hình ảnh</p>
+                </div>
+              )}
               {/* Status Badge Overlay */}
               <div className="absolute top-4 right-4">
                 <StatusBadge status={room.status} />
@@ -273,12 +282,22 @@ function RoomDetail() {
               </div>
             )}
 
+            {/* Occupancy */}
+            <div className="mb-6 pb-6 border-b-3 border-line-strong">
+              <div className="mb-2 flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-text-muted">
+                <span>Tỉ lệ lấp đầy</span>
+                <span className="text-text">{room.currentOccupancy || 0}/{room.capacity || 0} người</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-sm border-2 border-line-strong bg-surface-2">
+                <div className="h-full bg-primary" style={{ width: `${occupancyPercent}%` }} />
+              </div>
+            </div>
+
             {/* Description */}
             <div>
               <h3 className="text-lg font-black text-text mb-3">Mô tả</h3>
               <p className="text-sm text-text-muted font-bold leading-relaxed">
-                {room.description ||
-                  "Phòng ký túc xá hiện đại, đầy đủ tiện nghi, an ninh 24/7. Vị trí thuận lợi gần khu vực học tập và sinh hoạt chung."}
+                {room.description || "Phòng chưa có mô tả. Vui lòng liên hệ ban quản lý KTX để biết thêm chi tiết."}
               </p>
             </div>
           </div>
@@ -321,11 +340,7 @@ function RoomDetail() {
                   Chỗ trống
                 </span>
                 <span className="text-sm font-black text-text">
-                  {Math.max(
-                    0,
-                    (room.capacity || 0) - (room.currentOccupancy || 0)
-                  )}{" "}
-                  chỗ
+                  {freeSlots} chỗ
                 </span>
               </div>
             </div>
