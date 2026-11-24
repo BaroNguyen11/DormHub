@@ -14,6 +14,7 @@ import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
 import {
   CheckoutDialog,
+  DialogShell,
   RenewDialog,
   TransferDialog,
 } from "../../components/RequestDialogs";
@@ -41,6 +42,42 @@ export default function ResidencePage() {
   const [roommatesError, setRoommatesError] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState("");
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  useEffect(() => () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+  }, [pdfUrl]);
+
+  async function openContractPdf(download = false) {
+    if (!contract?.contractId || pdfBusy) return;
+    setPdfBusy(true);
+    setPdfError("");
+    try {
+      const blob = await api(`/student/contracts/${contract.contractId}/pdf`, {
+        responseType: "blob",
+        notify: false,
+      });
+      const url = URL.createObjectURL(blob);
+      if (download) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `hop-dong-${contract.contractId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        setPdfUrl(url);
+        setModal("pdf");
+      }
+    } catch (error) {
+      setPdfError(errorMessage(error));
+    } finally {
+      setPdfBusy(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -224,20 +261,18 @@ export default function ResidencePage() {
                       </dd>
                     </div>
                   </dl>
-                  {contract.pdfUrl || contract.documentUrl ? (
-                    <a
-                      className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 bg-secondary text-black font-extrabold border-2 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#141413] transition-all outline-none!"
-                      href={contract.pdfUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Download size={18} /> Xem / Tải hợp đồng PDF
-                    </a>
-                  ) : (
-                    <p className="mt-6 text-sm font-semibold text-text-muted">
-                      Chưa cập nhật bản scan PDF
-                    </p>
-                  )}
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <button type="button" disabled={pdfBusy} onClick={() => openContractPdf()}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary text-black font-extrabold border-2 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] disabled:opacity-60 outline-none!">
+                      <FileText size={18} /> Xem hợp đồng PDF
+                    </button>
+                    <button type="button" disabled={pdfBusy} onClick={() => openContractPdf(true)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface text-text font-extrabold border-2 border-line-strong rounded-sm shadow-[2px_2px_0_#141413] disabled:opacity-60 outline-none!">
+                      <Download size={18} /> Tải PDF
+                    </button>
+                  </div>
+                  {pdfBusy && <p className="mt-3 text-sm font-semibold">Đang chuẩn bị hợp đồng…</p>}
+                  {pdfError && <p role="alert" className="mt-3 text-sm font-semibold text-error">Không thể tải hợp đồng: {pdfError}</p>}
                   {activeContract && (
                     <div className="mt-6 border-t-2 border-line-strong pt-4">
                       <p className="mb-3 text-xs font-black uppercase tracking-wide text-text-muted">
@@ -296,6 +331,14 @@ export default function ResidencePage() {
           contract={contract}
           onClose={() => setModal("")}
         />
+      )}
+      {modal === "pdf" && pdfUrl && (
+        <DialogShell icon={FileText} title="Hợp đồng thuê ký túc xá"
+          subtitle={`Hợp đồng số ${contract?.contractId} · Bản PDF từ dữ liệu hiện tại`}
+          onClose={() => { setModal(""); setPdfUrl(null); }}>
+          <iframe title="Nội dung hợp đồng PDF" src={pdfUrl} className="h-[70vh] w-full border-2 border-line-strong" />
+          <p className="mt-3 text-xs font-semibold text-text-muted">Bạn có thể tải PDF bằng nút Tải PDF trên trang hợp đồng.</p>
+        </DialogShell>
       )}
     </Workspace>
   );

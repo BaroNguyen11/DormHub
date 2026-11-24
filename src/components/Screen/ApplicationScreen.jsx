@@ -176,10 +176,10 @@ export default function ApplicationScreen({ config }) {
     setError("");
 
     try {
-      // Only send roomId and note to backend
       const payload = {
         roomId: values.roomId,
         note: values.note || undefined,
+        contractAccepted: termsAccepted,
       };
       const result = await resources.create(
         "/student/dorm-applications",
@@ -615,10 +615,12 @@ export default function ApplicationScreen({ config }) {
             </div>
             <section>
               <h4 className="font-black uppercase">Bên A: Đơn vị quản lý ký túc xá (Bên cho thuê)</h4>
-              <p>Tên đơn vị: Chưa cập nhật</p>
-              <p>Đại diện và chức vụ: Chưa cập nhật</p>
-              <p>Địa chỉ, điện thoại, email: Chưa cập nhật</p>
-              <p>{draft.organizationNote}</p>
+              <p>Tên đơn vị: {draft.landlord?.name}</p>
+              <p>Người đại diện: {draft.landlord?.representative}</p>
+              <p>Chức vụ: {draft.landlord?.position}</p>
+              <p>Địa chỉ: {draft.landlord?.address}</p>
+              <p>Số điện thoại: {draft.landlord?.phone}</p>
+              <p>Email: {draft.landlord?.email}</p>
             </section>
             <section className="space-y-1">
               <h4 className="font-black uppercase">Bên B: Sinh viên (Bên thuê)</h4>

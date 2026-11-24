@@ -359,6 +359,7 @@ export async function api(
     successNotify = true,
     includeResponse = false,
     successMessage,
+    responseType = "json",
   } = {},
 ) {
   const rawPath = typeof path === "string" ? path.trim() : "";
@@ -389,7 +390,7 @@ export async function api(
   }
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   const requestHeaders = {
-    Accept: "application/json",
+    Accept: responseType === "blob" ? "application/pdf, application/json" : "application/json",
     ...(isForm || body === undefined
       ? {}
       : { "Content-Type": "application/json" }),
@@ -443,6 +444,7 @@ export async function api(
         successNotify,
         includeResponse,
         successMessage,
+        responseType,
       });
     } catch (refreshError) {
       console.error("[Auth] Refresh failed:", refreshError);
@@ -456,7 +458,9 @@ export async function api(
     clearLocalAuthTokens();
   }
 
-  const data = await parseResponse(response);
+  const data = response.ok && responseType === "blob"
+    ? await response.blob()
+    : await parseResponse(response);
   if (!response.ok) {
     const apiError = new ApiError(
       data?.message ||
@@ -494,6 +498,8 @@ export async function api(
   }
   if (normalizedPath === "/auth/login" && response.ok)
     redirectingToLogin = false;
+
+  if (responseType === "blob") return data;
 
   const unwrapped = unwrapResponse(data);
   return includeResponse
