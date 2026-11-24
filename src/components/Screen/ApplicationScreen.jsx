@@ -11,6 +11,7 @@ import {
   UserCheck,
   BedDouble,
   ShieldCheck,
+  FileText,
 } from "lucide-react";
 import { asList } from "../../api/apiClient";
 import { resources } from "../../services/resource.service";
@@ -19,6 +20,7 @@ import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import usePermissions from "../../hooks/usePermissions";
 import useAuth from "../../hooks/useAuth";
+import { DialogShell } from "../RequestDialogs";
 
 const getCachedStudentProfile = (user) =>
   user?.studentProfile ||
@@ -30,6 +32,14 @@ const getCachedStudentProfile = (user) =>
 
 const getRoomMonthlyPrice = (room) =>
   room?.pricePerMonth ?? room?.monthlyPrice ?? room?.price;
+
+const ROOM_TYPES = {
+  SINGLE: "Phòng đơn",
+  DOUBLE: "Phòng đôi",
+  QUAD: "Phòng 4 người",
+  SIX_BED: "Phòng 6 người",
+  EIGHT_BED: "Phòng 8 người",
+};
 
 const isProfileComplete = (profile) =>
   Boolean(
@@ -59,10 +69,20 @@ const sameProfile = (left, right) => {
 export default function ApplicationScreen({ config }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const preselectedRoomId = searchParams.get("roomId");
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState({});
+  const [values, setValues] = useState(() => {
+    const roomId = Number(preselectedRoomId);
+    return { roomId: Number.isSafeInteger(roomId) && roomId > 0 ? roomId : null };
+  });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [draftLoading, setDraftLoading] = useState(Boolean(values.roomId));
+  const [draftError, setDraftError] = useState("");
+  const [draftOpen, setDraftOpen] = useState(false);
+  const [draftViewed, setDraftViewed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { user } = useAuth();
 
   // Check if student already has a room
@@ -97,15 +117,11 @@ export default function ApplicationScreen({ config }) {
   }, []);
 
   // Load danh sách phòng còn trống theo giới tính của sinh viên đang đăng nhập
-  const { data: rooms, loading } = useLoad("/student/rooms-available", {
-    size: 100,
-  });
-
-  // Get roomId from URL query parameter
-  const preselectedRoomId = searchParams.get("roomId");
+  const { data: rooms, error: roomsError, loading } = useLoad("/student/rooms-available");
 
   const roomList = asList(rooms);
-  const selectedRoom = roomList.find((r) => r.id === values.roomId);
+  const selectedRoom = (draft?.room?.id === values.roomId ? draft.room : null)
+    || roomList.find((r) => r.id === values.roomId);
 
   // Check if profile is complete
   const profileComplete = isProfileComplete(profile);
@@ -116,21 +132,43 @@ export default function ApplicationScreen({ config }) {
     "Kiểm tra & Gửi",
   ];
 
-  const change = (key, value) =>
-    setValues((prev) => ({ ...prev, [key]: value }));
-
-  // Pre-fill roomId from URL on mount
-  useEffect(() => {
-    if (preselectedRoomId && !values.roomId) {
-      change("roomId", parseInt(preselectedRoomId, 10));
+  const change = (key, value) => {
+    if (key === "roomId") {
+      setDraft(null);
+      setDraftError("");
+      setDraftLoading(Boolean(value));
+      setDraftViewed(false);
+      setTermsAccepted(false);
+      setDraftOpen(false);
     }
-  }, [preselectedRoomId, values.roomId]);
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  useEffect(() => {
+    if (!values.roomId) return undefined;
+    let active = true;
+    resources.list(`/student/rooms-available/${values.roomId}/contract-draft`)
+      .then((result) => { if (active) setDraft(result); })
+      .catch(() => { if (active) setDraftError("Không thể tải hợp đồng dự thảo. Vui lòng thử lại sau."); })
+      .finally(() => { if (active) setDraftLoading(false); });
+    return () => { active = false; };
+  }, [values.roomId]);
 
   async function next(e) {
     e.preventDefault();
 
     if (step < 2) {
+      if (step === 1 && (!selectedRoom || !selectedRoom.isAvailable)) {
+        setError("Vui lòng chọn phòng có thể đăng ký.");
+        return;
+      }
+      setError("");
       setStep(step + 1);
+      return;
+    }
+
+    if (!selectedRoom || !draft || !draft.room?.isAvailable || draft.room?.id !== selectedRoom.id || !draftViewed || !termsAccepted) {
+      setError("Vui lòng xem và đồng ý với hợp đồng dự thảo trước khi gửi đơn.");
       return;
     }
 
@@ -317,7 +355,7 @@ export default function ApplicationScreen({ config }) {
                   <BedDouble size={18} /> Chọn phòng còn trống
                 </h3>
                 <span className="text-xs font-extrabold text-text-muted">
-                  Tìm thấy {roomList.length} phòng khả dụng
+                  Có {roomList.length} phòng phù hợp trong danh sách
                 </span>
               </div>
 
@@ -352,6 +390,8 @@ export default function ApplicationScreen({ config }) {
 
               {loading ? (
                 <Loading />
+              ) : roomsError ? (
+                <Notice error="Không thể tải danh sách phòng. Vui lòng thử lại sau." />
               ) : roomList.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {roomList.map((room) => {
@@ -369,7 +409,6 @@ export default function ApplicationScreen({ config }) {
                         <input
                           type="radio"
                           name="roomId"
-                          required
                           value={room.id}
                           checked={isSelected}
                           onChange={() => change("roomId", room.id)}
@@ -431,10 +470,9 @@ export default function ApplicationScreen({ config }) {
           {/* BƯỚC 2: Kiểm tra thông tin & Gửi hồ sơ */}
           {step === 2 && (
             <div className="space-y-6">
-              {/* Static info box about contract terms */}
               <div className="mb-6 p-4 bg-primary/10 border-2 border-primary rounded-sm">
                 <p className="text-sm font-bold text-text">
-                  ℹ️ Hợp đồng 12 tháng tính từ ngày đơn được duyệt. Tiền cọc = 1 tháng tiền phòng.
+                  Hãy xem toàn bộ hợp đồng dự thảo và xác nhận điều khoản trước khi gửi đơn.
                 </p>
               </div>
 
@@ -454,7 +492,7 @@ export default function ApplicationScreen({ config }) {
                     <strong className="text-base font-black text-text">
                       {selectedRoom
                         ? `Phòng ${selectedRoom.roomNumber || selectedRoom.name}`
-                        : values.roomId}
+                        : "—"}
                     </strong>
                   </div>
 
@@ -463,9 +501,7 @@ export default function ApplicationScreen({ config }) {
                       Tòa nhà:
                     </span>
                     <strong className="text-base font-black text-text">
-                      {selectedRoom?.buildingName ||
-                        selectedRoom?.building?.name ||
-                        "Khu A"}
+                      {selectedRoom?.buildingName || "—"}
                     </strong>
                   </div>
 
@@ -490,6 +526,34 @@ export default function ApplicationScreen({ config }) {
                   </div>
                 )}
               </div>
+              <div className="space-y-3 border-t-3 border-line-strong pt-5">
+                <button
+                  type="button"
+                  disabled={draftLoading || !draft || draft.room?.id !== values.roomId}
+                  onClick={() => {
+                    setDraftOpen(true);
+                    setDraftViewed(true);
+                  }}
+                  className="inline-flex items-center gap-2 border-3 border-line-strong rounded-sm bg-secondary px-4 py-2.5 text-sm font-black text-text shadow-[3px_3px_0_#141413] disabled:opacity-50"
+                >
+                  <FileText size={18} />
+                  {draftLoading ? "Đang tải hợp đồng..." : "Xem hợp đồng dự thảo"}
+                </button>
+                {draftError && <Notice error={draftError} />}
+                <label className="flex items-start gap-3 text-sm font-bold text-text">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    disabled={!draftViewed || draftLoading || !draft}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                    className="mt-1 size-5 accent-black"
+                  />
+                  Tôi đã đọc và đồng ý với các điều khoản trong hợp đồng dự thảo của phòng đã chọn.
+                </label>
+                <p className="text-xs font-semibold text-text-muted">
+                  Đây là bản dự thảo; ngày thuê cụ thể được xác định khi quản lý duyệt đơn.
+                </p>
+              </div>
             </div>
           )}
 
@@ -510,7 +574,7 @@ export default function ApplicationScreen({ config }) {
 
             <button
               type="submit"
-              disabled={busy || (step === 1 && !values.roomId)}
+              disabled={busy || (step === 1 && (!selectedRoom || !selectedRoom.isAvailable)) || (step === 2 && (draftLoading || !draftViewed || !termsAccepted || !draft?.room?.isAvailable || draft?.room?.id !== values.roomId))}
               className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-text font-extrabold text-sm rounded-sm border-3 border-line-strong shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-0.5 active:translate-0.5 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all cursor-pointer"
             >
               {busy ? (
@@ -535,6 +599,58 @@ export default function ApplicationScreen({ config }) {
           </div>
         </form>
       </div>
+      {draftOpen && draft && (
+        <DialogShell
+          icon={FileText}
+          title="Hợp đồng dự thảo"
+          subtitle="Bản xem trước trước khi gửi đơn đăng ký"
+          onClose={() => setDraftOpen(false)}
+        >
+          <div role="document" className="max-h-[70vh] space-y-5 overflow-y-auto pr-2 text-sm text-text">
+            <div className="text-center">
+              <p className="font-black uppercase">Cộng hòa xã hội chủ nghĩa Việt Nam</p>
+              <p className="font-bold">Độc lập - Tự do - Hạnh phúc</p>
+              <h3 className="mt-4 text-lg font-black uppercase">{draft.title}</h3>
+              <p className="font-black text-warning">HỢP ĐỒNG DỰ THẢO — CHƯA PHÁT HÀNH</p>
+            </div>
+            <section>
+              <h4 className="font-black uppercase">Bên A: Đơn vị quản lý ký túc xá (Bên cho thuê)</h4>
+              <p>Tên đơn vị: Chưa cập nhật</p>
+              <p>Đại diện và chức vụ: Chưa cập nhật</p>
+              <p>Địa chỉ, điện thoại, email: Chưa cập nhật</p>
+              <p>{draft.organizationNote}</p>
+            </section>
+            <section className="space-y-1">
+              <h4 className="font-black uppercase">Bên B: Sinh viên (Bên thuê)</h4>
+              <p>Họ và tên: {draft.student?.fullName || "Chưa cập nhật"}</p>
+              <p>Mã sinh viên: {draft.student?.studentCode || "Chưa cập nhật"}</p>
+              <p>CCCD: {draft.student?.cic || "Chưa cập nhật"}</p>
+              <p>Giới tính: {draft.student?.gender === "MALE" ? "Nam" : draft.student?.gender === "FEMALE" ? "Nữ" : "Chưa cập nhật"}</p>
+              <p>Ngày sinh: {draft.student?.dateOfBirth || "Chưa cập nhật"}</p>
+              <p>Điện thoại: {draft.student?.phone || "Chưa cập nhật"}</p>
+              <p>Địa chỉ: {draft.student?.address || "Chưa cập nhật"}</p>
+              <p>Email: {draft.student?.email || "Chưa cập nhật"}</p>
+            </section>
+            <section className="space-y-1 border-y-2 border-line-strong py-3">
+              <h4 className="font-black uppercase">Thông tin chỗ ở và giá thuê dự kiến</h4>
+              <p>Tòa nhà: {draft.room?.buildingName || "—"} ({draft.room?.buildingCode || "—"}) · Địa chỉ: {draft.room?.buildingAddress || "—"}</p>
+              <p>Phòng: {draft.room?.roomNumber || "—"} · Tầng: {draft.room?.floor ?? "—"}</p>
+              <p>Loại phòng: {ROOM_TYPES[draft.room?.roomType] || "—"} · Sức chứa: {draft.room?.capacity ?? "—"} sinh viên</p>
+              <p>Thời hạn: {draft.durationMonths} tháng; ngày bắt đầu và kết thúc xác định khi quản lý duyệt đơn.</p>
+              <p>Tiền thuê: {money(draft.monthlyRent)} / tháng</p>
+              <p>Tiền đặt cọc: {money(draft.depositAmount)}</p>
+            </section>
+            <p>{draft.introduction}</p>
+            {draft.sections?.map((section) => (
+              <section key={section.heading} className="space-y-2">
+                <h4 className="font-black">{section.heading}</h4>
+                {section.paragraphs?.map((paragraph) => <p key={paragraph} className="leading-relaxed">{paragraph}</p>)}
+              </section>
+            ))}
+            <p className="border-t-2 border-line-strong pt-3 text-xs font-bold">{draft.signatureNote}</p>
+          </div>
+        </DialogShell>
+      )}
     </div>
   );
 }
