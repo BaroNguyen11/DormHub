@@ -254,30 +254,30 @@ const DETAIL_SECTIONS = {
     { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "reviewedById"] },
   ],
   "/manager/renewal-requests": [
-    { title: "Sinh viên và hợp đồng", fields: ["studentName", "roomNumber", "contractId", "renewalRequestId"] },
+    { title: "Sinh viên và hợp đồng", fields: ["studentName", "studentCode", "roomNumber", "buildingName", "contractId", "renewalRequestId"] },
     { title: "Nội dung yêu cầu", fields: ["requestedEndDate", "reason", "status", "requestedAt"] },
     { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "reviewedById"] },
   ],
   "/student/checkout-requests": [
     { title: "Thông tin yêu cầu", fields: ["checkoutRequestId", "checkoutDate", "status", "requestDate"] },
     { title: "Nội dung", fields: ["reason"] },
-    { title: "Kết quả xử lý", fields: ["note", "depositDisposition", "processedAt"] },
+    { title: "Kết quả xử lý", fields: ["note", "depositStatus", "processedAt"] },
   ],
   "/manager/checkout-requests": [
     { title: "Sinh viên và phòng", fields: ["studentName", "studentCode", "roomNumber", "buildingName"] },
     { title: "Nội dung yêu cầu", fields: ["checkoutRequestId", "checkoutDate", "reason", "status", "requestDate"] },
-    { title: "Kết quả xử lý", fields: ["note", "depositDisposition", "processedAt"] },
+    { title: "Kết quả xử lý", fields: ["note", "depositStatus", "processedAt"] },
   ],
   "/student/room-transfer-requests": [
-    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomId", "preferredRoomId", "approvedRoomId", "status", "requestedAt"] },
+    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomNumber", "preferredRoomNumber", "approvedRoomNumber", "status", "requestedAt"] },
     { title: "Nội dung", fields: ["reason"] },
-    { title: "Kết quả xử lý", fields: ["reviewNote", "processedAt"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt"] },
   ],
   "/manager/room-transfer-requests": [
-    { title: "Sinh viên", fields: ["studentName", "studentId", "studentCode"] },
-    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomId", "preferredRoomId", "approvedRoomId", "status", "requestedAt"] },
+    { title: "Sinh viên", fields: ["studentName", "studentCode"] },
+    { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomNumber", "preferredRoomNumber", "approvedRoomNumber", "status", "requestedAt"] },
     { title: "Nội dung", fields: ["reason"] },
-    { title: "Kết quả xử lý", fields: ["reviewNote", "processedAt"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt"] },
   ],
 
   // Phòng trống (student tìm phòng & guest xem công khai)
@@ -823,6 +823,11 @@ export default function DetailScreen({ config }) {
 
       {/* Notice hiển thị Thông báo Lỗi / Thành công */}
       <Notice error={actionError || error || buildingRoomsError || depositInvoiceError} success={success} />
+      {isInvoiceDetail && data?.invoiceType === "UTILITY" && (
+        <p className="rounded-sm border-2 border-line-strong bg-surface-2 p-4 text-sm font-semibold text-text">
+          Đây là hóa đơn điện nước chung của phòng{data.roomNumber ? ` ${data.roomNumber}` : ""} trong kỳ tính tiền. Một sinh viên thanh toán đủ sẽ hoàn tất hóa đơn cho cả phòng; bạn không cần thanh toán lại khi hóa đơn đã được thanh toán.
+        </p>
+      )}
 
       {config.resource === "/contracts" && data?.status === "ACTIVE"
         && data?.assignmentStatus === "ASSIGNED"

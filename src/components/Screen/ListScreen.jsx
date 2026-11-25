@@ -45,7 +45,11 @@ export default function ListScreen({ config, onAccountAction }) {
       : {}),
     ...(status ? { status } : {}),
   });
-  const rows = asList(data);
+  // Buildings still use an unpaged list contract; filter on the server, page that list here.
+  const isUnpaged = Array.isArray(data);
+  const allRows = asList(data);
+  const rows = isUnpaged ? allRows.slice(page * pageSize, (page + 1) * pageSize) : allRows;
+  const totalElements = isUnpaged ? allRows.length : data?.totalElements;
 
   const createPath = config.create;
 
@@ -175,7 +179,9 @@ export default function ListScreen({ config, onAccountAction }) {
                               </>
                             )
                           ) : (
-                            formatValue(key, value)
+                            key === "studentName" && row.invoiceType === "UTILITY"
+                              ? "Hóa đơn chung của phòng"
+                              : formatValue(key, value)
                           )}
                         </td>
                       );
@@ -301,13 +307,13 @@ export default function ListScreen({ config, onAccountAction }) {
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t-4 border-line-strong bg-surface-2 text-xs font-extrabold text-text">
-          <span>Trang {page + 1}{data?.totalElements != null ? ` · Tổng ${data.totalElements} mục` : ""}</span>
+          <span>Trang {page + 1}{totalElements != null ? ` · Tổng ${totalElements} mục` : ""}</span>
           <div className="flex items-center gap-2">
             <button type="button" disabled={page === 0} onClick={previousPage}
               className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
               <ChevronLeft size={16} strokeWidth={2.5} />Trang trước
             </button>
-            <button type="button" disabled={data?.last === true || (data?.totalElements != null ? (page + 1) * pageSize >= data.totalElements : rows.length < pageSize)} onClick={nextPage}
+            <button type="button" disabled={loading || data?.last === true || (totalElements != null ? (page + 1) * pageSize >= totalElements : rows.length < pageSize)} onClick={nextPage}
               className="inline-flex items-center gap-1 px-3.5 py-2 bg-surface text-text rounded-sm border-2 border-line-strong shadow-[2px_2px_0_#141413] hover:shadow-[4px_4px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
               Trang sau<ChevronRight size={16} strokeWidth={2.5} />
             </button>
