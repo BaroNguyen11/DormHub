@@ -264,53 +264,9 @@ export default function ApplicationScreen({ config }) {
       {/* Heading tiêu đề trang */}
       <Heading config={config} />
 
-      {/* Stepper - Dải 4 bước Neo-Brutalism */}
-      <div className="bg-surface border-4 border-line-strong rounded-sm p-4 sm:p-6 shadow-[6px_6px_0_#141413]">
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:pb-0">
-          {steps.map((name, i) => {
-            const isCurrent = i === step;
-            const isCompleted = i < step;
-
-            return (
-              <div
-                key={name}
-                className="flex items-center gap-2.5 flex-1 min-w-30 last:flex-none py-1"
-              >
-                {/* Badge Số Thứ Tự */}
-                <div
-                  className={`size-9  rounded-sm border-2 border-line-strong flex items-center justify-center text-xs! font-black shrink-0 transition-all ${
-                    isCurrent
-                      ? "bg-primary text-black shadow-[2px_2px_0_#141413] -translate-y-0.5"
-                      : isCompleted
-                        ? "bg-warning text-black shadow-[2px_2px_0_#141413]"
-                        : "bg-surface-2 text-text-muted"
-                  }`}
-                >
-                  {isCompleted ? <Check size={16} strokeWidth={3} /> : i + 1}
-                </div>
-
-                {/* Nhãn Tên Bước */}
-                <span
-                  className={`text-xs sm:text-sm font-extrabold whitespace-nowrap ${
-                    isCurrent
-                      ? "text-text underline decoration-3 decoration-primary underline-offset-4"
-                      : isCompleted
-                        ? "text-text"
-                        : "text-text-muted"
-                  }`}
-                >
-                  {name}
-                </span>
-
-                {/* Đường nối giữa các bước */}
-                {i < steps.length - 1 && (
-                  <div className="flex-1 h-1 bg-line-strong/20 mx-2 rounded-sm hidden md:block" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <p className="text-sm font-extrabold text-text-muted">
+        Đăng ký phòng · {steps[step]} ({step + 1}/{steps.length})
+      </p>
 
       {/* Notice hiển thị lỗi nếu có */}
       <Notice error={error} />

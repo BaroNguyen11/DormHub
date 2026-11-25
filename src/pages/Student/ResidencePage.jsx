@@ -26,7 +26,7 @@ const formatDate = (value) => {
   const date = new Date(`${String(value).slice(0, 10)}T12:00:00Z`);
   return Number.isNaN(date.getTime())
     ? "—"
-    : date.toLocaleDateString("vi-VN", { timeZone: "UTC" });
+    : date.toLocaleDateString("vi-VN", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
 };
 const formatCurrency = (value) =>
   new Intl.NumberFormat("vi-VN", {
@@ -34,6 +34,30 @@ const formatCurrency = (value) =>
     currency: "VND",
     maximumFractionDigits: 0,
   }).format(Number(value) || 0);
+
+function RentalSummary({ plan, deposit }) {
+  const start = new Date(`${plan.startDate}T00:00:00Z`);
+  const end = new Date(`${plan.endDate}T00:00:00Z`);
+  const firstMonthEnd = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0));
+  const firstDays = firstMonthEnd.getUTCDate() - start.getUTCDate() + 1;
+  const followingMonths = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + end.getUTCMonth() - start.getUTCMonth();
+  const fullMonths = followingMonths + (start.getUTCDate() === 1 ? 1 : 0);
+  const rows = [
+    ["Ngày bắt đầu thuê", formatDate(plan.startDate)],
+    ["Ngày ở cuối cùng", formatDate(plan.endDate)],
+    ["Tổng thời hạn thuê", `${fullMonths} tháng${start.getUTCDate() === 1 ? "" : ` và ${firstDays} ngày`}`],
+    ["Số ngày thuê trong tháng đầu", `${firstDays} ngày`],
+    ["Số tháng thuê trọn vẹn", `${fullMonths} tháng`],
+    ["Giá thuê hàng tháng", formatCurrency(plan.monthlyRent)],
+    ["Tiền thuê tháng đầu", formatCurrency(plan.firstMonthRent)],
+    ["Tổng tiền thuê dự kiến toàn kỳ", "Chưa có thông tin tổng hợp"],
+    ["Tiền cọc đã thanh toán (riêng)", deposit == null ? "—" : formatCurrency(deposit)],
+  ];
+  return <div className="space-y-5"><dl className="space-y-3">{rows.map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2 border-b border-line-strong/20 pb-3"><dt className="text-sm text-text-muted">{label}</dt><dd className="font-black">{value}</dd></div>)}</dl>
+    <p className="text-sm font-semibold">Bắt đầu ngày 1–15: tháng đầu được tính trong 12 kỳ tháng. Từ ngày 16: tháng đầu là kỳ lẻ, tiếp theo là 12 tháng trọn vẹn. Ngày ở cuối cùng là ngày cuối tháng do hợp đồng xác định.</p>
+    <p className="text-sm text-text-muted">Tiền thuê tháng đầu được tính theo số ngày thực tế. Các số tiền hiển thị theo thông tin hợp đồng, chưa bao gồm điện nước và chi phí phát sinh.</p>
+  </div>;
+}
 
 export default function ResidencePage() {
   const [assignment, setAssignment] = useState(null);
@@ -49,6 +73,9 @@ export default function ResidencePage() {
   const [planError, setPlanError] = useState("");
   const [chosenDate, setChosenDate] = useState("");
   const [planBusy, setPlanBusy] = useState(false);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [dateBounds, setDateBounds] = useState(null);
   const [acceptedTerm, setAcceptedTerm] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => () => {
@@ -110,7 +137,7 @@ export default function ResidencePage() {
           }
         }
         const contractList = contracts?.content || contracts?.items || [];
-        const currentContract = contractList.find(
+        const currentContract = contractList.find((item) => currentAssignment?.contractId != null && item.contractId === currentAssignment.contractId) || contractList.find(
             (item) => String(item?.status || "").toUpperCase() === "ACTIVE",
           ) ||
             contractList[0] ||
@@ -126,41 +153,45 @@ export default function ResidencePage() {
               { notify: false },
             );
             setPlan(nextPlan);
+            setDateBounds(nextPlan);
             setChosenDate(nextPlan.checkInDate || "");
           } catch (error) {
             setPlanError(errorMessage(error));
           }
         }
-      } catch {
-        // API client reports request failures globally.
+      } catch (error) {
+        setLoadError(errorMessage(error));
       } finally {
         setLoading(false);
       }
     })();
   }, [reloadKey]);
 
-  async function previewDate() {
-    if (!contract?.contractId || !chosenDate || planBusy) return;
-    setPlanBusy(true);
-    setPlanError("");
-    setAcceptedTerm(false);
-    try {
-      const nextPlan = await api(
+  useEffect(() => {
+    if (!contract?.contractId || !chosenDate || contract.status !== "PENDING" || contract.depositStatus !== "HELD") return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setPlanBusy(true);
+      setPlanError("");
+      setAcceptedTerm(false);
+      try {
+        const nextPlan = await api(
         `/student/contracts/${contract.contractId}/check-in-plan?date=${encodeURIComponent(chosenDate)}`,
         { notify: false },
       );
-      setPlan(nextPlan);
+        if (active) setPlan(nextPlan);
     } catch (error) {
-      setPlan(null);
-      setPlanError(errorMessage(error));
+      if (active) { setPlan(null); setPlanError(errorMessage(error)); }
     } finally {
-      setPlanBusy(false);
+      if (active) setPlanBusy(false);
     }
-  }
+    }, 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [chosenDate, contract?.contractId, contract?.status, contract?.depositStatus]);
 
   async function confirmDate() {
-    if (!contract?.contractId || !acceptedTerm || plan?.checkInDate !== chosenDate || planBusy) return;
-    setPlanBusy(true);
+    if (!contract?.contractId || !acceptedTerm || plan?.checkInDate !== chosenDate || planBusy || confirmBusy) return;
+    setConfirmBusy(true);
     setPlanError("");
     try {
       await api(`/student/contracts/${contract.contractId}/confirm-check-in-date`, {
@@ -170,10 +201,11 @@ export default function ResidencePage() {
       });
       setAcceptedTerm(false);
       setReloadKey((value) => value + 1);
+      window.dispatchEvent(new Event("residence-updated"));
     } catch (error) {
       setPlanError(errorMessage(error));
     } finally {
-      setPlanBusy(false);
+      setConfirmBusy(false);
     }
   }
 
@@ -189,6 +221,12 @@ export default function ResidencePage() {
   ).toUpperCase() === "CHECKED_IN";
   const todayVN = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
 
+  useEffect(() => {
+    if (!assignment || contract?.status !== "ACTIVE" || checkedIn) return;
+    const timer = window.setInterval(() => setReloadKey((value) => value + 1), 30_000);
+    return () => window.clearInterval(timer);
+  }, [assignment, contract?.status, checkedIn]);
+
   const statusBadge = {
     PENDING: { label: contract?.depositStatus === "HELD" ? "CHỜ XÁC NHẬN LỊCH" : "CHỜ ĐÓNG CỌC", style: "bg-warning text-black" },
     ACTIVE: { label: "ĐANG HOẠT ĐỘNG", style: "bg-success text-black" },
@@ -202,6 +240,7 @@ export default function ResidencePage() {
   return (
     <Workspace group="student" title="Chỗ ở & Hợp đồng">
       <div className="space-y-7">
+        {loadError && <p role="alert" className="rounded-sm border-2 border-error p-4 font-bold text-error">{loadError} <button onClick={() => { setLoadError(""); setLoading(true); setReloadKey((value) => value + 1); }} className="underline">Thử lại</button></p>}
         {loading && (
           <p className="font-bold text-text-muted">Đang tải thông tin…</p>
         )}
@@ -211,20 +250,25 @@ export default function ResidencePage() {
             <section className={card}>
               {contractStatus === "PENDING" && contract?.depositStatus === "HELD" ? (
                 <>
-                  <h2 className="mb-3 text-xl font-black">Chọn ngày nhận phòng</h2>
+                  <div className="space-y-6">
+                  <div>
+                  <p className="mb-3 text-sm font-bold text-text-muted">Đã thanh toán cọc thành công</p>
+                  <h2 className="mb-3 text-xl font-black">Chọn lịch nhận phòng</h2>
                   <p className="font-semibold">
                     Phòng {plan?.roomNumber || room?.roomNumber} · {plan?.buildingName || room?.buildingName}
                   </p>
-                  {plan && (
-                    <p className="mt-2 text-sm font-semibold">
-                      Đã đóng cọc: {formatDate(plan.depositPaidAt)} · Hạn chọn ngày: {formatDate(plan.latestDate)}
-                    </p>
+                  {dateBounds && (
+                    <div className="mt-4 rounded-sm border-2 border-line-strong bg-surface-2 p-4">
+                      <p className="font-bold">Hạn cuối chọn ngày nhận phòng</p>
+                      <p className="text-lg font-black">{formatDate(dateBounds.latestDate)}</p>
+                      <p className="mt-2 text-sm">Đã đóng cọc ngày {formatDate(dateBounds.depositPaidAt)}</p>
+                    </div>
                   )}
                   <p className="mt-3 text-sm font-semibold">
                     Bạn có thể chọn từ ngày đóng cọc đến hết 7 ngày sau đó. Thời hạn hợp đồng hiện tại chỉ là dự kiến.
                     Thanh toán cọc sớm giúp bạn chủ động nhận phòng sớm hơn.
                   </p>
-                  {plan && (
+                  {dateBounds && (
                     <div className="mt-4 space-y-4">
                       <div className="flex flex-wrap items-end gap-3">
                         <label className="font-bold">
@@ -232,35 +276,27 @@ export default function ResidencePage() {
                           <input
                             type="date"
                             value={chosenDate}
-                            min={plan.earliestDate > todayVN ? plan.earliestDate : todayVN}
-                            max={plan.latestDate}
+                            min={dateBounds.earliestDate > todayVN ? dateBounds.earliestDate : todayVN}
+                            max={dateBounds.latestDate}
+                            disabled={confirmBusy}
                             onChange={(event) => {
                               setChosenDate(event.target.value);
                               setAcceptedTerm(false);
                             }}
-                            className="mt-1 block rounded-sm border-3 border-line-strong bg-surface p-2"
+                            className="mt-2 block w-full rounded-sm border-3 border-line-strong bg-surface p-3 text-text [color-scheme:light_dark]"
                           />
                         </label>
-                        <button type="button" disabled={!chosenDate || planBusy} onClick={previewDate}
-                          className="rounded-sm border-3 border-line-strong bg-secondary px-4 py-2 font-black disabled:opacity-50">
-                          Xem thời hạn
-                        </button>
                       </div>
-                      {plan.checkInDate === chosenDate && (
+                      {!planBusy && plan?.checkInDate === chosenDate && (
                         <>
-                          <p className="font-semibold">
-                            Thời hạn chính thức: {formatDate(plan.startDate)} – {formatDate(plan.endDate)}
-                            {" "}· Tiền thuê tháng đầu: {formatCurrency(plan.firstMonthRent)}
-                            {" "}· Giá tháng: {formatCurrency(plan.monthlyRent)}
-                          </p>
                           <label className="flex items-start gap-2 font-semibold">
                             <input type="checkbox" checked={acceptedTerm}
                               onChange={(event) => setAcceptedTerm(event.target.checked)} />
                             Tôi đã kiểm tra ngày nhận phòng và thời hạn thuê, đồng ý xác nhận một lần.
                           </label>
-                          <button type="button" disabled={!acceptedTerm || planBusy} onClick={confirmDate}
+                          <button type="button" disabled={!acceptedTerm || planBusy || confirmBusy} onClick={confirmDate}
                             className="rounded-sm border-3 border-line-strong bg-primary px-4 py-2 font-black disabled:opacity-50">
-                            Xác nhận ngày nhận phòng
+                            {confirmBusy ? "Đang xác nhận…" : "Xác nhận ngày nhận phòng"}
                           </button>
                         </>
                       )}
@@ -271,10 +307,22 @@ export default function ResidencePage() {
                   <p className="mt-3 text-sm font-semibold text-error">
                     Nếu quá hạn do bạn chưa xác nhận, ban quản lý có thể hủy suất và xử lý tiền cọc sau khi kiểm tra nguyên nhân.
                   </p>
+                  </div>
+                  <div className="border-t-2 border-line-strong/20 pt-5">
+                    <h3 className="mb-5 text-xl font-black">Thời hạn & chi phí dự kiến</h3>
+                    {!planBusy && plan?.checkInDate === chosenDate ? <RentalSummary plan={plan} deposit={deposit} /> : <p role="status">Chọn ngày hợp lệ để xem thời hạn và chi phí tương ứng.</p>}
+                  </div>
+                  </div>
                 </>
               ) : (
                 <>
+                  <p className="mb-3 text-sm font-bold text-text-muted">Lịch nhận phòng đã được xác nhận</p>
                   <h2 className="mb-2 text-xl font-black">Chờ nhận phòng</h2>
+                  <div className="my-4 rounded-sm border-2 border-line-strong bg-surface-2 p-4">
+                    <p className="font-bold">Ngày nhận phòng</p><p className="text-xl font-black">{formatDate(contract?.startDate)}</p>
+                    <p className="mt-2 font-bold">Phòng {room?.roomNumber} · {room?.buildingName || room?.building?.name}</p>
+                  </div>
+                  <p className="mb-3 text-sm font-semibold">Chuẩn bị CCCD và thông tin hợp đồng, đến ban quản lý để được hướng dẫn bàn giao phòng. Chức năng cư trú được mở sau khi quản lý xác nhận Check-in.</p>
                   <p className="font-semibold">
                     Bạn đã được phân phòng. Vui lòng đến ký túc xá đúng ngày;
                     quản lý sẽ xác nhận Check-in khi bàn giao phòng.

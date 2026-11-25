@@ -497,6 +497,18 @@ export default function DetailScreen({ config }) {
       : id == null ? "" : `${config.resource}/${encodeURIComponent(id)}`;
 
   const { data: raw, error, loading, reload } = useLoad(path, {});
+  // An approved application remains APPROVED after payment; read its actual invoice.
+  const depositInvoicePath = config.resource === "/student/dorm-applications"
+    && raw?.status === "APPROVED" && String(raw.id) === String(id) && raw.depositInvoiceId
+    ? `/student/invoices/${encodeURIComponent(raw.depositInvoiceId)}` : "";
+  const { data: depositInvoice, error: depositInvoiceError, loading: depositInvoiceLoading } = useLoad(depositInvoicePath, {});
+  const actionData = {
+    ...raw,
+    depositInvoiceStatus: depositInvoicePath && !depositInvoiceLoading
+      && depositInvoice != null && raw?.depositInvoiceId != null
+      && String(depositInvoice.invoiceId) === String(raw.depositInvoiceId)
+      ? depositInvoice.status : null,
+  };
 
   // Khi single: true, backend có thể trả về Page (vd /student/room-assignments
   // trả Page<RoomAssignmentResponse>). Lấy phần tử đầu tiên của content/items
@@ -727,7 +739,7 @@ export default function DetailScreen({ config }) {
             }
             if (!action.visibleWhen) return true;
             if (typeof action.visibleWhen === "function") {
-              return action.visibleWhen(data);
+              return action.visibleWhen(actionData);
             }
             return Object.entries(action.visibleWhen).every(
               ([field, value]) =>
@@ -810,7 +822,7 @@ export default function DetailScreen({ config }) {
       </Heading>
 
       {/* Notice hiển thị Thông báo Lỗi / Thành công */}
-      <Notice error={actionError || error || buildingRoomsError} success={success} />
+      <Notice error={actionError || error || buildingRoomsError || depositInvoiceError} success={success} />
 
       {config.resource === "/contracts" && data?.status === "ACTIVE"
         && data?.assignmentStatus === "ASSIGNED"

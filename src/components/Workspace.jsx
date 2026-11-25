@@ -1,4 +1,5 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import ResidenceJourney from "./ResidenceJourney";
 import {
   Menu,
   LogOut,
@@ -21,6 +22,11 @@ import { resources } from "../services/resource.service";
 import { api } from "../api/apiClient";
 
 export default function Workspace({ group, title, children }) {
+  const { pathname } = useLocation();
+  const showResidenceJourney = group === "student" && (
+    pathname.startsWith("/student/applications") || pathname.startsWith("/student/invoices/")
+    || ["/student/residence", "/student/room-contract", "/student/payment-result"].includes(pathname)
+  );
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -524,6 +530,7 @@ export default function Workspace({ group, title, children }) {
 
         {/* Content Body */}
         <main className="w-full px-6 lg:px-12 py-10 pb-16 flex-1">
+          {showResidenceJourney && <ResidenceJourney />}
           {children}
         </main>
       </div>

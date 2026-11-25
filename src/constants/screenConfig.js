@@ -152,7 +152,13 @@ export const screens = {
         label: "Thanh toán cọc để nhận phòng",
         type: "redirect",
         path: (data) => `/student/invoices/${data.depositInvoiceId}`,
-        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceId,
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceId && data.depositInvoiceStatus === "UNPAID",
+      },
+      {
+        label: "Xem lịch nhận phòng & hợp đồng",
+        type: "redirect",
+        path: "/student/residence",
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceStatus === "PAID",
       },
       {
         // Backend chỉ cho hủy đơn PENDING (DORM_APPLICATION_NOT_PENDING).
