@@ -306,7 +306,7 @@ function RoomDetailContent() {
 
             {/* Help Text */}
             <p className="text-xs text-text-muted mt-6 text-center leading-relaxed">
-              Chọn phòng phù hợp và gửi đơn đăng ký nội trú
+              Sau khi đơn được duyệt và bạn đóng cọc, bạn có 7 ngày để chọn ngày nhận phòng. Đóng cọc sớm giúp bạn chủ động nhận phòng sớm hơn.
             </p>
           </div>
         </div>

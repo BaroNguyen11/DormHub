@@ -25,7 +25,7 @@ export default function ListScreen({ config, onAccountAction }) {
   const location = useLocation();
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(config.defaultStatus || "");
   const [busy, setBusy] = useState("");
   const [success, setSuccess] = useState("");
   const [actionError, setActionError] = useState("");
@@ -157,7 +157,22 @@ export default function ListScreen({ config, onAccountAction }) {
                             config.resource === "/manager/maintenance" ? (
                               <MaintenanceStatusBadge status={value} />
                             ) : (
-                              <StatusBadge status={value} />
+                              <>
+                                <StatusBadge status={value} />
+                                {config.resource === "/manager/dorm-applications" &&
+                                  value === "PENDING" && row.createdAt &&
+                                  Date.now() - new Date(row.createdAt).getTime() > 24 * 60 * 60 * 1000 && (
+                                    <span className="ml-2 inline-block border-2 border-line-strong bg-error-light px-2 py-1 text-xs font-black">
+                                      Quá hạn xử lý 24 giờ
+                                    </span>
+                                  )}
+                                {config.resource === "/contracts" && value === "PENDING"
+                                  && row.depositStatus === "HELD" && (
+                                    <span className="ml-2 inline-block border-2 border-line-strong bg-warning px-2 py-1 text-xs font-black">
+                                      Chưa chọn lịch
+                                    </span>
+                                  )}
+                              </>
                             )
                           ) : (
                             formatValue(key, value)

@@ -23,7 +23,7 @@ const card =
   "bg-surface border-4 border-line-strong rounded-sm p-6 shadow-[5px_5px_0_#141413]";
 const formatDate = (value) => {
   if (!value) return "—";
-  const date = new Date(value);
+  const date = new Date(`${String(value).slice(0, 10)}T12:00:00Z`);
   return Number.isNaN(date.getTime())
     ? "—"
     : date.toLocaleDateString("vi-VN", { timeZone: "UTC" });
@@ -45,7 +45,12 @@ export default function ResidencePage() {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
-
+  const [plan, setPlan] = useState(null);
+  const [planError, setPlanError] = useState("");
+  const [chosenDate, setChosenDate] = useState("");
+  const [planBusy, setPlanBusy] = useState(false);
+  const [acceptedTerm, setAcceptedTerm] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => () => {
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
   }, [pdfUrl]);
@@ -94,7 +99,7 @@ export default function ResidencePage() {
         setAssignment(currentAssignment || null);
         setRoommates([]);
         setRoommatesError("");
-        if (currentAssignment) {
+        if (String(currentAssignment?.assignmentStatus || currentAssignment?.status || "").toUpperCase() === "CHECKED_IN") {
           try {
             const members = await api("/student/room-assignments/roommates", {
               notify: false,
@@ -105,20 +110,72 @@ export default function ResidencePage() {
           }
         }
         const contractList = contracts?.content || contracts?.items || [];
-        setContract(
-          contractList.find(
+        const currentContract = contractList.find(
             (item) => String(item?.status || "").toUpperCase() === "ACTIVE",
           ) ||
             contractList[0] ||
-            null,
-        );
+            null;
+        setContract(currentContract);
+        setPlan(null);
+        setPlanError("");
+        if (currentContract?.status === "PENDING"
+            && currentContract?.depositStatus === "HELD" && currentAssignment) {
+          try {
+            const nextPlan = await api(
+              `/student/contracts/${currentContract.contractId}/check-in-plan`,
+              { notify: false },
+            );
+            setPlan(nextPlan);
+            setChosenDate(nextPlan.checkInDate || "");
+          } catch (error) {
+            setPlanError(errorMessage(error));
+          }
+        }
       } catch {
         // API client reports request failures globally.
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [reloadKey]);
+
+  async function previewDate() {
+    if (!contract?.contractId || !chosenDate || planBusy) return;
+    setPlanBusy(true);
+    setPlanError("");
+    setAcceptedTerm(false);
+    try {
+      const nextPlan = await api(
+        `/student/contracts/${contract.contractId}/check-in-plan?date=${encodeURIComponent(chosenDate)}`,
+        { notify: false },
+      );
+      setPlan(nextPlan);
+    } catch (error) {
+      setPlan(null);
+      setPlanError(errorMessage(error));
+    } finally {
+      setPlanBusy(false);
+    }
+  }
+
+  async function confirmDate() {
+    if (!contract?.contractId || !acceptedTerm || plan?.checkInDate !== chosenDate || planBusy) return;
+    setPlanBusy(true);
+    setPlanError("");
+    try {
+      await api(`/student/contracts/${contract.contractId}/confirm-check-in-date`, {
+        method: "POST",
+        body: { checkInDate: chosenDate },
+        notify: false,
+      });
+      setAcceptedTerm(false);
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      setPlanError(errorMessage(error));
+    } finally {
+      setPlanBusy(false);
+    }
+  }
 
   const room = assignment?.room || assignment;
   const deposit =
@@ -127,8 +184,13 @@ export default function ResidencePage() {
     contract?.status || contract?.contractStatus || "",
   ).toUpperCase();
   const activeContract = contractStatus === "ACTIVE";
+  const checkedIn = String(
+    assignment?.assignmentStatus || assignment?.status || "",
+  ).toUpperCase() === "CHECKED_IN";
+  const todayVN = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
 
   const statusBadge = {
+    PENDING: { label: contract?.depositStatus === "HELD" ? "CHỜ XÁC NHẬN LỊCH" : "CHỜ ĐÓNG CỌC", style: "bg-warning text-black" },
     ACTIVE: { label: "ĐANG HOẠT ĐỘNG", style: "bg-success text-black" },
     EXPIRED: { label: "ĐÃ HẾT HẠN", style: "bg-surface-3 text-text-muted" },
     TERMINATED: { label: "ĐÃ HỦY", style: "bg-error text-white" },
@@ -144,6 +206,88 @@ export default function ResidencePage() {
           <p className="font-bold text-text-muted">Đang tải thông tin…</p>
         )}
         {!loading && (
+          <>
+          {assignment && !checkedIn && (
+            <section className={card}>
+              {contractStatus === "PENDING" && contract?.depositStatus === "HELD" ? (
+                <>
+                  <h2 className="mb-3 text-xl font-black">Chọn ngày nhận phòng</h2>
+                  <p className="font-semibold">
+                    Phòng {plan?.roomNumber || room?.roomNumber} · {plan?.buildingName || room?.buildingName}
+                  </p>
+                  {plan && (
+                    <p className="mt-2 text-sm font-semibold">
+                      Đã đóng cọc: {formatDate(plan.depositPaidAt)} · Hạn chọn ngày: {formatDate(plan.latestDate)}
+                    </p>
+                  )}
+                  <p className="mt-3 text-sm font-semibold">
+                    Bạn có thể chọn từ ngày đóng cọc đến hết 7 ngày sau đó. Thời hạn hợp đồng hiện tại chỉ là dự kiến.
+                    Thanh toán cọc sớm giúp bạn chủ động nhận phòng sớm hơn.
+                  </p>
+                  {plan && (
+                    <div className="mt-4 space-y-4">
+                      <div className="flex flex-wrap items-end gap-3">
+                        <label className="font-bold">
+                          Ngày nhận phòng
+                          <input
+                            type="date"
+                            value={chosenDate}
+                            min={plan.earliestDate > todayVN ? plan.earliestDate : todayVN}
+                            max={plan.latestDate}
+                            onChange={(event) => {
+                              setChosenDate(event.target.value);
+                              setAcceptedTerm(false);
+                            }}
+                            className="mt-1 block rounded-sm border-3 border-line-strong bg-surface p-2"
+                          />
+                        </label>
+                        <button type="button" disabled={!chosenDate || planBusy} onClick={previewDate}
+                          className="rounded-sm border-3 border-line-strong bg-secondary px-4 py-2 font-black disabled:opacity-50">
+                          Xem thời hạn
+                        </button>
+                      </div>
+                      {plan.checkInDate === chosenDate && (
+                        <>
+                          <p className="font-semibold">
+                            Thời hạn chính thức: {formatDate(plan.startDate)} – {formatDate(plan.endDate)}
+                            {" "}· Tiền thuê tháng đầu: {formatCurrency(plan.firstMonthRent)}
+                            {" "}· Giá tháng: {formatCurrency(plan.monthlyRent)}
+                          </p>
+                          <label className="flex items-start gap-2 font-semibold">
+                            <input type="checkbox" checked={acceptedTerm}
+                              onChange={(event) => setAcceptedTerm(event.target.checked)} />
+                            Tôi đã kiểm tra ngày nhận phòng và thời hạn thuê, đồng ý xác nhận một lần.
+                          </label>
+                          <button type="button" disabled={!acceptedTerm || planBusy} onClick={confirmDate}
+                            className="rounded-sm border-3 border-line-strong bg-primary px-4 py-2 font-black disabled:opacity-50">
+                            Xác nhận ngày nhận phòng
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {planBusy && <p className="mt-3 font-semibold">Đang xử lý…</p>}
+                  {planError && <p role="alert" className="mt-3 font-semibold text-error">{planError}</p>}
+                  <p className="mt-3 text-sm font-semibold text-error">
+                    Nếu quá hạn do bạn chưa xác nhận, ban quản lý có thể hủy suất và xử lý tiền cọc sau khi kiểm tra nguyên nhân.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="mb-2 text-xl font-black">Chờ nhận phòng</h2>
+                  <p className="font-semibold">
+                    Bạn đã được phân phòng. Vui lòng đến ký túc xá đúng ngày;
+                    quản lý sẽ xác nhận Check-in khi bàn giao phòng.
+                  </p>
+                  {contract?.startDate && contract?.endDate && (
+                    <p className="mt-3 font-semibold">
+                      Thời hạn hợp đồng: {formatDate(contract.startDate)} – {formatDate(contract.endDate)}
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+          )}
           <div className="grid lg:grid-cols-2 gap-6">
             <section className={card}>
               <h2 className="w-full block leading-normal text-xl font-black flex gap-2 items-center mb-5">
@@ -219,7 +363,7 @@ export default function ResidencePage() {
                 <div className="flex items-center gap-3 border-2 border-dashed border-line-strong bg-surface-2 rounded-sm p-4 text-sm font-semibold text-text-muted">
                   <Users size={20} className="shrink-0" />
                   <span>
-                    {assignment ? "Bạn đang ở một mình." : "Bạn chưa có phòng."}
+                    {checkedIn ? "Bạn đang ở một mình." : assignment ? "Chưa có thông tin bạn cùng phòng." : "Bạn chưa có phòng."}
                   </span>
                 </div>
               )}
@@ -238,7 +382,9 @@ export default function ResidencePage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-sm opacity-70">Thời hạn</dt>
+                      <dt className="text-sm opacity-70">
+                        {contractStatus === "PENDING" ? "Thời hạn dự kiến" : "Thời hạn"}
+                      </dt>
                       <dd className="font-extrabold">
                         {formatDate(contract.startDate)} –{" "}
                         {formatDate(contract.endDate)}
@@ -273,7 +419,7 @@ export default function ResidencePage() {
                   </div>
                   {pdfBusy && <p className="mt-3 text-sm font-semibold">Đang chuẩn bị hợp đồng…</p>}
                   {pdfError && <p role="alert" className="mt-3 text-sm font-semibold text-error">Không thể tải hợp đồng: {pdfError}</p>}
-                  {activeContract && (
+                  {activeContract && checkedIn && (
                     <div className="mt-6 border-t-2 border-line-strong pt-4">
                       <p className="mb-3 text-xs font-black uppercase tracking-wide text-text-muted">
                         Thao tác hợp đồng
@@ -309,6 +455,7 @@ export default function ResidencePage() {
               )}
             </section>
           </div>
+          </>
         )}
       </div>
       {modal === "renew" && (

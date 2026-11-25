@@ -235,7 +235,7 @@ function notifyApiError(error, path, method = "GET") {
       toast.error("Bạn không có quyền thực hiện chức năng này!");
       break;
     case 404:
-      toast.error("Không tìm thấy đường dẫn API hoặc dữ liệu yêu cầu!");
+      toast.error("Không tìm thấy thông tin bạn yêu cầu. Vui lòng thử lại sau.");
       break;
     case 500:
       toast.error("Lỗi hệ thống máy chủ (Lỗi 500). Vui lòng thử lại sau!");

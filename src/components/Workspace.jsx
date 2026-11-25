@@ -9,7 +9,6 @@ import {
   Zap,
   ChevronRight,
   Bell,
-  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -35,7 +34,7 @@ export default function Workspace({ group, title, children }) {
     let active = true;
     const loadCount = async () => {
       try {
-        const result = await api("/notifications/unread-count");
+        const result = await api("/notifications/unread-count", { notify: false });
         if (active)
           setUnreadCount(
             Number(result?.unreadCount ?? result?.count ?? result ?? 0),

@@ -474,6 +474,9 @@ export default function ApplicationScreen({ config }) {
                 <p className="text-sm font-bold text-text">
                   Hãy xem toàn bộ hợp đồng dự thảo và xác nhận điều khoản trước khi gửi đơn.
                 </p>
+                <p className="mt-2 text-sm font-semibold text-text">
+                  Quản lý xử lý đơn trong 24 giờ. Sau khi được duyệt, bạn có 48 giờ để đóng cọc; sau khi đóng cọc, bạn có 7 ngày để chọn và xác nhận ngày nhận phòng.
+                </p>
               </div>
 
               <div className="flex items-center gap-2 pb-2 border-b-3 border-line-strong">

@@ -1,7 +1,7 @@
 // ====================================
 // DETAIL SCREEN - Màn hình chi tiết (Neo-Brutalism)
 // ====================================
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation, matchPath } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   ArrowLeft,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { resources } from "../../services/resource.service";
 import { API_BASE_URL } from "../../api/apiClient";
+import { screens } from "../../constants/screenConfig";
 import { FIELD_LABELS } from "./constants";
 import { formatValue } from "./formatters";
 import { Notice, Loading, Empty, Heading } from "./UIComponents";
@@ -55,6 +56,12 @@ function resolveImageUrl(value) {
     return `${origin}${url}`;
   }
   return url;
+}
+
+function businessTimestamp(value) {
+  if (!value) return NaN;
+  const text = String(value);
+  return new Date(/(?:Z|[+-]\d{2}:\d{2})$/i.test(text) ? text : `${text}+07:00`).getTime();
 }
 
 function ImageLightbox({ src, alt, onClose }) {
@@ -456,9 +463,16 @@ function ContractProgress({ data }) {
 }
 
 export default function DetailScreen({ config }) {
-  const { id } = useParams();
+  const { id: routeId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const configuredPath = Object.keys(screens).find((path) => screens[path] === config);
+  const matchedRoute = configuredPath
+    ? matchPath({ path: configuredPath, end: true }, location.pathname)
+    : null;
+  // During route transitions the previous detail screen can stay mounted briefly.
+  // Only load the resource when its own route still matches the current URL.
+  const id = configuredPath ? matchedRoute?.params.id : routeId;
 
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -469,10 +483,18 @@ export default function DetailScreen({ config }) {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null });
   const [pendingConfirmAction, setPendingConfirmAction] = useState(null);
   const [pendingInput, setPendingInput] = useState(null);
+  const [clockNow, setClockNow] = useState(0);
+  useEffect(() => {
+    const initial = window.setTimeout(() => setClockNow(Date.now()), 0);
+    const timer = window.setInterval(() => setClockNow(Date.now()), 60_000);
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); };
+  }, []);
 
-  const path = config.single
-    ? config.resource
-    : `${config.resource}/${encodeURIComponent(id)}`;
+  const path = configuredPath && !matchedRoute
+    ? ""
+    : config.single
+      ? config.resource
+      : id == null ? "" : `${config.resource}/${encodeURIComponent(id)}`;
 
   const { data: raw, error, loading, reload } = useLoad(path, {});
 
@@ -496,6 +518,9 @@ export default function DetailScreen({ config }) {
   const isBuildingDetail = config.resource === "/manager/buildings";
   const isContractDetail = ["/contracts", "/student/contracts"].includes(config.resource);
   const isInvoiceDetail = ["/invoices", "/student/invoices"].includes(config.resource);
+  const depositDueMs = businessTimestamp(data?.dueDate);
+  const remainingDepositMinutes = Number.isFinite(depositDueMs)
+    ? Math.max(0, Math.ceil((depositDueMs - clockNow) / 60_000)) : null;
   const detailSections = DETAIL_SECTIONS[config.resource];
   const { data: buildingRoomsData, loading: buildingRoomsLoading, error: buildingRoomsError } = useLoad(
     isBuildingDetail ? "/manager/rooms" : "",
@@ -619,7 +644,7 @@ export default function DetailScreen({ config }) {
 
     try {
       await resources.action(
-        `${config.resource}/${id}${action.suffix}`,
+        action.endpoint ? action.endpoint(data) : `${config.resource}/${id}${action.suffix}`,
         action.method,
         body,
       );
@@ -712,9 +737,12 @@ export default function DetailScreen({ config }) {
           .map((action) => {
           // Handle redirect actions
           if (action.type === "redirect") {
-            const targetPath = action.useRoomId
-              ? `${action.path}?roomId=${id}`
+            const actionPath = typeof action.path === "function"
+              ? action.path(data)
               : action.path;
+            const targetPath = action.useRoomId
+              ? `${actionPath}?roomId=${encodeURIComponent(id)}`
+              : actionPath;
             return (
               <Link
                 key={action.label}
@@ -783,6 +811,35 @@ export default function DetailScreen({ config }) {
 
       {/* Notice hiển thị Thông báo Lỗi / Thành công */}
       <Notice error={actionError || error || buildingRoomsError} success={success} />
+
+      {config.resource === "/contracts" && data?.status === "ACTIVE"
+        && data?.assignmentStatus === "ASSIGNED"
+        && data?.startDate
+        && String(data.startDate).slice(0, 10) < new Date(clockNow).toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" }) && (
+          <p className="border-3 border-line-strong bg-warning p-4 font-bold shadow-[3px_3px_0_#141413]">
+            Sinh viên đã xác nhận ngày nhận phòng nhưng chưa Check-in. Vui lòng kiểm tra tình trạng bàn giao thực tế trước khi xác nhận.
+          </p>
+        )}
+
+      {["/contracts", "/student/contracts"].includes(config.resource)
+        && data?.status === "PENDING" && (
+          <p className="border-3 border-line-strong bg-warning p-4 font-bold shadow-[3px_3px_0_#141413]">
+            Thời hạn hiển thị là dự kiến; ngày bắt đầu và kết thúc sẽ được cập nhật khi sinh viên xác nhận ngày nhận phòng.
+          </p>
+        )}
+
+      {config.resource === "/student/invoices" && data?.invoiceType === "DEPOSIT"
+        && data?.status === "UNPAID" && data?.dueDate && (
+          <p className="border-3 border-line-strong bg-warning p-4 font-bold shadow-[3px_3px_0_#141413]">
+            Tiền cọc: {formatValue("totalAmount", data.totalAmount)} · Hạn thanh toán: {formatValue("dueDate", data.dueDate)}.
+            {remainingDepositMinutes !== null && clockNow > 0 && (
+              <span> {remainingDepositMinutes > 0
+                ? `Còn ${Math.floor(remainingDepositMinutes / 60)} giờ ${remainingDepositMinutes % 60} phút.`
+                : "Hóa đơn đã quá hạn thanh toán."}</span>
+            )}
+            {" "}Thanh toán sớm giúp bạn chủ động chọn ngày nhận phòng sớm hơn.
+          </p>
+        )}
 
       {/* Hiển thị Loading, Empty hoặc Chi tiết */}
       {loading ? (
