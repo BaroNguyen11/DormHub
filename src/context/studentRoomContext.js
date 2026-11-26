@@ -1,4 +1,4 @@
 import { createContext } from 'react';
 
-// Trạng thái phòng của sinh viên: { loading, hasRoom, refresh }
+// hasRoom: đã CHECKED_IN; hasAssignment: đã giữ chỗ ASSIGNED hoặc CHECKED_IN.
 export const StudentRoomContext = createContext(null);

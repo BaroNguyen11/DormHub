@@ -14,13 +14,15 @@ const startsWithAny = (pathname, prefixes) =>
 
 /**
  * Cổng chặn cho khu vực sinh viên:
- * - Chưa có phòng  -> chỉ được vào Tìm phòng / Đơn đăng ký / Hồ sơ.
- * - Đã có phòng    -> vào đầy đủ các chức năng, không cần tìm phòng nữa.
+ * - Chưa check-in -> xem đơn, thanh toán, hợp đồng và thông tin phân phòng.
+ * - Đã check-in   -> vào đầy đủ các chức năng cư trú.
  */
 export default function StudentRoomGate() {
   const { pathname } = useLocation();
   const [loading, setLoading] = useState(true);
   const [hasRoom, setHasRoom] = useState(false);
+  const [hasAssignment, setHasAssignment] = useState(false);
+  const [stagePath, setStagePath] = useState(STUDENT_NO_ROOM_HOME);
   const hasRoomRef = useRef(false);
   const refreshRequestRef = useRef(null);
 
@@ -38,17 +40,37 @@ export default function StudentRoomGate() {
         const items = Array.isArray(data)
           ? data
           : data?.content || data?.items || [];
+        const checkedIn = items.some((a) =>
+          String(a?.assignmentStatus || a?.status || '').toUpperCase() === 'CHECKED_IN',
+        );
         const assigned = items.some((a) =>
           ['ASSIGNED', 'CHECKED_IN'].includes(
             String(a?.assignmentStatus || a?.status || '').toUpperCase(),
           ),
         );
-        hasRoomRef.current = assigned;
-        setHasRoom(assigned);
+        setHasAssignment(assigned);
+        if (assigned) {
+          setStagePath('/student/residence');
+        } else {
+          const applications = await api('/student/dorm-applications?page=0&size=20', {
+            method: 'GET', notify: false,
+          });
+          const applicationItems = applications?.content || [];
+          const openApplication = applicationItems.find((item) =>
+            ['PENDING', 'APPROVED'].includes(String(item?.status || '').toUpperCase()),
+          );
+          setStagePath(openApplication?.status === 'APPROVED' && openApplication.depositInvoiceId
+            ? `/student/invoices/${openApplication.depositInvoiceId}`
+            : openApplication ? '/student/applications' : STUDENT_NO_ROOM_HOME);
+        }
+        hasRoomRef.current = checkedIn;
+        setHasRoom(checkedIn);
       } catch {
         // 404 / 403 / mạng: coi như chưa có phòng để SV vẫn vào được Tìm phòng.
         hasRoomRef.current = false;
         setHasRoom(false);
+        setHasAssignment(false);
+        setStagePath(STUDENT_NO_ROOM_HOME);
       } finally {
         setLoading(false);
       }
@@ -70,16 +92,27 @@ export default function StudentRoomGate() {
   }, [pathname, refresh]);
 
   const value = useMemo(
-    () => ({ loading, hasRoom, refresh }),
-    [loading, hasRoom, refresh],
+    () => ({ loading, hasRoom, hasAssignment, refresh }),
+    [loading, hasRoom, hasAssignment, refresh],
   );
 
   if (loading) {
     return <div className="page-status">Đang kiểm tra thông tin phòng…</div>;
   }
 
+  const residenceOnly = pathname === '/student/maintenance/new' ||
+    /^\/student\/contracts\/[^/]+\/renewal$/.test(pathname) ||
+    pathname.startsWith('/student/room-transfer-requests/') ||
+    pathname.startsWith('/student/checkout-requests/');
+  if (!hasRoom && residenceOnly) {
+    return <Navigate to="/student/residence" replace />;
+  }
+  if (hasAssignment && pathname === '/student/applications/new') {
+    return <Navigate to="/student/residence" replace />;
+  }
+
   if (!hasRoom && !startsWithAny(pathname, STUDENT_NO_ROOM_ALLOWED)) {
-    return <Navigate to={STUDENT_NO_ROOM_HOME} replace />;
+    return <Navigate to={stagePath} replace />;
   }
 
   if (hasRoom && startsWithAny(pathname, STUDENT_HOUSED_BLOCKED)) {

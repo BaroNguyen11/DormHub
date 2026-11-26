@@ -44,7 +44,6 @@ export const FIELD_LABELS = {
   availableSlots: "Chỗ trống",
   floor: "Tầng",
   totalFloors: "Tổng số tầng",
-  totalRooms: "Tổng số phòng",
   availableRooms: "Phòng còn trống",
   residents: "Sinh viên đang cư trú",
 
@@ -55,7 +54,6 @@ export const FIELD_LABELS = {
   depositAmount: "Tiền cọc",
   price: "Giá",
   totalAmount: "Tổng tiền",
-  amount: "Số tiền",
   electricityAmount: "Tiền điện",
   waterAmount: "Tiền nước",
   serviceAmount: "Phí dịch vụ",
@@ -81,7 +79,6 @@ export const FIELD_LABELS = {
   status: "Trạng thái",
   assignmentStatus: "Trạng thái phân phòng",
   contractStatus: "Trạng thái hợp đồng",
-  depositStatus: "Trạng thái tiền cọc",
   type: "Loại",
   invoiceType: "Loại hóa đơn",
   itemType: "Khoản thu",
@@ -144,6 +141,9 @@ export const FIELD_LABELS = {
   // Room transfer requests (Chuyển phòng)
   transferId: "Mã yêu cầu",
   currentRoomId: "Phòng hiện tại",
+  currentRoomNumber: "Phòng hiện tại",
+  preferredRoomNumber: "Phòng mong muốn",
+  approvedRoomNumber: "Phòng được duyệt",
   preferredRoomId: "Phòng mong muốn",
   approvedRoomId: "Phòng được duyệt",
   currentAssignmentId: "Mã phân phòng hiện tại",

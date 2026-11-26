@@ -152,7 +152,13 @@ export const screens = {
         label: "Thanh toán cọc để nhận phòng",
         type: "redirect",
         path: (data) => `/student/invoices/${data.depositInvoiceId}`,
-        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceId,
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceId && data.depositInvoiceStatus === "UNPAID",
+      },
+      {
+        label: "Xem lịch nhận phòng & hợp đồng",
+        type: "redirect",
+        path: "/student/residence",
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositInvoiceStatus === "PAID",
       },
       {
         // Backend chỉ cho hủy đơn PENDING (DORM_APPLICATION_NOT_PENDING).
@@ -358,6 +364,7 @@ export const screens = {
     ],
     detail: "/manager/applications",
     search: true,
+    defaultStatus: "PENDING",
     statusOptions: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
   },
   "/manager/applications/:id": {
@@ -486,7 +493,6 @@ export const screens = {
     detail: "/manager/residents",
     search: true,
     idField: "studentId",
-    searchParam: "name",
     accountAction: true,
   },
   "/manager/residents/:id": {
@@ -522,6 +528,7 @@ export const screens = {
       "contractId",
       "studentName",
       "roomNumber",
+      "startDate",
       "endDate",
       "status",
     ],
@@ -536,10 +543,11 @@ export const screens = {
     actions: [
       {
         label: "Check-in",
-        suffix: "/check-in",
+        endpoint: (data) => `/manager/contracts/${data.contractId}/check-in`,
         method: "POST",
         confirm: true,
-        visibleWhen: (data) => data.status === "ACTIVE",
+        visibleWhen: (data) => data.status === "ACTIVE" && data.assignmentStatus === "ASSIGNED"
+          && Boolean(data.startDate),
       },
     ],
   },
@@ -579,18 +587,6 @@ export const screens = {
     group: "manager",
     type: "detail",
     resource: "/invoices",
-    actions: [
-      {
-        // Đường làm việc khi không có webhook SePay (demo/tiền mặt tại văn phòng):
-        // xác nhận đã nhận cọc -> invoice PAID + hợp đồng ACTIVE + TỰ ĐỘNG PHÂN PHÒNG
-        // (DepositService.confirmDepositPaid -> RoomAssignmentService.assign).
-        label: "Xác nhận đã nhận cọc (tiền mặt)",
-        suffix: "/confirm-cash-deposit",
-        method: "POST",
-        confirm: true,
-        visibleWhen: { invoiceType: "DEPOSIT", status: "UNPAID" },
-      },
-    ],
   },
 
   "/manager/sepay": {
@@ -848,7 +844,7 @@ export const screens = {
     group: "student",
     type: "list",
     resource: "/student/room-transfer-requests",
-    columns: ["transferId", "currentRoomId", "preferredRoomId", "status", "requestedAt"],
+    columns: ["transferId", "currentRoomNumber", "preferredRoomNumber", "status", "requestedAt"],
     detail: "/student/room-transfer-requests",
     create: "/student/room-transfer-requests/new",
     createLabel: "Tạo yêu cầu chuyển phòng",
@@ -881,7 +877,7 @@ export const screens = {
     group: "manager",
     type: "list",
     resource: "/manager/room-transfer-requests",
-    columns: ["transferId", "studentId", "currentRoomId", "preferredRoomId", "status", "requestedAt"],
+    columns: ["transferId", "studentName", "studentCode", "currentRoomNumber", "preferredRoomNumber", "status", "requestedAt"],
     detail: "/manager/room-transfer-requests",
     statusOptions: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
   },
@@ -966,7 +962,6 @@ export const nav = {
 // sinh viên được duyệt đơn phải vào được dashboard và trang hóa đơn để TRẢ CỌC,
 // nếu không luồng "duyệt -> cọc -> phân phòng" bị kẹt vĩnh viễn.
 export const STUDENT_NO_ROOM_ALLOWED = [
-  "/student",
   "/student/rooms",
   "/student/applications",
   "/student/profile",
@@ -974,6 +969,7 @@ export const STUDENT_NO_ROOM_ALLOWED = [
   "/student/payments",
   "/student/contracts",
   "/student/room-contract",
+  "/student/residence",
   "/student/notifications",
   // FIX: cho phép xem lịch sử báo hỏng cũ khi phòng đã bị thu hồi (trả phòng xong),
   // tránh mất dấu vết các yêu cầu đã tạo khi còn ở KTX.

@@ -134,12 +134,12 @@ export default function PaymentResult() {
   useEffect(() => {
     if (countdown === null) return;
     if (countdown <= 0) {
-      navigate("/student", { replace: true });
+      navigate(payment?.invoiceType === "DEPOSIT" ? "/student/residence" : "/student", { replace: true });
       return;
     }
     const timer = setTimeout(() => setCountdown((value) => value - 1), 1000);
     return () => clearTimeout(timer);
-  }, [countdown, navigate]);
+  }, [countdown, navigate, payment?.invoiceType]);
 
   function copy(text, key) {
     if (!text) return;
@@ -254,7 +254,7 @@ export default function PaymentResult() {
 
         {isSuccess && countdown !== null && countdown > 0 && (
           <p className="text-xs font-black text-primary uppercase tracking-wide">
-            Tự động vào “Phòng của tôi” sau {countdown}s…
+            {isDeposit ? "Tự động chuyển đến chọn ngày nhận phòng" : "Tự động chuyển đến thông tin chỗ ở"} sau {countdown}s…
           </p>
         )}
 
@@ -355,10 +355,10 @@ export default function PaymentResult() {
       <div className="flex gap-3 flex-wrap">
         {isSuccess ? (
           <Link
-            to="/student"
+            to={isDeposit ? "/student/residence" : "/student"}
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary border-3 border-line-strong rounded-sm font-extrabold text-sm text-text shadow-[3px_3px_0_#141413] hover:shadow-[5px_5px_0_#141413] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none transition-all"
           >
-            Vào phòng của tôi
+            {isDeposit ? "Chọn ngày nhận phòng" : "Xem thông tin chỗ ở"}
           </Link>
         ) : (
           <Link

@@ -70,7 +70,7 @@ function addMonths(value, months) {
 // ------------------------------------------------------------------
 // Khung dialog dùng chung (Neo-Brutalism) — header icon + title + nút đóng, Esc để đóng
 // ------------------------------------------------------------------
-function DialogShell({ icon: Icon, tone = "bg-primary text-black", title, subtitle, onClose, children }) {
+export function DialogShell({ icon: Icon, tone = "bg-primary text-black", title, subtitle, onClose, children }) {
   useEffect(() => {
     const onKey = (event) => {
       if (event.key === "Escape") onClose();

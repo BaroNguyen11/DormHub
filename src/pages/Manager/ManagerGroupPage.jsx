@@ -123,6 +123,7 @@ function TabContent({ group, tab, selectedStudent, onSelectStudent, onAccountSuc
     <FormScreen config={config} />
   ) : (
     <ListScreen
+      key={configKey}
       config={config}
       onAccountAction={group === "students" ? onSelectStudent : undefined}
     />
