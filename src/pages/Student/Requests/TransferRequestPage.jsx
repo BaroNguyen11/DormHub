@@ -1,3 +1,4 @@
+import useCurrentStay from "../../../hooks/useCurrentStay";
 // ====================================
 // TẠO YÊU CẦU CHUYỂN PHÒNG — trang riêng thay cho FormScreen trống
 // ====================================
@@ -11,7 +12,6 @@ import { Loading, Notice } from "../../../components/Screen/UIComponents";
 import {
   RequestPageShell,
   TransferForm,
-  useCurrentStay,
 } from "../../../components/RequestDialogs";
 
 export default function TransferRequestPage() {

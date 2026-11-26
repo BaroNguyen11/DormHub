@@ -223,6 +223,7 @@ export const screens = {
     fields: ["requestedEndDate", "reason"],
   },
   "/student/renewal-requests": {
+    idField: "renewalRequestId",
     title: "Yêu cầu gia hạn",
     group: "student",
     type: "list",
@@ -705,6 +706,7 @@ export const screens = {
 
   // ===== MANAGER RENEWAL REQUESTS =====
   "/manager/renewal-requests": {
+    idField: "renewalRequestId",
     title: "Quản lý gia hạn",
     group: "manager",
     type: "list",
@@ -752,6 +754,7 @@ export const screens = {
 
   // ===== CHECKOUT REQUESTS (Trả phòng) =====
   "/student/checkout-requests": {
+    idField: "checkoutRequestId",
     title: "Yêu cầu trả phòng",
     group: "student",
     type: "list",
@@ -767,9 +770,7 @@ export const screens = {
     group: "student",
     type: "form",
     resource: "/student/checkout-requests",
-    // FIX: thêm checkoutDate — backend yêu cầu ngày trả phòng dự kiến
-    // (ResidencePage cũng gửi checkoutDate khi tạo từ modal).
-    fields: ["checkoutDate", "reason"],
+    fields: ["reason"],
   },
   "/student/checkout-requests/:id": {
     title: "Chi tiết yêu cầu trả phòng",
@@ -787,6 +788,7 @@ export const screens = {
     ],
   },
   "/manager/checkout-requests": {
+    idField: "checkoutRequestId",
     title: "Quản lý trả phòng",
     group: "manager",
     type: "list",
@@ -820,19 +822,29 @@ export const screens = {
         visibleWhen: (data) => data.status === "PENDING",
       },
       {
-        label: "Hoàn thành (Hoàn cọc)",
+        label: "Hoàn tất (Đã hoàn cọc bên ngoài)",
         suffix: "/complete",
         method: "POST",
         body: { depositDisposition: "REFUNDED" },
-        confirm: true,
-        visibleWhen: (data) => data.status === "APPROVED",
+        checkoutComplete: true,
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositStatus === "HELD",
       },
       {
-        label: "Hoàn thành (Tịch thu cọc)",
+        label: "Hoàn tất (Không hoàn cọc)",
         suffix: "/complete",
         method: "POST",
         body: { depositDisposition: "FORFEITED" },
-        confirm: true,
+        checkoutComplete: true,
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositStatus === "HELD",
+      },
+      {
+        label: "Hoàn tất trả phòng", suffix: "/complete", method: "POST", body: {}, checkoutComplete: true,
+        visibleWhen: (data) => data.status === "APPROVED" && data.depositStatus !== "HELD",
+      },
+      {
+        label: "Hủy yêu cầu đã duyệt", suffix: "/cancel", method: "PATCH",
+        promptField: "note", promptLabel: "Lý do hủy yêu cầu", promptRequired: true,
+        bodyBuilder: (data, value) => ({ status: "CANCELLED", note: value }),
         visibleWhen: (data) => data.status === "APPROVED",
       },
     ],
@@ -840,6 +852,7 @@ export const screens = {
 
   // ===== ROOM TRANSFER REQUESTS (Chuyển phòng) =====
   "/student/room-transfer-requests": {
+    idField: "transferId",
     title: "Yêu cầu chuyển phòng",
     group: "student",
     type: "list",
@@ -848,7 +861,7 @@ export const screens = {
     detail: "/student/room-transfer-requests",
     create: "/student/room-transfer-requests/new",
     createLabel: "Tạo yêu cầu chuyển phòng",
-    statusOptions: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+    statusOptions: ["PENDING", "APPROVED", "COMPLETED", "REJECTED", "CANCELLED"],
   },
   "/student/room-transfer-requests/new": {
     title: "Tạo yêu cầu chuyển phòng",
@@ -873,13 +886,14 @@ export const screens = {
     ],
   },
   "/manager/room-transfer-requests": {
+    idField: "transferId",
     title: "Quản lý chuyển phòng",
     group: "manager",
     type: "list",
     resource: "/manager/room-transfer-requests",
     columns: ["transferId", "studentName", "studentCode", "currentRoomNumber", "preferredRoomNumber", "status", "requestedAt"],
     detail: "/manager/room-transfer-requests",
-    statusOptions: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+    statusOptions: ["PENDING", "APPROVED", "COMPLETED", "REJECTED", "CANCELLED"],
   },
   "/manager/room-transfer-requests/:id": {
     title: "Duyệt chuyển phòng",
@@ -892,7 +906,7 @@ export const screens = {
         suffix: "/review",
         method: "PATCH",
         body: { status: "APPROVED" },
-        confirm: true,
+        transferAction: "approve",
         visibleWhen: (data) => data.status === "PENDING",
       },
       {
@@ -904,6 +918,14 @@ export const screens = {
         promptRequired: true,
         bodyBuilder: (data, promptValue) => ({ status: "REJECTED", reviewNote: promptValue }),
         visibleWhen: (data) => data.status === "PENDING",
+      },
+      {
+        label: "Hoàn tất chuyển phòng", suffix: "/complete", method: "POST", transferAction: "complete",
+        visibleWhen: (data) => data.status === "APPROVED" && data.handoverPending === true,
+      },
+      {
+        label: "Hủy sau xác minh", suffix: "/cancel", method: "PATCH", transferAction: "cancel",
+        visibleWhen: (data) => data.status === "APPROVED" && data.handoverPending === true,
       },
     ],
   },
@@ -974,6 +996,9 @@ export const STUDENT_NO_ROOM_ALLOWED = [
   // FIX: cho phép xem lịch sử báo hỏng cũ khi phòng đã bị thu hồi (trả phòng xong),
   // tránh mất dấu vết các yêu cầu đã tạo khi còn ở KTX.
   "/student/maintenance",
+  "/student/renewal-requests",
+  "/student/room-transfer-requests",
+  "/student/checkout-requests",
   "/change-password",
   // FIX: trang kết quả thanh toán (QR VietQR) phải vào được khi SV chưa có phòng,
   // nếu không gate sẽ đá SV về /student/rooms ngay sau khi bấm "Thanh toán"

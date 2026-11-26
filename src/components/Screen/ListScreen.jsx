@@ -163,6 +163,14 @@ export default function ListScreen({ config, onAccountAction }) {
                             ) : (
                               <>
                                 <StatusBadge status={value} />
+                                {config.resource.endsWith("/room-transfer-requests") && row.handoverPending && (
+                                  <span className="ml-2 text-xs font-bold">Chờ bàn giao</span>
+                                )}
+                                {config.resource.endsWith("/room-transfer-requests") && (row.responseOverdue || row.completionOverdue) && (
+                                  <span className="ml-2 inline-block border-2 border-line-strong bg-warning px-2 py-1 text-xs font-black text-black">
+                                    {row.completionOverdue ? "Quá hạn bàn giao 72 giờ" : "Quá hạn phản hồi 48 giờ"}
+                                  </span>
+                                )}
                                 {config.resource === "/manager/dorm-applications" &&
                                   value === "PENDING" && row.createdAt &&
                                   Date.now() - new Date(row.createdAt).getTime() > 24 * 60 * 60 * 1000 && (

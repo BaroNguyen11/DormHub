@@ -9,6 +9,9 @@
 //    ResidencePage lẫn /student/.../new pages.
 
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import useStudentRoom from "../hooks/useStudentRoom";
+import { renewalEndDate } from "../utils/residenceRequests";
 import {
   ArrowLeft,
   ArrowLeftRight,
@@ -27,10 +30,8 @@ import {
 } from "lucide-react";
 import { api, asList } from "../api/apiClient";
 import { resources } from "../services/resource.service";
-import { errorMessage } from "../utils/errorHandler";
 import { money, date as formatDate } from "../utils/format";
 import { CustomSelect } from "./ui/CustomSelect";
-import { CustomDatePicker } from "./ui/CustomDatePicker";
 import { StatusBadge } from "./ui";
 
 const shellOverlay =
@@ -58,13 +59,17 @@ function roomTypeLabel(value) {
   return ROOM_TYPE_LABELS[String(value || "").toUpperCase()] || value || "—";
 }
 
-/** Thêm `months` tháng vào một mốc ngày (giữ logic cũ của ResidencePage). */
-function addMonths(value, months) {
-  const base = value ? new Date(value) : new Date();
-  if (Number.isNaN(base.getTime())) return null;
-  const next = new Date(base);
-  next.setMonth(next.getMonth() + Number(months));
-  return next;
+function ResidenceRequestNotice() {
+  const { residenceRequest, requestsLoading, requestsError, refresh } = useStudentRoom();
+  if (requestsLoading) return <p role="status" className="text-sm font-bold">Đang kiểm tra yêu cầu hiện tại…</p>;
+  if (requestsError) return <p role="alert" className="text-sm font-bold text-error">Không thể kiểm tra yêu cầu hiện tại. <button type="button" className="underline" onClick={() => void refresh()}>Thử lại</button></p>;
+  return residenceRequest ? <p role="status" className="border-2 border-line-strong bg-warning p-3 text-sm font-bold text-black">Bạn đang có yêu cầu chưa hoàn tất. <Link className="underline" to={residenceRequest.path}>Xem yêu cầu hiện tại</Link> trước khi gửi yêu cầu khác.</p> : null;
+}
+
+function useRequestBlocked(contract, allowExpired = false) {
+  const { hasRoom, residenceRequest, requestsLoading, requestsError } = useStudentRoom();
+  return !hasRoom || Boolean(residenceRequest) || requestsLoading || requestsError
+    || !(contract?.status === "ACTIVE" || (allowExpired && contract?.status === "EXPIRED"));
 }
 
 // ------------------------------------------------------------------
@@ -162,29 +167,31 @@ export function RoomContractContext({ room, contract, extra }) {
 // 1) GIA HẠN HỢP ĐỒNG — hiện hợp đồng hiện tại + xem trước ngày kết thúc mới
 // ------------------------------------------------------------------
 export function RenewForm({ contract, room, onDone, onCancel, disabled = false, submitLabel = "Gửi yêu cầu gia hạn" }) {
+  const requestBlocked = useRequestBlocked(contract, false);
   const [months, setMonths] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
   const newEnd = useMemo(
-    () => (months ? addMonths(contract?.endDate, Number(months)) : null),
+    () => (months ? renewalEndDate(contract?.endDate, Number(months)) : null),
     [months, contract?.endDate],
   );
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (busy || requestBlocked) return;
     const contractId = contract?.contractId ?? contract?.id;
     if (!contractId || !months) return;
     setBusy(true);
     try {
-      const nextEnd = addMonths(contract?.endDate, Number(months));
       await api(`/student/contracts/${contractId}/renewal-requests`, {
         method: "POST",
         body: {
-          requestedEndDate: nextEnd.toISOString().slice(0, 10),
+          months: Number(months),
           reason: reason.trim(),
         },
       });
+      window.dispatchEvent(new Event("residence-updated"));
       onDone?.();
     } catch {
       // API client đã toast lỗi globally.
@@ -196,6 +203,7 @@ export function RenewForm({ contract, room, onDone, onCancel, disabled = false, 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <RoomContractContext room={room} contract={contract} />
+      <ResidenceRequestNotice />
 
       <div>
         <label className={fieldLabel}>
@@ -205,7 +213,7 @@ export function RenewForm({ contract, room, onDone, onCancel, disabled = false, 
             disabled={disabled}
             value={months}
             onChange={setMonths}
-            options={[1, 2, 3, 6, 12].map((n) => ({
+            options={Array.from({ length: 12 }, (_, i) => i + 1).map((n) => ({
               value: String(n),
               label: `${n} tháng`,
             }))}
@@ -231,6 +239,11 @@ export function RenewForm({ contract, room, onDone, onCancel, disabled = false, 
         )}
       </div>
 
+      <div className="rounded-sm border-2 border-line-strong bg-surface-2 p-3 text-sm font-bold space-y-1">
+        <p>Giá thuê hàng tháng: {money(contract?.monthlyRent)}</p>
+        <p>Tiền thuê dự kiến phần gia hạn: {months ? money(Number(contract?.monthlyRent) * Number(months)) : "—"}</p>
+        <p className="text-xs text-text-muted">Tiền thuê vẫn thanh toán theo từng tháng. Không thu thêm tiền cọc.</p>
+      </div>
       <label className={fieldLabel}>
         Lý do / ghi chú (không bắt buộc)
         <textarea
@@ -249,7 +262,7 @@ export function RenewForm({ contract, room, onDone, onCancel, disabled = false, 
             Đóng
           </button>
         )}
-        <button type="submit" disabled={busy || disabled || !months} className={btnPrimary}>
+        <button type="submit" disabled={busy || disabled || requestBlocked || !months} className={btnPrimary}>
           {busy ? (
             <LoaderCircle size={18} className="animate-spin" />
           ) : (
@@ -283,7 +296,7 @@ function RoomOptionCard({ roomOption, selected, onSelect }) {
     String(roomOption.status || "").toUpperCase() === "AVAILABLE";
   const free = Math.max(
     0,
-    (roomOption.capacity || 0) - (roomOption.currentOccupancy || 0),
+    roomOption.availableSlots ?? ((roomOption.capacity || 0) - (roomOption.currentOccupancy || 0)),
   );
   return (
     <button
@@ -325,6 +338,7 @@ function RoomOptionCard({ roomOption, selected, onSelect }) {
 }
 
 export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "Gửi yêu cầu chuyển phòng" }) {
+  const requestBlocked = useRequestBlocked(contract, false);
   const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [roomsError, setRoomsError] = useState("");
@@ -358,6 +372,7 @@ export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "
 
   const currentRoomId = room?.id ?? room?.roomId;
   const candidates = rooms.filter((item) => {
+    if (Number(item.pricePerMonth) !== Number(contract?.monthlyRent)) return false;
     if (String(item.id) === String(currentRoomId)) return false; // ẩn phòng đang ở
     const keyword = query.trim().toLocaleLowerCase("vi");
     if (!keyword) return true;
@@ -373,17 +388,18 @@ export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (busy || requestBlocked) return;
     if (!selectedRoom) return;
     setBusy(true);
     try {
       await api("/student/room-transfer-requests", {
         method: "POST",
         body: {
-          preferredBuilding: selectedRoom.buildingName || "",
           preferredRoomId: selectedRoom.id,
           reason: reason.trim(),
         },
       });
+      window.dispatchEvent(new Event("residence-updated"));
       onDone?.();
     } catch {
       // API client đã toast lỗi globally.
@@ -395,6 +411,7 @@ export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <RoomContractContext room={room} contract={contract} />
+      <ResidenceRequestNotice />
 
       <fieldset className="min-w-0" disabled={busy}>
         <legend className="mb-2 block text-xs font-black uppercase tracking-wide text-text-muted">
@@ -471,8 +488,7 @@ export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "
 
       <p className="m-0 flex items-start gap-2 text-xs font-bold text-text-muted">
         <CircleAlert size={14} className="mt-0.5 shrink-0" />
-        Yêu cầu chuyển phòng cần ban quản lý phê duyệt; giá phòng mới có thể
-        khác giá phòng hiện tại.
+        Chỉ hỗ trợ chuyển sang phòng cùng giá thuê. Giá thuê và tiền cọc không thay đổi.
       </p>
 
       <div className="flex flex-wrap justify-end gap-3 pt-1">
@@ -481,7 +497,7 @@ export function TransferForm({ room, contract, onDone, onCancel, submitLabel = "
             Đóng
           </button>
         )}
-        <button type="submit" disabled={busy || !selectedRoom} className={btnPrimary}>
+        <button type="submit" disabled={busy || requestBlocked || !selectedRoom} className={btnPrimary}>
           {busy ? (
             <LoaderCircle size={18} className="animate-spin" />
           ) : (
@@ -512,7 +528,7 @@ export function TransferDialog({ room, contract, onClose }) {
 // 3) TRẢ PHÒNG — hiện phòng + hợp đồng + tiền cọc, chọn ngày trả dự kiến
 // ------------------------------------------------------------------
 export function CheckoutForm({ room, contract, onDone, onCancel, submitLabel = "Gửi yêu cầu trả phòng" }) {
-  const [checkoutDate, setCheckoutDate] = useState("");
+  const requestBlocked = useRequestBlocked(contract, true);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -521,13 +537,15 @@ export function CheckoutForm({ room, contract, onDone, onCancel, submitLabel = "
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!checkoutDate) return;
+    if (busy || requestBlocked) return;
+    if (!reason.trim()) return;
     setBusy(true);
     try {
       await api("/student/checkout-requests", {
         method: "POST",
-        body: { checkoutDate, reason: reason.trim() },
+        body: { reason: reason.trim() },
       });
+      window.dispatchEvent(new Event("residence-updated"));
       onDone?.();
     } catch {
       // API client đã toast lỗi globally.
@@ -544,28 +562,20 @@ export function CheckoutForm({ room, contract, onDone, onCancel, submitLabel = "
         extra={
           deposit != null ? (
             <span className="inline-flex items-center gap-1.5 text-text">
-              <Wallet size={14} /> Tiền cọc đang giữ: {money(deposit)}
+              <Wallet size={14} /> Tiền cọc hợp đồng: {money(deposit)}
             </span>
           ) : null
         }
       />
 
-      <label className={fieldLabel}>
-        Ngày dự kiến trả phòng
-        <CustomDatePicker
-          required
-          disabled={busy}
-          min={new Date().toISOString().slice(0, 10)}
-          value={checkoutDate}
-          onChange={setCheckoutDate}
-          className="mt-1.5"
-        />
-      </label>
+      <ResidenceRequestNotice />
 
       <label className={fieldLabel}>
-        Lý do / ghi chú (không bắt buộc)
+        Lý do trả phòng (bắt buộc)
         <textarea
           rows={3}
+          required
+          maxLength={1000}
           disabled={busy}
           className={control}
           value={reason}
@@ -576,7 +586,7 @@ export function CheckoutForm({ room, contract, onDone, onCancel, submitLabel = "
 
       <p className="m-0 flex items-start gap-2 rounded-sm border-3 border-line-strong bg-warning px-4 py-3 text-xs font-bold text-black shadow-[3px_3px_0_#141413]">
         <CircleAlert size={16} className="mt-0.5 shrink-0" />
-        Yêu cầu cần ban quản lý phê duyệt. Khi hoàn tất trả phòng, ban quản lý
+        Gửi yêu cầu hoặc được duyệt chưa kết thúc cư trú. Sau khi bàn giao thực tế, ban quản lý
         sẽ quyết định hoàn trả hoặc xử lý tiền cọc theo tình trạng phòng.
       </p>
 
@@ -586,7 +596,7 @@ export function CheckoutForm({ room, contract, onDone, onCancel, submitLabel = "
             Đóng
           </button>
         )}
-        <button type="submit" disabled={busy || !checkoutDate} className={btnPrimary}>
+        <button type="submit" disabled={busy || requestBlocked || !reason.trim()} className={btnPrimary}>
           {busy ? (
             <LoaderCircle size={18} className="animate-spin" />
           ) : (
@@ -605,7 +615,7 @@ export function CheckoutDialog({ room, contract, onClose }) {
       icon={DoorOpen}
       tone="bg-error text-white"
       title="Yêu cầu trả phòng"
-      subtitle="Chọn ngày dự kiến trả phòng — ban quản lý sẽ xem xét và phản hồi"
+      subtitle="Gửi lý do trả phòng — tiếp tục cư trú cho đến khi hoàn tất bàn giao"
       onClose={onClose}
     >
       <CheckoutForm room={room} contract={contract} onDone={onClose} onCancel={onClose} />
@@ -616,49 +626,6 @@ export function CheckoutDialog({ room, contract, onClose }) {
 // ------------------------------------------------------------------
 // Hook dùng chung: lấy chỗ ở + hợp đồng hiện tại của sinh viên (cho các trang riêng)
 // ------------------------------------------------------------------
-export function useCurrentStay() {
-  const [room, setRoom] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const [assignments, contracts] = await Promise.all([
-          resources.list("/student/room-assignments", { page: 0, size: 20 }),
-          resources.list("/student/contracts", { page: 0, size: 20 }),
-        ]);
-        if (!active) return;
-        const current = (assignments?.content || []).find((item) =>
-          ["ASSIGNED", "CHECKED_IN"].includes(
-            String(item.assignmentStatus || item.status).toUpperCase(),
-          ),
-        );
-        setRoom(current?.room || current || null);
-        const list = contracts?.content || contracts?.items || [];
-        setContract(
-          list.find(
-            (item) => String(item?.status || "").toUpperCase() === "ACTIVE",
-          ) ||
-            list[0] ||
-            null,
-        );
-      } catch (err) {
-        if (active) setError(errorMessage(err));
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { room, contract, loading, error };
-}
-
 // ------------------------------------------------------------------
 // Khung trang riêng cho từng luồng (thay thế FormScreen trống):
 // nút quay lại + card tiêu đề + nội dung form có ngữ cảnh

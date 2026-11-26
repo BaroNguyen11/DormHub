@@ -20,6 +20,7 @@ import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import usePermissions from "../../hooks/usePermissions";
 import useAuth from "../../hooks/useAuth";
+import useStudentRoom from "../../hooks/useStudentRoom";
 import { DialogShell } from "../RequestDialogs";
 
 const getCachedStudentProfile = (user) =>
@@ -84,6 +85,7 @@ export default function ApplicationScreen({ config }) {
   const [draftViewed, setDraftViewed] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { user } = useAuth();
+  const { refresh: refreshJourney } = useStudentRoom();
 
   // Check if student already has a room
   const { hasActiveRoom, checkingRoom } = usePermissions();
@@ -185,6 +187,7 @@ export default function ApplicationScreen({ config }) {
         "/student/dorm-applications",
         payload,
       );
+      await refreshJourney();
       navigate(`/student/applications/${result?.id}`, { replace: true });
     } catch {
       // API client reports request failures globally.

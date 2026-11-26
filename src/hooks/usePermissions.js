@@ -7,10 +7,10 @@ import useStudentRoom from './useStudentRoom';
  */
 export function usePermissions() {
   const { role, user } = useAuth();
-  const { hasAssignment, loading } = useStudentRoom();
+  const { hasAssignment, registrationStage, loading } = useStudentRoom();
 
   return {
-    canRegisterForRoom: !hasAssignment && role === 'STUDENT',
+    canRegisterForRoom: !loading && registrationStage === 'search' && !hasAssignment && role === 'STUDENT',
     hasActiveRoom: hasAssignment,
     checkingRoom: loading,
     isGuest: !user,

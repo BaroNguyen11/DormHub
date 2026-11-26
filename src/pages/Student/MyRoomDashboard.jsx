@@ -20,6 +20,7 @@ import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
 import useStudentRoom from "../../hooks/useStudentRoom";
 import Workspace from "@/components/Workspace";
+import { currentApplication, loadJourneyPages } from "../../utils/studentJourney";
 
 
 const cardBase =
@@ -47,17 +48,21 @@ export default function MyRoomDashboard() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     async function fetchAllData() {
       setLoading(true);
       setError("");
+      setPendingInfo(null);
+      setRoomData(null);
+      setContractData(null);
+      setInvoiceData(null);
 
       try {
-        const roomAssignments = await resources.list(
-          "/student/room-assignments",
-          { page: 0, size: 20 },
-        );
+        const roomAssignments = await loadJourneyPages((page, size) =>
+          resources.list("/student/room-assignments", { page, size }));
+        if (!active) return;
 
-        const currentRoom = roomAssignments?.content?.find((assignment) => {
+        const currentRoom = roomAssignments.find((assignment) => {
           const status = String(
             assignment.assignmentStatus || assignment.status || "",
           ).toUpperCase();
@@ -68,13 +73,13 @@ export default function MyRoomDashboard() {
           let depositPaidForMessage = false;
           let approvedFound = false;
           try {
-            const apps = await resources.list("/student/dorm-applications", {
-              page: 0,
-              size: 20,
-            });
-            const items = apps?.content || [];
-            const approved = items.find((a) => a?.status === "APPROVED");
-            const pending = items.find((a) => a?.status === "PENDING");
+            const [items, contracts] = await Promise.all(
+              ["/student/dorm-applications", "/student/contracts"].map((path) =>
+                loadJourneyPages((page, size) => resources.list(path, { page, size }))));
+            if (!active) return;
+            const application = currentApplication(items, contracts);
+            const approved = application?.status === "APPROVED" ? application : null;
+            const pending = application?.status === "PENDING" ? application : null;
             if (approved) {
               approvedFound = true;
               let depositPaid = false;
@@ -83,6 +88,7 @@ export default function MyRoomDashboard() {
                   const depositInvoice = await api(
                     `/student/invoices/${encodeURIComponent(approved.depositInvoiceId)}`,
                   );
+                  if (!active) return;
                   depositPaid =
                     String(depositInvoice?.status || "").toUpperCase() ===
                     "PAID";
@@ -104,6 +110,7 @@ export default function MyRoomDashboard() {
           } catch {
             /* ignore error */
           }
+          if (!active) return;
           setError(
             depositPaidForMessage
               ? "Tiền cọc đã được ghi nhận — đang cập nhật chỗ ở của bạn…"
@@ -132,6 +139,7 @@ export default function MyRoomDashboard() {
           page: 0,
           size: 1,
         });
+        if (!active) return;
 
         if (contracts?.content?.length > 0) {
           setContractData(contracts.content[0]);
@@ -141,6 +149,7 @@ export default function MyRoomDashboard() {
           page: 0,
           size: 50,
         });
+        if (!active) return;
         const invoiceList = Array.isArray(invoices?.content) ? invoices.content : [];
         const byNearestDueDate = (a, b) =>
           new Date(a?.dueDate || a?.createdAt || 0).getTime() -
@@ -156,13 +165,17 @@ export default function MyRoomDashboard() {
           )[0];
         setInvoiceData(unpaidInvoice || latestPaidInvoice || null);
       } catch (err) {
-        setError(errorMessage(err));
+        if (active) setError(errorMessage(err));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     fetchAllData();
+    return () => {
+      active = false;
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
   }, [refreshKey, gateHasRoom, refreshRoomGate]);
 
   const containerVariants = {

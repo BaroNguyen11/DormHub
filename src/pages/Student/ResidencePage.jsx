@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import useStudentRoom from "../../hooks/useStudentRoom";
 import {
   ArrowLeftRight,
   Building2,
@@ -12,6 +14,7 @@ import Workspace from "../../components/Workspace";
 import { resources } from "../../services/resource.service";
 import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
+import { loadJourneyPages } from "../../utils/studentJourney";
 import {
   CheckoutDialog,
   DialogShell,
@@ -60,6 +63,8 @@ function RentalSummary({ plan, deposit }) {
 }
 
 export default function ResidencePage() {
+  const { hasRoom, residenceRequest, requestsLoading, requestsError } = useStudentRoom();
+  const requestBlocked = !hasRoom || Boolean(residenceRequest) || requestsLoading || requestsError;
   const [assignment, setAssignment] = useState(null);
   const [contract, setContract] = useState(null);
   const [roommates, setRoommates] = useState([]);
@@ -112,13 +117,18 @@ export default function ResidencePage() {
   }
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         const [assignments, contracts] = await Promise.all([
-          resources.list("/student/room-assignments", { page: 0, size: 20 }),
-          resources.list("/student/contracts", { page: 0, size: 20 }),
+          ...["/student/room-assignments", "/student/contracts"].map((path) =>
+            loadJourneyPages((page, size) => resources.list(path, { page, size }))),
         ]);
-        const currentAssignment = (assignments?.content || []).find((a) =>
+        if (!active) return;
+        setLoadError("");
+        const currentAssignment = assignments.find((a) =>
+          String(a.assignmentStatus || a.status).toUpperCase() === "CHECKED_IN",
+        ) || assignments.find((a) =>
           ["ASSIGNED", "CHECKED_IN"].includes(
             String(a.assignmentStatus || a.status).toUpperCase(),
           ),
@@ -131,12 +141,14 @@ export default function ResidencePage() {
             const members = await api("/student/room-assignments/roommates", {
               notify: false,
             });
+            if (!active) return;
             setRoommates(Array.isArray(members) ? members : []);
           } catch (err) {
             setRoommatesError(errorMessage(err));
           }
         }
-        const contractList = contracts?.content || contracts?.items || [];
+        if (!active) return;
+        const contractList = contracts;
         const currentContract = contractList.find((item) => currentAssignment?.contractId != null && item.contractId === currentAssignment.contractId) || contractList.find(
             (item) => String(item?.status || "").toUpperCase() === "ACTIVE",
           ) ||
@@ -160,11 +172,12 @@ export default function ResidencePage() {
           }
         }
       } catch (error) {
-        setLoadError(errorMessage(error));
+        if (active) setLoadError(errorMessage(error));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+    return () => { active = false; };
   }, [reloadKey]);
 
   useEffect(() => {
@@ -216,15 +229,23 @@ export default function ResidencePage() {
     contract?.status || contract?.contractStatus || "",
   ).toUpperCase();
   const activeContract = contractStatus === "ACTIVE";
+  const canCheckout = ["ACTIVE", "EXPIRED"].includes(contractStatus);
   const checkedIn = String(
     assignment?.assignmentStatus || assignment?.status || "",
   ).toUpperCase() === "CHECKED_IN";
   const todayVN = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
 
   useEffect(() => {
-    if (!assignment || contract?.status !== "ACTIVE" || checkedIn) return;
-    const timer = window.setInterval(() => setReloadKey((value) => value + 1), 30_000);
-    return () => window.clearInterval(timer);
+
+    const update = () => setReloadKey((value) => value + 1);
+    const timer = window.setInterval(update, 30_000);
+    window.addEventListener("residence-updated", update);
+    window.addEventListener("focus", update);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("residence-updated", update);
+      window.removeEventListener("focus", update);
+    };
   }, [assignment, contract?.status, checkedIn]);
 
   const statusBadge = {
@@ -239,6 +260,11 @@ export default function ResidencePage() {
   };
   return (
     <Workspace group="student" title="Chỗ ở & Hợp đồng">
+      <nav aria-label="Lịch sử yêu cầu cư trú" className="mb-5 flex flex-wrap gap-3 text-sm font-bold">
+        <Link className="underline" to="/student/renewal-requests">Lịch sử gia hạn</Link>
+        <Link className="underline" to="/student/room-transfer-requests">Lịch sử chuyển phòng</Link>
+        <Link className="underline" to="/student/checkout-requests">Lịch sử trả phòng</Link>
+      </nav>
       <div className="space-y-7">
         {loadError && <p role="alert" className="rounded-sm border-2 border-error p-4 font-bold text-error">{loadError} <button onClick={() => { setLoadError(""); setLoading(true); setReloadKey((value) => value + 1); }} className="underline">Thử lại</button></p>}
         {loading && (
@@ -467,7 +493,7 @@ export default function ResidencePage() {
                   </div>
                   {pdfBusy && <p className="mt-3 text-sm font-semibold">Đang chuẩn bị hợp đồng…</p>}
                   {pdfError && <p role="alert" className="mt-3 text-sm font-semibold text-error">Không thể tải hợp đồng: {pdfError}</p>}
-                  {activeContract && checkedIn && (
+                  {canCheckout && checkedIn && (
                     <div className="mt-6 border-t-2 border-line-strong pt-4">
                       <p className="mb-3 text-xs font-black uppercase tracking-wide text-text-muted">
                         Thao tác hợp đồng
@@ -475,6 +501,7 @@ export default function ResidencePage() {
                       <div className="flex flex-wrap gap-2.5">
                         <button
                           type="button"
+                          disabled={!activeContract || requestBlocked}
                           onClick={() => setModal("renew")}
                           className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-primary px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
@@ -482,6 +509,7 @@ export default function ResidencePage() {
                         </button>
                         <button
                           type="button"
+                          disabled={!activeContract || requestBlocked}
                           onClick={() => setModal("transfer")}
                           className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-info px-3 py-2 text-sm! font-black! text-black shadow-[2px_2px_0_#141413] hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
@@ -489,12 +517,15 @@ export default function ResidencePage() {
                         </button>
                         <button
                           type="button"
+                          disabled={requestBlocked}
                           onClick={() => setModal("checkout")}
                           className="inline-flex items-center gap-2 rounded-sm border-2 border-line-strong bg-surface px-3 py-2 text-sm! font-bold! text-text shadow-[2px_2px_0_#141413] hover:bg-error hover:text-white hover:-translate-0.5 hover:shadow-[3px_3px_0_#141413] active:shadow-none active:translate-0.5 transition-all outline-none!"
                         >
                           <DoorOpen size={16} /> Trả phòng
                         </button>
                       </div>
+                      {residenceRequest && <p className="mt-3 text-sm font-semibold">Bạn đang có yêu cầu chưa hoàn tất. <Link className="underline" to={residenceRequest.path}>Xem yêu cầu hiện tại</Link>.</p>}
+                      {requestsError && <p role="alert" className="mt-3 text-sm text-error">Chưa thể kiểm tra yêu cầu hiện tại. Vui lòng thử lại sau.</p>}
                     </div>
                   )}
                 </>

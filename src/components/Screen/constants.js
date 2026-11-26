@@ -140,6 +140,9 @@ export const FIELD_LABELS = {
 
   // Room transfer requests (Chuyển phòng)
   transferId: "Mã yêu cầu",
+  responseDeadline: "Hạn phản hồi",
+  completionDeadline: "Hạn hoàn tất bàn giao",
+  completedAt: "Thời điểm hoàn tất",
   currentRoomId: "Phòng hiện tại",
   currentRoomNumber: "Phòng hiện tại",
   preferredRoomNumber: "Phòng mong muốn",

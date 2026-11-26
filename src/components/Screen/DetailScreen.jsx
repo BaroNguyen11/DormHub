@@ -25,6 +25,9 @@ import { Notice, Loading, Empty, Heading } from "./UIComponents";
 import { useLoad } from "./useLoad";
 import { MaintenanceStatusBadge, StatusBadge } from "../ui";
 import { toast } from "sonner";
+import { DialogShell } from "../RequestDialogs";
+import { CustomSelect } from "../ui/CustomSelect";
+import { getTransferRoomChoices } from "../../utils/residenceRequests";
 import { asList } from "../../api/apiClient";
 
 // Các field chứa ảnh đính kèm (báo hỏng: imageUrl; phòng: images/imageUrls)
@@ -271,13 +274,13 @@ const DETAIL_SECTIONS = {
   "/student/room-transfer-requests": [
     { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomNumber", "preferredRoomNumber", "approvedRoomNumber", "status", "requestedAt"] },
     { title: "Nội dung", fields: ["reason"] },
-    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "completedAt"] },
   ],
   "/manager/room-transfer-requests": [
     { title: "Sinh viên", fields: ["studentName", "studentCode"] },
     { title: "Thông tin yêu cầu", fields: ["transferId", "currentRoomNumber", "preferredRoomNumber", "approvedRoomNumber", "status", "requestedAt"] },
     { title: "Nội dung", fields: ["reason"] },
-    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt"] },
+    { title: "Kết quả xử lý", fields: ["reviewNote", "reviewedAt", "completedAt"] },
   ],
 
   // Phòng trống (student tìm phòng & guest xem công khai)
@@ -483,6 +486,8 @@ export default function DetailScreen({ config }) {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null });
   const [pendingConfirmAction, setPendingConfirmAction] = useState(null);
   const [pendingInput, setPendingInput] = useState(null);
+  const [checkoutHandover, setCheckoutHandover] = useState(null);
+  const [transferAction, setTransferAction] = useState(null);
   const [clockNow, setClockNow] = useState(0);
   useEffect(() => {
     const initial = window.setTimeout(() => setClockNow(Date.now()), 0);
@@ -497,6 +502,12 @@ export default function DetailScreen({ config }) {
       : id == null ? "" : `${config.resource}/${encodeURIComponent(id)}`;
 
   const { data: raw, error, loading, reload } = useLoad(path, {});
+  useEffect(() => {
+    if (!config.resource.endsWith("/room-transfer-requests")) return undefined;
+    const timer = window.setInterval(reload, 30_000);
+    window.addEventListener("focus", reload);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", reload); };
+  }, [config.resource, reload]);
   // An approved application remains APPROVED after payment; read its actual invoice.
   const depositInvoicePath = config.resource === "/student/dorm-applications"
     && raw?.status === "APPROVED" && String(raw.id) === String(id) && raw.depositInvoiceId
@@ -566,6 +577,28 @@ export default function DetailScreen({ config }) {
       return;
     }
 
+    if (action.unavailable) return;
+    if (action.transferAction && !options.transferConfirmed) {
+      if (!data?.handoverActionsEnabled) return;
+      const next = { action, checks: [], note: "", lateConfirmed: false, rooms: [],
+        selectedRoomId: "", roomsLoading: action.transferAction === "approve", error: "" };
+      setTransferAction(next);
+      if (action.transferAction === "approve") {
+        try {
+          const rooms = await getTransferRoomChoices(data);
+          setTransferAction((current) => current?.action === action ? { ...current, rooms, roomsLoading: false,
+            selectedRoomId: rooms.some((room) => String(room.id) === String(data.preferredRoomId)) ? String(data.preferredRoomId) : "" } : current);
+        } catch {
+          setTransferAction((current) => current?.action === action ? { ...current, roomsLoading: false,
+            error: "Không thể tải danh sách phòng phù hợp. Vui lòng thử lại." } : current);
+        }
+      }
+      return;
+    }
+    if (action.checkoutComplete && !options.handoverConfirmed) {
+      setCheckoutHandover({ action, checks: [], note: "" });
+      return;
+    }
     if (action.confirm && !options.confirmed) {
       const actionType = isStudentDetail
         ? action.body?.status === "LOCKED" ? "LOCK" : "UNLOCK"
@@ -576,6 +609,10 @@ export default function DetailScreen({ config }) {
     }
 
     let body = action.body;
+    if (action.transferAction === "approve") body = { status: "APPROVED", approvedRoomId: Number(options.selectedRoomId), reviewNote: options.transferNote || undefined };
+    if (action.transferAction === "complete") body = { lateCompletionConfirmed: options.lateConfirmed === true, note: options.transferNote || undefined };
+    if (action.transferAction === "cancel") body = { studentHasNotMoved: true, note: options.transferNote };
+    if (action.checkoutComplete) body = { ...body, ...(options.handoverNote ? { note: options.handoverNote } : {}) };
 
     const needsInput = action.promptField || action.reason || action.room;
     if (needsInput && !options.inputSubmitted && !options.reason) {
@@ -669,6 +706,11 @@ export default function DetailScreen({ config }) {
       setPendingConfirmAction(null);
       setConfirmModal({ isOpen: false, action: null });
       setPendingInput(null);
+      setCheckoutHandover(null);
+      setTransferAction(null);
+      if (/\/(renewal-requests|room-transfer-requests|checkout-requests)$/.test(config.resource)) {
+        window.dispatchEvent(new Event("residence-updated"));
+      }
       reload();
     } catch {
       // API client reports request failures globally.
@@ -771,7 +813,8 @@ export default function DetailScreen({ config }) {
             <button
               key={action.label}
               type="button"
-              disabled={busy || loading}
+              disabled={busy || loading || action.unavailable || (action.transferAction && !data?.handoverActionsEnabled)
+                || (action.transferAction === "complete" && (data?.contractStatus !== "ACTIVE" || businessTimestamp(data?.contractEndDate) < clockNow))}
               onClick={() => doAction(action)}
               className={`
     inline-flex items-center gap-2
@@ -823,6 +866,33 @@ export default function DetailScreen({ config }) {
 
       {/* Notice hiển thị Thông báo Lỗi / Thành công */}
       <Notice error={actionError || error || buildingRoomsError || depositInvoiceError} success={success} />
+      {config.resource === "/manager/room-transfer-requests" && data?.handoverActionsEnabled === false && (
+        <p className="rounded-sm border-2 border-line-strong bg-warning p-4 text-sm font-bold text-black">
+          Chức năng duyệt và bàn giao chuyển phòng tạm thời chưa thể sử dụng. Vui lòng liên hệ ban quản lý để được hỗ trợ.
+        </p>
+      )}
+      {config.resource.endsWith("/room-transfer-requests") && data?.handoverPending && (
+        <section className="rounded-sm border-3 border-line-strong bg-surface-2 p-5 shadow-[3px_3px_0_#141413] space-y-3">
+          <h2 className="font-black text-lg">Đã duyệt — Chờ bàn giao chuyển phòng</h2>
+          <p className="font-bold">Phòng đang cư trú: {data.currentRoomNumber}. Phòng được duyệt: {data.approvedRoomNumber}.</p>
+          <p>Thời điểm duyệt: {new Date(businessTimestamp(data.reviewedAt)).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</p>
+          <p className="font-black">Hạn bàn giao: {new Date(businessTimestamp(data.completionDeadline)).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</p>
+          <p className="font-bold">{clockNow <= 0 ? "Đang cập nhật thời gian…" : businessTimestamp(data.completionDeadline) < clockNow
+            ? "Đã quá hạn 72 giờ. Quản lý cần xác minh bàn giao thực tế trước khi xử lý."
+            : `Còn ${Math.floor(Math.max(0, businessTimestamp(data.completionDeadline) - clockNow) / 3_600_000)} giờ ${Math.floor(Math.max(0, businessTimestamp(data.completionDeadline) - clockNow) / 60_000) % 60} phút.`}</p>
+          <p>Giá thuê: {formatValue("monthlyRent", data.monthlyRent)} · Tiền cọc: {formatValue("depositAmount", data.depositAmount)} — không thay đổi.</p>
+          <ol className="list-decimal pl-5 space-y-1 text-sm">
+            <li>Thu dọn tài sản cá nhân.</li><li>Liên hệ quản lý kiểm tra tài sản, thiết bị phòng cũ.</li>
+            <li>Hoàn thành nghĩa vụ thanh toán còn lại.</li><li>Bàn giao phòng cũ và tiếp nhận phòng mới.</li>
+            <li>Chờ quản lý xác nhận hoàn tất. Không tự xác nhận trên ứng dụng.</li>
+          </ol>
+          {(data.contractStatus !== "ACTIVE" || businessTimestamp(data.contractEndDate) < clockNow) && <p role="alert" className="font-bold text-error">Hợp đồng không còn đủ điều kiện chuyển phòng. Vui lòng liên hệ quản lý xử lý yêu cầu và suất giữ.</p>}
+        </section>
+      )}
+      {config.resource.endsWith("/room-transfer-requests") && data?.status === "PENDING"
+        && clockNow - businessTimestamp(data.requestedAt) > 48 * 60 * 60 * 1000 && (
+          <p className="border-2 border-line-strong bg-warning p-3 font-bold text-black">Yêu cầu đã quá thời hạn phản hồi 48 giờ. Vui lòng liên hệ ban quản lý.</p>
+        )}
       {isInvoiceDetail && data?.invoiceType === "UTILITY" && (
         <p className="rounded-sm border-2 border-line-strong bg-surface-2 p-4 text-sm font-semibold text-text">
           Đây là hóa đơn điện nước chung của phòng{data.roomNumber ? ` ${data.roomNumber}` : ""} trong kỳ tính tiền. Một sinh viên thanh toán đủ sẽ hoàn tất hóa đơn cho cả phòng; bạn không cần thanh toán lại khi hóa đơn đã được thanh toán.
@@ -1155,6 +1225,103 @@ export default function DetailScreen({ config }) {
         </div>
       )}
 
+      {transferAction && (
+        <DialogShell icon={Home}
+          title={transferAction.action.transferAction === "approve" ? "Phê duyệt chuyển phòng"
+            : transferAction.action.transferAction === "complete" ? "Hoàn tất chuyển phòng" : "Hủy yêu cầu chuyển phòng"}
+          subtitle={`${data?.studentName || "Sinh viên"} · ${data?.studentCode || ""} · Hợp đồng #${data?.contractId || "—"}`}
+          onClose={() => { if (!busy) setTransferAction(null); }}>
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            const kind = transferAction.action.transferAction;
+            const overdue = clockNow > businessTimestamp(data?.completionDeadline);
+            if (busy || transferAction.roomsLoading || transferAction.error) return;
+            if (kind === "approve" && !transferAction.rooms.some((room) => String(room.id) === transferAction.selectedRoomId)) return;
+            if (kind === "complete" && (transferAction.checks.length !== 4 || (overdue && (!transferAction.lateConfirmed || !transferAction.note.trim())))) return;
+            if (kind === "cancel" && (transferAction.checks.length !== 1 || !transferAction.note.trim())) return;
+            void doAction(transferAction.action, { transferConfirmed: true,
+              selectedRoomId: transferAction.selectedRoomId, transferNote: transferAction.note.trim(), lateConfirmed: transferAction.lateConfirmed });
+          }}>
+            <p className="text-sm font-bold">Phòng hiện tại: {data?.currentRoomNumber} · Phòng mong muốn: {data?.preferredRoomNumber || "—"}</p>
+            {transferAction.action.transferAction === "approve" ? <>
+              <p className="text-sm">Phê duyệt chỉ giữ một suất phòng đích. Sinh viên tiếp tục cư trú ở phòng cũ cho đến khi quản lý xác nhận bàn giao.</p>
+              {transferAction.roomsLoading ? <p role="status">Đang tải phòng phù hợp…</p> :
+                <CustomSelect required value={transferAction.selectedRoomId} placeholder="Chọn phòng được duyệt"
+                  onChange={(value) => setTransferAction((current) => ({ ...current, selectedRoomId: String(value) }))}
+                  options={transferAction.rooms.map((room) => ({ value: String(room.id), label: `${room.roomNumber} · ${room.buildingName} · còn ${room.availableSlots} chỗ` }))} />}
+              {!transferAction.roomsLoading && <button type="button" className="text-sm font-bold underline" onClick={() => void doAction(transferAction.action)}>Tải lại danh sách phòng</button>}
+              {!transferAction.roomsLoading && !transferAction.error && transferAction.rooms.length === 0 && <p>Hiện chưa có phòng cùng giá, phù hợp giới tính và còn suất để phê duyệt.</p>}
+            </> : <>
+              <p className="text-sm font-bold">Phòng được duyệt: {data?.approvedRoomNumber}</p>
+              <p className="text-sm">Hạn bàn giao: {data?.completionDeadline ? new Date(businessTimestamp(data.completionDeadline)).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}</p>
+              {(transferAction.action.transferAction === "complete" ? [
+                "Sinh viên đã di chuyển tài sản cá nhân khỏi phòng cũ", "Đã kiểm tra tài sản và thiết bị phòng cũ",
+                "Đã kiểm tra nghĩa vụ thanh toán", "Đã bàn giao phòng mới cho sinh viên",
+              ] : ["Đã xác minh sinh viên chưa thực hiện chuyển phòng thực tế"]).map((label, index) => <label key={label} className="flex gap-2 text-sm font-bold">
+                <input type="checkbox" required disabled={busy} checked={transferAction.checks.includes(index)}
+                  onChange={(event) => setTransferAction((current) => ({ ...current,
+                    checks: event.target.checked ? [...current.checks, index] : current.checks.filter((item) => item !== index),
+                  }))} />{label}
+              </label>)}
+              {transferAction.action.transferAction === "complete" && clockNow > businessTimestamp(data?.completionDeadline) &&
+                <label className="flex gap-2 text-sm font-bold text-error"><input type="checkbox" required checked={transferAction.lateConfirmed}
+                  onChange={(event) => setTransferAction((current) => ({ ...current, lateConfirmed: event.target.checked }))} />Đã xác minh bàn giao thực tế và đồng ý xử lý ngoại lệ quá hạn 72 giờ</label>}
+            </>}
+            <label className="block text-sm font-bold">{transferAction.action.transferAction === "cancel" ? "Lý do hủy (bắt buộc)" : "Ghi chú / lý do xử lý ngoại lệ"}
+              <textarea className="mt-2 w-full border-2 border-line-strong bg-surface p-3 text-text" rows={3} maxLength={1000} disabled={busy}
+                required={transferAction.action.transferAction === "cancel" || (transferAction.action.transferAction === "complete" && clockNow > businessTimestamp(data?.completionDeadline))}
+                value={transferAction.note} onChange={(event) => setTransferAction((current) => ({ ...current, note: event.target.value }))} />
+            </label>
+            {transferAction.error && <p role="alert" className="text-sm text-error">{transferAction.error} <button type="button" className="underline" onClick={() => void doAction(transferAction.action)}>Thử lại</button></p>}
+            <button type="submit" disabled={busy || transferAction.roomsLoading || Boolean(transferAction.error)
+                || (transferAction.action.transferAction === "approve" && !transferAction.selectedRoomId)
+                || (transferAction.action.transferAction === "complete" && (transferAction.checks.length !== 4
+                  || (clockNow > businessTimestamp(data?.completionDeadline) && (!transferAction.lateConfirmed || !transferAction.note.trim()))))
+                || (transferAction.action.transferAction === "cancel" && (transferAction.checks.length !== 1 || !transferAction.note.trim()))}
+              className="rounded-sm border-3 border-line-strong bg-primary px-4 py-2 font-black text-black shadow-[3px_3px_0_#141413] disabled:opacity-50">
+              {busy ? "Đang xử lý…" : "Xác nhận"}
+            </button>
+          </form>
+        </DialogShell>
+      )}
+      {checkoutHandover && (
+        <DialogShell icon={Home} title="Xác nhận hoàn tất trả phòng"
+          subtitle={`${data?.studentName || "Sinh viên"} · Phòng ${data?.roomNumber || "—"} · Hợp đồng #${data?.contractId || "—"}`}
+          onClose={() => { if (!busy) setCheckoutHandover(null); }}>
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            if (busy || checkoutHandover.checks.length !== 3) return;
+            void doAction(checkoutHandover.action, { handoverConfirmed: true, handoverNote: checkoutHandover.note.trim() });
+          }}>
+            <p className="text-sm font-bold">Chỉ xác nhận sau khi bàn giao thực tế. Thao tác này kết thúc cư trú và giải phóng chỗ ở.</p>
+            {[
+              "Đã nhận bàn giao phòng, kiểm tra tài sản và thiết bị",
+              "Đã kiểm tra nghĩa vụ thanh toán của sinh viên",
+              checkoutHandover.action.body?.depositDisposition === "REFUNDED"
+                ? "Đã hoàn trả tiền cọc thực tế bên ngoài hệ thống"
+                : checkoutHandover.action.body?.depositDisposition === "FORFEITED"
+                  ? "Đã kiểm tra căn cứ không hoàn cọc theo hợp đồng và bàn giao"
+                  : "Đã kiểm tra trạng thái tiền cọc, không xử lý cọc lần nữa",
+            ].map((label, index) => <label key={label} className="flex gap-2 text-sm font-bold">
+              <input type="checkbox" required disabled={busy} checked={checkoutHandover.checks.includes(index)}
+                onChange={(event) => setCheckoutHandover((current) => ({ ...current,
+                  checks: event.target.checked ? [...current.checks, index] : current.checks.filter((item) => item !== index),
+                }))} />{label}
+            </label>)}
+            <label className="block text-sm font-bold">Ghi chú / căn cứ xử lý cọc
+              <textarea className="mt-2 w-full border-2 border-line-strong bg-surface p-3 text-text" rows={3} maxLength={1000}
+                required={checkoutHandover.action.body?.depositDisposition === "FORFEITED"} disabled={busy}
+                value={checkoutHandover.note} onChange={(event) => setCheckoutHandover((current) => ({ ...current, note: event.target.value }))} />
+            </label>
+            <p className="text-xs text-text-muted">Hệ thống ghi nhận kết quả xử lý cọc, không tự động chuyển tiền hoàn cọc.</p>
+            <button type="submit" disabled={busy || checkoutHandover.checks.length !== 3
+                || (checkoutHandover.action.body?.depositDisposition === "FORFEITED" && !checkoutHandover.note.trim())}
+              className="rounded-sm border-3 border-line-strong bg-primary px-4 py-2 font-black text-black shadow-[3px_3px_0_#141413] disabled:opacity-50">
+              {busy ? "Đang xử lý…" : "Xác nhận hoàn tất"}
+            </button>
+          </form>
+        </DialogShell>
+      )}
       {pendingInput && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <form

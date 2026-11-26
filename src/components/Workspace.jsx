@@ -34,7 +34,7 @@ export default function Workspace({ group, title, children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const { hasRoom } = useStudentRoom();
+  const { hasRoom, hasResidenceHistory, registrationStage, stagePath } = useStudentRoom();
   useEffect(() => {
     if (!["student", "manager"].includes(group)) return undefined;
     let active = true;
@@ -111,6 +111,11 @@ export default function Workspace({ group, title, children }) {
 
     if (group === "student") {
       const type = String(item.type || item.targetType || "").toUpperCase();
+      const transferId = item.refId ?? item.targetId ?? item.entityId ?? item.referenceId;
+      if (type === "TRANSFER_PROCESSED" && transferId != null) {
+        navigate(`/student/room-transfer-requests/${encodeURIComponent(transferId)}`);
+        return;
+      }
       const text = `${type} ${item.title || ""} ${item.body || item.message || ""}`.toLowerCase();
 
       // 1. Hóa đơn
@@ -185,7 +190,21 @@ export default function Workspace({ group, title, children }) {
   }
   // Sinh viên chưa có phòng chỉ thấy các chức năng tìm phòng / đăng ký
   const noRoom = group === "student" && !hasRoom;
-  const navItems = nav[noRoom ? "studentNoRoom" : group];
+  const registrationInProgress = noRoom && registrationStage !== "search";
+  const stageLabel = {
+    deposit: "Thanh toán cọc",
+    schedule: "Chọn lịch nhận phòng",
+    waiting: "Chờ nhận phòng",
+    assigned: "Chỗ ở & Hợp đồng",
+  }[registrationStage];
+  const navItems = registrationInProgress
+    ? [
+        ...(stageLabel ? [[stageLabel, stagePath, Building2]] : []),
+        ...nav.studentNoRoom.filter(([, path]) => path !== "/student/rooms"),
+      ]
+    : nav[noRoom ? "studentNoRoom" : group];
+  const displayedNavItems = noRoom && hasResidenceHistory && !navItems.some(([, path]) => path === "/student/residence")
+    ? [["Chỗ ở & Hợp đồng", "/student/residence", Building2], ...navItems] : navItems;
   if (group === "guest")
     return (
       <div className="min-h-screen bg-bg">
@@ -337,14 +356,14 @@ export default function Workspace({ group, title, children }) {
         <div className="text-[11px] tracking-widest text-text-muted font-extrabold px-3 py-4 uppercase">
           {group === "student"
             ? noRoom
-              ? "Tìm phòng nội trú"
+              ? registrationInProgress ? "Đăng ký & Nhận phòng" : "Tìm phòng nội trú"
               : "Không gian sinh viên"
             : "Trung tâm quản lý"}
         </div>
 
         {/* Menu Items */}
         <nav className="flex flex-col gap-2">
-          {navItems?.map(([name, path, Icon]) => (
+          {displayedNavItems?.map(([name, path, Icon]) => (
             <NavLink key={path} to={path} end onClick={() => setOpen(false)}>
               {({ isActive }) => (
                 <div
