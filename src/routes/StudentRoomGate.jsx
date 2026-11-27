@@ -26,6 +26,7 @@ export default function StudentRoomGate() {
   const [hasAssignment, setHasAssignment] = useState(false);
   const [hasResidenceHistory, setHasResidenceHistory] = useState(false);
   const [registrationStage, setRegistrationStage] = useState('unknown');
+  const [journey, setJourney] = useState(null);
   const [residenceRequest, setResidenceRequest] = useState(null);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestsError, setRequestsError] = useState(false);
@@ -40,22 +41,22 @@ export default function StudentRoomGate() {
       try {
         // Backend trả về Page<RoomAssignmentResponse> tại /student/room-assignments
         // (endpoint cũ /room-assignments/me đã bị xoá → 404).
-        const [assignments, contracts, applications] = await Promise.all([
+        const [assignments, contracts, applications, openRequest] = await Promise.all([
           ...['/student/room-assignments', '/student/contracts', '/student/dorm-applications']
             .map((path) => loadJourneyPages((page, size) =>
               api(`${path}?page=${page}&size=${size}`, { notify: false }))),
+          getOpenResidenceRequest(),
         ]);
-        const journey = studentJourney(assignments, contracts, applications);
+        const journey = studentJourney(assignments, contracts, applications, openRequest);
+        setJourney(journey);
         setHasAssignment(journey.hasAssignment);
         setHasResidenceHistory(journey.hasResidenceHistory);
         setStagePath(journey.stagePath);
         setRegistrationStage(journey.registrationStage);
         hasRoomRef.current = journey.hasRoom;
         setHasRoom(journey.hasRoom);
-        try {
-          setResidenceRequest(journey.hasRoom ? await getOpenResidenceRequest() : null);
-          setRequestsError(false);
-        } catch { setRequestsError(true); }
+        setResidenceRequest(openRequest);
+        setRequestsError(false);
       } catch {
         // Keep the last verified stage; a failed lookup does not reopen room registration.
         setRequestsError(true);
@@ -98,9 +99,9 @@ export default function StudentRoomGate() {
   }, [hasRoom, refresh]);
 
   const value = useMemo(
-    () => ({ loading, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
+    () => ({ loading, journey, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
       residenceRequest, requestsLoading, requestsError }),
-    [loading, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
+    [loading, journey, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
       residenceRequest, requestsLoading, requestsError],
   );
 

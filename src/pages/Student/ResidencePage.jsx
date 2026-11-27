@@ -11,10 +11,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Workspace from "../../components/Workspace";
-import { resources } from "../../services/resource.service";
 import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
-import { loadJourneyPages } from "../../utils/studentJourney";
 import {
   CheckoutDialog,
   DialogShell,
@@ -63,7 +61,7 @@ function RentalSummary({ plan, deposit }) {
 }
 
 export default function ResidencePage() {
-  const { hasRoom, residenceRequest, requestsLoading, requestsError } = useStudentRoom();
+  const { journey, hasRoom, residenceRequest, requestsLoading, requestsError } = useStudentRoom();
   const requestBlocked = !hasRoom || Boolean(residenceRequest) || requestsLoading || requestsError;
   const [assignment, setAssignment] = useState(null);
   const [contract, setContract] = useState(null);
@@ -120,19 +118,9 @@ export default function ResidencePage() {
     let active = true;
     (async () => {
       try {
-        const [assignments, contracts] = await Promise.all([
-          ...["/student/room-assignments", "/student/contracts"].map((path) =>
-            loadJourneyPages((page, size) => resources.list(path, { page, size }))),
-        ]);
         if (!active) return;
         setLoadError("");
-        const currentAssignment = assignments.find((a) =>
-          String(a.assignmentStatus || a.status).toUpperCase() === "CHECKED_IN",
-        ) || assignments.find((a) =>
-          ["ASSIGNED", "CHECKED_IN"].includes(
-            String(a.assignmentStatus || a.status).toUpperCase(),
-          ),
-        );
+        const currentAssignment = journey?.assignment;
         setAssignment(currentAssignment || null);
         setRoommates([]);
         setRoommatesError("");
@@ -148,12 +136,7 @@ export default function ResidencePage() {
           }
         }
         if (!active) return;
-        const contractList = contracts;
-        const currentContract = contractList.find((item) => currentAssignment?.contractId != null && item.contractId === currentAssignment.contractId) || contractList.find(
-            (item) => String(item?.status || "").toUpperCase() === "ACTIVE",
-          ) ||
-            contractList[0] ||
-            null;
+        const currentContract = journey?.contract || null;
         setContract(currentContract);
         setPlan(null);
         setPlanError("");
@@ -164,11 +147,12 @@ export default function ResidencePage() {
               `/student/contracts/${currentContract.contractId}/check-in-plan`,
               { notify: false },
             );
+            if (!active) return;
             setPlan(nextPlan);
             setDateBounds(nextPlan);
             setChosenDate(nextPlan.checkInDate || "");
           } catch (error) {
-            setPlanError(errorMessage(error));
+            if (active) setPlanError(errorMessage(error));
           }
         }
       } catch (error) {
@@ -178,7 +162,7 @@ export default function ResidencePage() {
       }
     })();
     return () => { active = false; };
-  }, [reloadKey]);
+  }, [reloadKey, journey]);
 
   useEffect(() => {
     if (!contract?.contractId || !chosenDate || contract.status !== "PENDING" || contract.depositStatus !== "HELD") return;

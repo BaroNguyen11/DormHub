@@ -10,6 +10,7 @@ import { RefreshCw } from "lucide-react";
 import Workspace from "../../../components/Workspace";
 import { resources } from "../../../services/resource.service";
 import { errorMessage } from "../../../utils/errorHandler";
+import useStudentRoom from "../../../hooks/useStudentRoom";
 import { Loading, Notice } from "../../../components/Screen/UIComponents";
 import {
   RequestPageShell,
@@ -19,6 +20,7 @@ import {
 export default function RenewRequestPage() {
   const { contractId } = useParams();
   const navigate = useNavigate();
+  const { journey } = useStudentRoom();
   const [contract, setContract] = useState(null);
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,20 +33,9 @@ export default function RenewRequestPage() {
         const detail = await resources.get("/student/contracts", contractId);
         if (!active) return;
         setContract(detail);
-        try {
-          const assignments = await resources.list("/student/room-assignments", {
-            page: 0,
-            size: 20,
-          });
-          const current = (assignments?.content || []).find((item) =>
-            ["ASSIGNED", "CHECKED_IN"].includes(
-              String(item.assignmentStatus || item.status).toUpperCase(),
-            ),
-          );
-          if (active) setRoom(current?.room || current || null);
-        } catch {
-          // Không có phòng vẫn cho xem hợp đồng.
-        }
+        const current = String(journey?.contract?.contractId) === String(contractId)
+          ? journey?.assignment : null;
+        setRoom(current?.room || current || null);
       } catch (err) {
         if (active) setError(errorMessage(err));
       } finally {
@@ -54,7 +45,7 @@ export default function RenewRequestPage() {
     return () => {
       active = false;
     };
-  }, [contractId]);
+  }, [contractId, journey]);
 
   const contractStatus = String(contract?.status || "").toUpperCase();
   const isActive = contractStatus === "ACTIVE";

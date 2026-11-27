@@ -16,11 +16,9 @@ import {
 } from "lucide-react";
 import { Loading, Notice } from "../../components/Screen/UIComponents";
 import { resources } from "../../services/resource.service";
-import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
 import useStudentRoom from "../../hooks/useStudentRoom";
 import Workspace from "@/components/Workspace";
-import { currentApplication, loadJourneyPages } from "../../utils/studentJourney";
 
 
 const cardBase =
@@ -39,7 +37,7 @@ export default function MyRoomDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const pollTimer = useRef(null);
   const pollCount = useRef(0);
-  const { hasRoom: gateHasRoom, refresh: refreshRoomGate } = useStudentRoom();
+  const { journey, refresh: refreshRoomGate } = useStudentRoom();
 
   useEffect(() => {
     return () => {
@@ -58,57 +56,24 @@ export default function MyRoomDashboard() {
       setInvoiceData(null);
 
       try {
-        const roomAssignments = await loadJourneyPages((page, size) =>
-          resources.list("/student/room-assignments", { page, size }));
         if (!active) return;
-
-        const currentRoom = roomAssignments.find((assignment) => {
-          const status = String(
-            assignment.assignmentStatus || assignment.status || "",
-          ).toUpperCase();
-          return status === "ASSIGNED" || status === "CHECKED_IN";
-        });
+        const currentRoom = journey?.assignment;
 
         if (!currentRoom) {
-          let depositPaidForMessage = false;
-          let approvedFound = false;
-          try {
-            const [items, contracts] = await Promise.all(
-              ["/student/dorm-applications", "/student/contracts"].map((path) =>
-                loadJourneyPages((page, size) => resources.list(path, { page, size }))));
-            if (!active) return;
-            const application = currentApplication(items, contracts);
-            const approved = application?.status === "APPROVED" ? application : null;
-            const pending = application?.status === "PENDING" ? application : null;
-            if (approved) {
-              approvedFound = true;
-              let depositPaid = false;
-              if (approved.depositInvoiceId) {
-                try {
-                  const depositInvoice = await api(
-                    `/student/invoices/${encodeURIComponent(approved.depositInvoiceId)}`,
-                  );
-                  if (!active) return;
-                  depositPaid =
-                    String(depositInvoice?.status || "").toUpperCase() ===
-                    "PAID";
-                } catch {
-                  /* ignore error */
-                }
-              }
-              setPendingInfo({
-                type: "APPROVED",
-                applicationId: approved.id,
-                depositInvoiceId: approved.depositInvoiceId,
-                depositAmount: approved.depositAmount,
-                depositPaid,
-              });
-              depositPaidForMessage = depositPaid;
-            } else if (pending) {
-              setPendingInfo({ type: "PENDING", applicationId: pending.id });
-            }
-          } catch {
-            /* ignore error */
+          const depositPaidForMessage = journey?.depositPaid === true;
+          const application = journey?.application;
+          const approved = application?.status === "APPROVED" ? application : null;
+          const pending = journey?.registrationStage === "pending" ? application : null;
+          if (approved) {
+            setPendingInfo({
+              type: "APPROVED",
+              applicationId: approved.id,
+              depositInvoiceId: journey.depositInvoiceId,
+              depositAmount: approved.depositAmount,
+              depositPaid: depositPaidForMessage,
+            });
+          } else if (pending) {
+            setPendingInfo({ type: "PENDING", applicationId: pending.id });
           }
           if (!active) return;
           setError(
@@ -118,11 +83,11 @@ export default function MyRoomDashboard() {
           );
           setLoading(false);
 
-          if (approvedFound && pollCount.current < MAX_ROOM_POLLS) {
+          if (approved && pollCount.current < MAX_ROOM_POLLS) {
             pollCount.current += 1;
             if (pollTimer.current) clearTimeout(pollTimer.current);
             pollTimer.current = setTimeout(
-              () => setRefreshKey((value) => value + 1),
+              () => { void refreshRoomGate?.(); setRefreshKey((value) => value + 1); },
               ROOM_POLL_INTERVAL_MS,
             );
           }
@@ -132,25 +97,16 @@ export default function MyRoomDashboard() {
         if (pollTimer.current) clearTimeout(pollTimer.current);
         pollCount.current = 0;
         setRoomData(currentRoom);
-        if (!gateHasRoom) refreshRoomGate?.();
-
-        const contracts = await resources.list("/student/contracts", {
-          status: "ACTIVE",
-          page: 0,
-          size: 1,
-        });
-        if (!active) return;
-
-        if (contracts?.content?.length > 0) {
-          setContractData(contracts.content[0]);
-        }
+        setContractData(journey.contract);
 
         const invoices = await resources.list("/student/invoices", {
           page: 0,
           size: 50,
         });
         if (!active) return;
-        const invoiceList = Array.isArray(invoices?.content) ? invoices.content : [];
+        const invoiceList = (Array.isArray(invoices?.content) ? invoices.content : [])
+          .filter((invoice) => invoice.invoiceType !== "DEPOSIT"
+            || (journey.depositInvoiceId != null && String(invoice.invoiceId) === String(journey.depositInvoiceId)));
         const byNearestDueDate = (a, b) =>
           new Date(a?.dueDate || a?.createdAt || 0).getTime() -
           new Date(b?.dueDate || b?.createdAt || 0).getTime();
@@ -176,7 +132,7 @@ export default function MyRoomDashboard() {
       active = false;
       if (pollTimer.current) clearTimeout(pollTimer.current);
     };
-  }, [refreshKey, gateHasRoom, refreshRoomGate]);
+  }, [refreshKey, journey, refreshRoomGate]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

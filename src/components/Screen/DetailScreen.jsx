@@ -29,6 +29,7 @@ import { DialogShell } from "../RequestDialogs";
 import { CustomSelect } from "../ui/CustomSelect";
 import { getTransferRoomChoices } from "../../utils/residenceRequests";
 import { asList } from "../../api/apiClient";
+import useStudentRoom from "../../hooks/useStudentRoom";
 
 // Các field chứa ảnh đính kèm (báo hỏng: imageUrl; phòng: images/imageUrls)
 const IMAGE_FIELDS = new Set(["imageUrl", "images", "imageUrls"]);
@@ -508,13 +509,19 @@ export default function DetailScreen({ config }) {
     window.addEventListener("focus", reload);
     return () => { window.clearInterval(timer); window.removeEventListener("focus", reload); };
   }, [config.resource, reload]);
-  // An approved application remains APPROVED after payment; read its actual invoice.
+  const { journey } = useStudentRoom();
+  const isCurrentRegistration = raw?.id != null && journey?.application?.id != null
+    && String(raw.id) === String(journey.application.id)
+    && raw?.contractId != null && journey?.contract?.contractId != null
+    && String(raw.contractId) === String(journey.contract.contractId);
+  // History stays readable, but only the current process offers next-step actions.
   const depositInvoicePath = config.resource === "/student/dorm-applications"
-    && raw?.status === "APPROVED" && String(raw.id) === String(id) && raw.depositInvoiceId
+    && isCurrentRegistration && raw?.status === "APPROVED" && String(raw.id) === String(id) && raw.depositInvoiceId
     ? `/student/invoices/${encodeURIComponent(raw.depositInvoiceId)}` : "";
   const { data: depositInvoice, error: depositInvoiceError, loading: depositInvoiceLoading } = useLoad(depositInvoicePath, {});
   const actionData = {
     ...raw,
+    isCurrentRegistration,
     depositInvoiceStatus: depositInvoicePath && !depositInvoiceLoading
       && depositInvoice != null && raw?.depositInvoiceId != null
       && String(depositInvoice.invoiceId) === String(raw.depositInvoiceId)

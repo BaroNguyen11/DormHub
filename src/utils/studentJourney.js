@@ -1,4 +1,5 @@
-const status = (item) => String(item?.assignmentStatus || item?.status || '').toUpperCase();
+const status = (item) => String(item?.status || '').toUpperCase();
+const assignmentStatus = (item) => String(item?.assignmentStatus || item?.status || '').toUpperCase();
 const list = (value) => Array.isArray(value) ? value : value?.content || value?.items || [];
 
 // Journey decisions must include older live stays and contracts, not just page zero.
@@ -14,48 +15,58 @@ export async function loadJourneyPages(loadPage) {
   }
 }
 
-export function currentApplication(applications, contracts) {
-  const items = list(applications);
-  const contractList = list(contracts);
-  return items.find((item) => status(item) === 'PENDING') || items.find((item) => {
-    if (status(item) !== 'APPROVED') return false;
-    const related = contractList.filter((c) => String(c.contractId) === String(item.contractId));
-    return related.length === 0 || related.some((c) => ['PENDING', 'ACTIVE'].includes(status(c)));
-  });
+const sameId = (a, b) => a != null && b != null && String(a) === String(b);
+const holdsContract = (contract) => ['PENDING', 'ACTIVE'].includes(status(contract));
+
+export function currentApplication(applications, contracts, assignments = []) {
+  return studentJourney(assignments, contracts, applications).application || undefined;
 }
 
 // Navigation reflects server state only; no progress is persisted in the browser.
-export function studentJourney(assignments, contracts, applications) {
+export function studentJourney(assignments, contracts, applications, openRequest = null) {
   const assignmentList = list(assignments);
-  const hasResidenceHistory = assignmentList.some((item) => item.checkInAt || ['CHECKED_IN', 'CHECKED_OUT'].includes(status(item)));
-  const checkedIn = assignmentList.find((item) => status(item) === 'CHECKED_IN');
-  const assignment = checkedIn || assignmentList.find((item) => status(item) === 'ASSIGNED');
+  const hasResidenceHistory = assignmentList.some((item) => item.checkInAt || ['CHECKED_IN', 'CHECKED_OUT'].includes(assignmentStatus(item)));
+  const checkedIn = assignmentList.find((item) => assignmentStatus(item) === 'CHECKED_IN');
+  const assignment = checkedIn || assignmentList.find((item) => assignmentStatus(item) === 'ASSIGNED');
   const contractList = list(contracts);
-  if (assignment) {
-    const contract = contractList.find((item) => String(item.contractId) === String(assignment.contractId));
-    return {
-      hasRoom: Boolean(checkedIn), hasAssignment: true, hasResidenceHistory,
-      registrationStage: checkedIn ? 'resident' : status(contract) === 'ACTIVE' ? 'waiting'
-        : status(contract) === 'PENDING' && contract.depositStatus === 'HELD' ? 'schedule' : 'assigned',
-      stagePath: '/student/residence',
-    };
-  }
-  const application = currentApplication(applications, contractList);
-  const holdingContract = contractList.find((c) => ['PENDING', 'ACTIVE'].includes(status(c)));
-  if (!application && holdingContract) {
-    return {
-      hasRoom: false, hasAssignment: false, hasResidenceHistory,
-      registrationStage: status(holdingContract) === 'ACTIVE' ? 'waiting'
-        : holdingContract.depositStatus === 'HELD' ? 'schedule' : 'deposit',
-      stagePath: '/student/residence',
-    };
-  }
-  const approved = status(application) === 'APPROVED';
+  const applicationList = list(applications);
+  // A live stay wins over a pending registration. Never pair unrelated records.
+  const contract = assignment
+    ? contractList.find((c) => sameId(c.contractId, assignment.contractId))
+    : contractList.find(holdsContract);
+  const approved = contract && (holdsContract(contract) || (checkedIn && status(contract) === 'EXPIRED'))
+    ? applicationList.find((a) => status(a) === 'APPROVED' && sameId(a.contractId, contract.contractId))
+    : null;
+  const pending = applicationList.find((a) => status(a) === 'PENDING');
+  const orphanApproved = applicationList.some((a) => status(a) === 'APPROVED'
+    && !contractList.some((c) => sameId(c.contractId, a.contractId)));
+  const application = approved || (!assignment && !contract ? pending : null);
+  const checkoutOpen = openRequest?.kind === 'checkout' || openRequest?.blocksRegistration === true;
+  let registrationStage = 'search';
+  if (assignment || contract) {
+    registrationStage = 'unresolved';
+    if (checkedIn && contract && ['ACTIVE', 'EXPIRED'].includes(status(contract))) {
+      registrationStage = 'resident';
+    } else if (status(contract) === 'PENDING' && contract.depositStatus === 'UNPAID' && !assignment) {
+      registrationStage = 'deposit';
+    } else if (assignmentStatus(assignment) === 'ASSIGNED' && contract?.depositStatus === 'HELD') {
+      registrationStage = status(contract) === 'ACTIVE' ? 'waiting'
+        : status(contract) === 'PENDING' ? 'schedule' : 'unresolved';
+    }
+  } else if (checkoutOpen) registrationStage = 'unresolved';
+  else if (pending) registrationStage = 'pending';
+  else if (orphanApproved) registrationStage = 'unresolved';
+  const depositInvoiceId = approved?.depositInvoiceId ?? null;
+  const progressStep = { search: 0, pending: 1, deposit: 2, schedule: 3, waiting: 4 }[registrationStage] ?? null;
   return {
-    hasRoom: false, hasAssignment: false, hasResidenceHistory,
-    registrationStage: approved ? 'deposit' : application ? 'pending' : 'search',
-    stagePath: approved && application.depositInvoiceId
-      ? `/student/invoices/${application.depositInvoiceId}`
-      : application ? '/student/applications' : '/student/rooms',
+    assignment: assignment || null, contract: contract || null, application: application || null,
+    depositInvoiceId, depositPaid: contract?.depositStatus === 'HELD',
+    hasRoom: registrationStage === 'resident', hasAssignment: Boolean(assignment), hasResidenceHistory,
+    hasActiveProcess: registrationStage !== 'search', registrationStage, progressStep,
+    stagePath: registrationStage === 'search' ? '/student/rooms'
+      : registrationStage === 'pending' ? '/student/applications'
+      : registrationStage === 'deposit' && depositInvoiceId ? `/student/invoices/${depositInvoiceId}`
+      : registrationStage === 'unresolved' && checkoutOpen ? openRequest.path
+      : !assignment && !contract ? '/student/applications' : '/student/residence',
   };
 }

@@ -19,7 +19,8 @@ export async function getOpenResidenceRequest() {
       page += 1;
     }
   })));
-  return results.find(Boolean) || null;
+  const current = results.find(Boolean);
+  return current ? { ...current, blocksRegistration: results.some((item) => item?.kind === 'checkout') } : null;
 }
 
 export function renewalEndDate(value, months) {
