@@ -83,7 +83,7 @@ function RoomDetailContent() {
   // Chỉ hiển thị ảnh thật từ backend; không còn thay thế bằng ảnh mạng
   // (trước đây gán ảnh Unsplash làm "ảnh phòng" gây hiểu nhầm cho sinh viên).
   const images = room.images?.length > 0 ? room.images : [];
-  const freeSlots = Math.max(0, (room.capacity || 0) - (room.currentOccupancy || 0));
+  const freeSlots = Math.max(0, room.availableSlots ?? ((room.capacity || 0) - (room.currentOccupancy || 0)));
   const occupancyPercent = room.capacity > 0
     ? Math.min(100, Math.round(((room.currentOccupancy || 0) / room.capacity) * 100))
     : 0;

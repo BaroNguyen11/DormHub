@@ -8,6 +8,8 @@ import {
   STUDENT_NO_ROOM_HOME,
 } from '../constants/screenConfig';
 import { ROLE_HOME } from '../constants/roles';
+import { studentJourney, loadJourneyPages } from '../utils/studentJourney';
+import { getOpenResidenceRequest } from '../utils/residenceRequests';
 
 const startsWithAny = (pathname, prefixes) =>
   prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -22,6 +24,12 @@ export default function StudentRoomGate() {
   const [loading, setLoading] = useState(true);
   const [hasRoom, setHasRoom] = useState(false);
   const [hasAssignment, setHasAssignment] = useState(false);
+  const [hasResidenceHistory, setHasResidenceHistory] = useState(false);
+  const [registrationStage, setRegistrationStage] = useState('unknown');
+  const [journey, setJourney] = useState(null);
+  const [residenceRequest, setResidenceRequest] = useState(null);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState(false);
   const [stagePath, setStagePath] = useState(STUDENT_NO_ROOM_HOME);
   const hasRoomRef = useRef(false);
   const refreshRequestRef = useRef(null);
@@ -33,46 +41,28 @@ export default function StudentRoomGate() {
       try {
         // Backend trả về Page<RoomAssignmentResponse> tại /student/room-assignments
         // (endpoint cũ /room-assignments/me đã bị xoá → 404).
-        const data = await api('/student/room-assignments', {
-          method: 'GET',
-          // Backend default page=0, size=20 — đủ để biết SV có đang ở phòng nào không.
-        });
-        const items = Array.isArray(data)
-          ? data
-          : data?.content || data?.items || [];
-        const checkedIn = items.some((a) =>
-          String(a?.assignmentStatus || a?.status || '').toUpperCase() === 'CHECKED_IN',
-        );
-        const assigned = items.some((a) =>
-          ['ASSIGNED', 'CHECKED_IN'].includes(
-            String(a?.assignmentStatus || a?.status || '').toUpperCase(),
-          ),
-        );
-        setHasAssignment(assigned);
-        if (assigned) {
-          setStagePath('/student/residence');
-        } else {
-          const applications = await api('/student/dorm-applications?page=0&size=20', {
-            method: 'GET', notify: false,
-          });
-          const applicationItems = applications?.content || [];
-          const openApplication = applicationItems.find((item) =>
-            ['PENDING', 'APPROVED'].includes(String(item?.status || '').toUpperCase()),
-          );
-          setStagePath(openApplication?.status === 'APPROVED' && openApplication.depositInvoiceId
-            ? `/student/invoices/${openApplication.depositInvoiceId}`
-            : openApplication ? '/student/applications' : STUDENT_NO_ROOM_HOME);
-        }
-        hasRoomRef.current = checkedIn;
-        setHasRoom(checkedIn);
+        const [assignments, contracts, applications, openRequest] = await Promise.all([
+          ...['/student/room-assignments', '/student/contracts', '/student/dorm-applications']
+            .map((path) => loadJourneyPages((page, size) =>
+              api(`${path}?page=${page}&size=${size}`, { notify: false }))),
+          getOpenResidenceRequest(),
+        ]);
+        const journey = studentJourney(assignments, contracts, applications, openRequest);
+        setJourney(journey);
+        setHasAssignment(journey.hasAssignment);
+        setHasResidenceHistory(journey.hasResidenceHistory);
+        setStagePath(journey.stagePath);
+        setRegistrationStage(journey.registrationStage);
+        hasRoomRef.current = journey.hasRoom;
+        setHasRoom(journey.hasRoom);
+        setResidenceRequest(openRequest);
+        setRequestsError(false);
       } catch {
-        // 404 / 403 / mạng: coi như chưa có phòng để SV vẫn vào được Tìm phòng.
-        hasRoomRef.current = false;
-        setHasRoom(false);
-        setHasAssignment(false);
-        setStagePath(STUDENT_NO_ROOM_HOME);
+        // Keep the last verified stage; a failed lookup does not reopen room registration.
+        setRequestsError(true);
       } finally {
         setLoading(false);
+        setRequestsLoading(false);
       }
     })();
     refreshRequestRef.current = request;
@@ -88,22 +78,46 @@ export default function StudentRoomGate() {
   // Tải lần đầu; sinh viên chưa có phòng được kiểm tra lại mỗi khi chuyển trang
   // (để vừa được duyệt đơn là vào được trang chính ngay).
   useEffect(() => {
-    if (!hasRoomRef.current) void refresh();
+    void refresh();
   }, [pathname, refresh]);
 
+  useEffect(() => {
+    const update = () => {
+      // A mutation may finish while an older lookup is still in flight.
+      const pending = refreshRequestRef.current;
+      if (pending) void pending.then(() => refresh());
+      else void refresh();
+    };
+    window.addEventListener('residence-updated', update);
+    window.addEventListener('focus', update);
+    const timer = window.setInterval(update, 30_000);
+    return () => {
+      window.removeEventListener('residence-updated', update);
+      window.removeEventListener('focus', update);
+      if (timer != null) window.clearInterval(timer);
+    };
+  }, [hasRoom, refresh]);
+
   const value = useMemo(
-    () => ({ loading, hasRoom, hasAssignment, refresh }),
-    [loading, hasRoom, hasAssignment, refresh],
+    () => ({ loading, journey, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
+      residenceRequest, requestsLoading, requestsError }),
+    [loading, journey, hasRoom, hasAssignment, hasResidenceHistory, registrationStage, stagePath, refresh,
+      residenceRequest, requestsLoading, requestsError],
   );
 
   if (loading) {
     return <div className="page-status">Đang kiểm tra thông tin phòng…</div>;
   }
 
+  if (registrationStage !== 'search' && registrationStage !== 'unknown'
+      && (pathname === '/student/applications/new' || startsWithAny(pathname, ['/student/rooms']))) {
+    return <Navigate to={stagePath} replace />;
+  }
+
   const residenceOnly = pathname === '/student/maintenance/new' ||
     /^\/student\/contracts\/[^/]+\/renewal$/.test(pathname) ||
-    pathname.startsWith('/student/room-transfer-requests/') ||
-    pathname.startsWith('/student/checkout-requests/');
+    pathname === '/student/room-transfer-requests/new' ||
+    pathname === '/student/checkout-requests/new';
   if (!hasRoom && residenceOnly) {
     return <Navigate to="/student/residence" replace />;
   }

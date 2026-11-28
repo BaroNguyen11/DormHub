@@ -1,3 +1,4 @@
+import useCurrentStay from "../../../hooks/useCurrentStay";
 // ====================================
 // TẠO YÊU CẦU TRẢ PHÒNG — trang riêng thay cho FormScreen trống
 // ====================================
@@ -11,7 +12,6 @@ import { Loading, Notice } from "../../../components/Screen/UIComponents";
 import {
   CheckoutForm,
   RequestPageShell,
-  useCurrentStay,
 } from "../../../components/RequestDialogs";
 
 export default function CheckoutRequestPage() {
@@ -27,7 +27,7 @@ export default function CheckoutRequestPage() {
           icon={DoorOpen}
           tone="bg-error text-white"
           title="Trả phòng"
-          subtitle="Chọn ngày dự kiến trả phòng — ban quản lý sẽ xem xét và phản hồi"
+          subtitle="Gửi lý do và phối hợp với ban quản lý để bàn giao phòng thực tế"
           onBack={() => navigate(-1)}
         >
           {error && <Notice error={error} />}

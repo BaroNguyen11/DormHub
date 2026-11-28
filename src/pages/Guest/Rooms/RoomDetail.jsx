@@ -96,7 +96,7 @@ function RoomDetail() {
       : [];
   const freeSlots = Math.max(
     0,
-    (room.capacity || 0) - (room.currentOccupancy || 0),
+    room.availableSlots ?? ((room.capacity || 0) - (room.currentOccupancy || 0)),
   );
   const occupancyPercent = room.capacity > 0
     ? Math.min(100, Math.round(((room.currentOccupancy || 0) / room.capacity) * 100))

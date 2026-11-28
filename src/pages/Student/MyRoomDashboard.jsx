@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Loading, Notice } from "../../components/Screen/UIComponents";
 import { resources } from "../../services/resource.service";
-import { api } from "../../api/apiClient";
 import { errorMessage } from "../../utils/errorHandler";
 import useStudentRoom from "../../hooks/useStudentRoom";
 import Workspace from "@/components/Workspace";
@@ -38,7 +37,7 @@ export default function MyRoomDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const pollTimer = useRef(null);
   const pollCount = useRef(0);
-  const { hasRoom: gateHasRoom, refresh: refreshRoomGate } = useStudentRoom();
+  const { journey, refresh: refreshRoomGate } = useStudentRoom();
 
   useEffect(() => {
     return () => {
@@ -47,63 +46,36 @@ export default function MyRoomDashboard() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     async function fetchAllData() {
       setLoading(true);
       setError("");
+      setPendingInfo(null);
+      setRoomData(null);
+      setContractData(null);
+      setInvoiceData(null);
 
       try {
-        const roomAssignments = await resources.list(
-          "/student/room-assignments",
-          { page: 0, size: 20 },
-        );
-
-        const currentRoom = roomAssignments?.content?.find((assignment) => {
-          const status = String(
-            assignment.assignmentStatus || assignment.status || "",
-          ).toUpperCase();
-          return status === "ASSIGNED" || status === "CHECKED_IN";
-        });
+        if (!active) return;
+        const currentRoom = journey?.assignment;
 
         if (!currentRoom) {
-          let depositPaidForMessage = false;
-          let approvedFound = false;
-          try {
-            const apps = await resources.list("/student/dorm-applications", {
-              page: 0,
-              size: 20,
+          const depositPaidForMessage = journey?.depositPaid === true;
+          const application = journey?.application;
+          const approved = application?.status === "APPROVED" ? application : null;
+          const pending = journey?.registrationStage === "pending" ? application : null;
+          if (approved) {
+            setPendingInfo({
+              type: "APPROVED",
+              applicationId: approved.id,
+              depositInvoiceId: journey.depositInvoiceId,
+              depositAmount: approved.depositAmount,
+              depositPaid: depositPaidForMessage,
             });
-            const items = apps?.content || [];
-            const approved = items.find((a) => a?.status === "APPROVED");
-            const pending = items.find((a) => a?.status === "PENDING");
-            if (approved) {
-              approvedFound = true;
-              let depositPaid = false;
-              if (approved.depositInvoiceId) {
-                try {
-                  const depositInvoice = await api(
-                    `/student/invoices/${encodeURIComponent(approved.depositInvoiceId)}`,
-                  );
-                  depositPaid =
-                    String(depositInvoice?.status || "").toUpperCase() ===
-                    "PAID";
-                } catch {
-                  /* ignore error */
-                }
-              }
-              setPendingInfo({
-                type: "APPROVED",
-                applicationId: approved.id,
-                depositInvoiceId: approved.depositInvoiceId,
-                depositAmount: approved.depositAmount,
-                depositPaid,
-              });
-              depositPaidForMessage = depositPaid;
-            } else if (pending) {
-              setPendingInfo({ type: "PENDING", applicationId: pending.id });
-            }
-          } catch {
-            /* ignore error */
+          } else if (pending) {
+            setPendingInfo({ type: "PENDING", applicationId: pending.id });
           }
+          if (!active) return;
           setError(
             depositPaidForMessage
               ? "Tiền cọc đã được ghi nhận — đang cập nhật chỗ ở của bạn…"
@@ -111,11 +83,11 @@ export default function MyRoomDashboard() {
           );
           setLoading(false);
 
-          if (approvedFound && pollCount.current < MAX_ROOM_POLLS) {
+          if (approved && pollCount.current < MAX_ROOM_POLLS) {
             pollCount.current += 1;
             if (pollTimer.current) clearTimeout(pollTimer.current);
             pollTimer.current = setTimeout(
-              () => setRefreshKey((value) => value + 1),
+              () => { void refreshRoomGate?.(); setRefreshKey((value) => value + 1); },
               ROOM_POLL_INTERVAL_MS,
             );
           }
@@ -125,23 +97,16 @@ export default function MyRoomDashboard() {
         if (pollTimer.current) clearTimeout(pollTimer.current);
         pollCount.current = 0;
         setRoomData(currentRoom);
-        if (!gateHasRoom) refreshRoomGate?.();
-
-        const contracts = await resources.list("/student/contracts", {
-          status: "ACTIVE",
-          page: 0,
-          size: 1,
-        });
-
-        if (contracts?.content?.length > 0) {
-          setContractData(contracts.content[0]);
-        }
+        setContractData(journey.contract);
 
         const invoices = await resources.list("/student/invoices", {
           page: 0,
           size: 50,
         });
-        const invoiceList = Array.isArray(invoices?.content) ? invoices.content : [];
+        if (!active) return;
+        const invoiceList = (Array.isArray(invoices?.content) ? invoices.content : [])
+          .filter((invoice) => invoice.invoiceType !== "DEPOSIT"
+            || (journey.depositInvoiceId != null && String(invoice.invoiceId) === String(journey.depositInvoiceId)));
         const byNearestDueDate = (a, b) =>
           new Date(a?.dueDate || a?.createdAt || 0).getTime() -
           new Date(b?.dueDate || b?.createdAt || 0).getTime();
@@ -156,14 +121,18 @@ export default function MyRoomDashboard() {
           )[0];
         setInvoiceData(unpaidInvoice || latestPaidInvoice || null);
       } catch (err) {
-        setError(errorMessage(err));
+        if (active) setError(errorMessage(err));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     fetchAllData();
-  }, [refreshKey, gateHasRoom, refreshRoomGate]);
+    return () => {
+      active = false;
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
+  }, [refreshKey, journey, refreshRoomGate]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
